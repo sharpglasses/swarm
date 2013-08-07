@@ -1,6 +1,8 @@
 #include "swarm.h"
 #include "decode.h"
 
+#include <stdlib.h>
+
 namespace swarm {
   // -------------------------------------------------------
   // Handler
@@ -11,16 +13,49 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Param
-  size_t Param::size () const {
-    return 0;
+  const std::string Param::errmsg_ = "(error)";
+
+  Param::Param () : len_(0) {
   }
-  byte_t * Param::get (size_t idx, size_t *len) const {
+  Param::~Param () {
+  }
+  void Param::init () {
+    this->len_ = 0;
+  }
+  size_t Param::size () const {
+    return this->len_;
+  }
+  void Param::push (byte_t *data, size_t len, bool copy) {
+  }
+  byte_t * Param::get (size_t *len, size_t idx) {
     return NULL;
   }
-  bool Param::str (size_t idx, std::string *s) const {
-    return false;
+
+  int32_t Param::int32 (size_t idx) { return 0; }
+  u_int32_t Param::uint32 (size_t idx) { return 0; }
+  int64_t Param::int64 (size_t idx) { return 0; }
+  u_int64_t Param::uint64 (size_t idx) { return 0; }
+  std::string Param::str (size_t idx) {
+    return Param::errmsg_;
+  }
+  std::string Param::hex (size_t idx) {
+    return Param::errmsg_;
+  }
+  std::string Param::ip4 (size_t idx) {
+    return Param::errmsg_;
+  }
+  std::string Param::ip6 (size_t idx) {
+    return Param::errmsg_;
+  }
+  std::string Param::mac (size_t idx) {
+    return Param::errmsg_;
   }
 
+  bool Param::str (std::string *s, size_t idx) { return false; }
+  bool Param::hex (std::string *s, size_t idx) { return false; }
+  bool Param::ip4 (std::string *s, size_t idx) { return false; }
+  bool Param::ip6 (std::string *s, size_t idx) { return false; }
+  bool Param::mac (std::string *s, size_t idx) { return false; }    
 
   // -------------------------------------------------------
   // Decoder
@@ -29,10 +64,26 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Property
-  Property::Property (NetDec * nd) : nd_(nd) {
+  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), buf_len_(0) {
   }
+  Property::~Property () {
+    if (this->buf_) {
+      free (this->buf_); 
+    }
+  }
+  void Property::init  (const byte_t *data, const size_t cap_len, 
+                        const size_t data_len, const struct timeval &tv) {
+    if (this->buf_len_ < cap_len) {
+      this->buf_len_ = cap_len;
+      this->buf_ = static_cast <byte_t *>
+        (::realloc (static_cast <void*> (this->buf_), this->buf_len_));
+    }
 
-  void Property::init () {
+    this->tv_sec_ = 0;
+    this->tv_usec_ = 0;
+    this->data_len_ = 0;
+    this->cap_len_ = 0;
+    this->ptr_ = 0;
   }
   Param * Property::param (const std::string &key) const {
     return NULL;

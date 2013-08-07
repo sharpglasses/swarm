@@ -18,12 +18,47 @@ namespace swarm {
 
   class NetDec;
 
-  class Param {
-  public:
-    size_t size () const;
-    byte_t * get (size_t idx, size_t *len) const;
-    bool str (size_t idx, std::string *s) const;
+  
+  class Var {
+  private:
+    byte_t * ptr_;
+    size_t len_;
 
+  public:
+    void init ();
+    void set (byte_t *ptr, size_t len);
+    byte_t * get (size_t *len) const;
+  };
+
+  class Param {
+  private:
+    std::vector <Var *> var_set_;
+    size_t len_;
+
+  public:
+    const static std::string errmsg_;
+    Param ();
+    ~Param ();
+    void init ();
+
+    size_t size () const;
+    void push (byte_t *data, size_t len, bool copy=false);
+    byte_t * get (size_t *len = NULL, size_t idx = 0);
+
+    int32_t int32 (size_t idx = 0);
+    u_int32_t uint32 (size_t idx = 0);
+    int64_t int64 (size_t idx = 0);
+    u_int64_t uint64 (size_t idx = 0);
+    std::string str (size_t idx = 0);
+    std::string hex (size_t idx = 0);
+    std::string ip4 (size_t idx = 0);
+    std::string ip6 (size_t idx = 0);
+    std::string mac (size_t idx = 0);    
+    bool str (std::string *s, size_t idx);
+    bool hex (std::string *s, size_t idx);
+    bool ip4 (std::string *s, size_t idx);
+    bool ip6 (std::string *s, size_t idx);
+    bool mac (std::string *s, size_t idx);    
   };
 
   class Property {
@@ -41,7 +76,10 @@ namespace swarm {
 
   public:
     Property (NetDec * nd);
-    void init ();
+    ~Property ();
+    void init (const byte_t *data, const size_t cap_len, 
+               const size_t data_len, const struct timeval &tv);
+
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
     byte_t * payload (size_t alloc_size);
