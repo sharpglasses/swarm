@@ -22,7 +22,7 @@ C++ based network traffic capturing and decoding library.
     class DnsHandler : public swarm::Handler {
     public:
       void recv (ev_id ev, const swarm::Property &p) {
-        std::cout << p.param ("dns.query") << std::endl;
+        std::cout << p.param ("dns.query")->str () << std::endl;
       }
     };
     
@@ -30,6 +30,6 @@ C++ based network traffic capturing and decoding library.
       swarm::NetCap * nc = new swarm::NetCap ();
       swarm::NetDec * nd = new swarm::NetDec ();
       nd->set_handler ("dns.packet", new DnsHandler ());
-      cap->start_capture ();
+      cap->start_capture_alldev ();
     }
 
