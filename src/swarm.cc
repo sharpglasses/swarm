@@ -1,6 +1,7 @@
 #include "swarm.h"
 #include "decode.h"
 
+#include <pcap.h>
 #include <stdlib.h>
 
 namespace swarm {
@@ -98,14 +99,23 @@ namespace swarm {
   // -------------------------------------------------------
   //NetDec
   NetDec::NetDec () : none_("") {
-    
+    int mod_count = 
+      DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_)); 
+    for (int i = 0; i < mod_count; i++) {
+      this->dict_dec_.insert (std::make_pair (this->dec_name_[i], i));
+    } 
   }
   NetDec::~NetDec () {
   }
 
+
+
   bool NetDec::input (const byte_t *data, const size_t cap_len, 
                       const size_t data_len, 
-                      const struct timeval &tv) {
+                      const struct timeval &tv, const int dlt) {    
+    if (dlt == DLT_EN10MB) {
+      return false;
+    }
     return false;
   }
   ev_id NetDec::lookup_ev_id (const std::string &name) {

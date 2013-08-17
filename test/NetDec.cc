@@ -146,12 +146,12 @@ TEST (NetDec, basic_scenario) {
   std::string sample_file = "./data/SkypeIRC.cap";
   struct pcap_pkthdr *pkthdr;
   const u_char *pkt_data;
-
   pd = pcap_open_offline(sample_file.c_str (), errbuf);
   ASSERT_TRUE (pd != NULL);
 
+  int dlt = pcap_datalink (pd);
   while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts);
+    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
   }
 
   EXPECT_EQ ( 707, dns_h->count ());

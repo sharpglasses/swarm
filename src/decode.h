@@ -10,9 +10,10 @@ namespace swarm {
     static std::map <std::string, Decoder * (*)(NetDec *)> protocol_decoder_map_;
 
   public:
+    DecoderMap ();
     static bool reg_protocol_decoder (const std::string &name, Decoder * (*New) (NetDec *));
-    void build_decoder_vector (std::vector <Decoder *> *dec_vec, 
-                               std::vector <std::string> *dec_name);
+    static int build_decoder_vector (NetDec * nd, std::vector <Decoder *> *dec_vec, 
+                                     std::vector <std::string> *dec_name);
   };
 
 #define INIT_DECODER(NAME,FUNC)                                         \

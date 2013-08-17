@@ -8,9 +8,10 @@
 
 namespace swarm {
   typedef u_int8_t  byte_t;
-  typedef u_int64_t ev_id;  // Event ID
+  typedef u_int64_t ev_id;    // Event ID
   typedef u_int64_t param_id; // Parameter ID
   typedef u_int64_t hdlr_id;  // Handler Entry ID
+  typedef size_t    dec_id;   // Decoder ID
 
   const static ev_id    EV_NULL = 0;
   const static hdlr_id  HDLR_NULL = 0;
@@ -109,15 +110,19 @@ namespace swarm {
   class NetDec {
   private:
     std::map <std::string, ev_id> dict_event_;
+    std::map <std::string, param_id> dict_param_;
+    std::map <std::string, dec_id> dict_dec_;
+
     const std::string none_ ;
-    std::vector <Decoder *> decoder_;
+    std::vector <Decoder *> dec_mod_;
+    std::vector <std::string> dec_name_;
 
   public:
     NetDec ();
     ~NetDec ();
-    
+
     bool input (const byte_t *data, const size_t cap_len, 
-                const size_t data_len, const struct timeval &tv);
+                const size_t data_len, const struct timeval &tv, int dlt);
     ev_id lookup_ev_id (const std::string &name);
     std::string lookup_ev_name (ev_id eid);
     param_id lookup_param_id (const std::string &name);

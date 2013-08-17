@@ -65,11 +65,15 @@ function set_trigger (conf) {
 
 
 if (conf.forEach === undefined) {
-    set_trigger (conf);
+    if (conf.enable !== 0) {
+        set_trigger (conf);
+    }
 }
 else {
     conf.forEach (function (c) {
-        set_trigger (c);
+        if (c.enable !== 0) {
+            set_trigger (c);
+        }
     });
 }
 
