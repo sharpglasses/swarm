@@ -11,11 +11,12 @@ namespace swarm {
   typedef u_int64_t ev_id;    // Event ID
   typedef u_int64_t param_id; // Parameter ID
   typedef u_int64_t hdlr_id;  // Handler Entry ID
-  typedef size_t    dec_id;   // Decoder ID
+  typedef int       dec_id;   // Decoder ID
 
   const static ev_id    EV_NULL = 0;
   const static hdlr_id  HDLR_NULL = 0;
   const static param_id PARAM_NULL = 0;
+  const static dec_id   DEC_NULL = -1;
 
   class NetDec;
 
@@ -98,11 +99,12 @@ namespace swarm {
     NetDec * nd_;
 
   protected:
-    void emit (Property *p);
+    void emit (dec_id dec, Property *p);
 
   public:
     Decoder (NetDec * nd);
     virtual ~Decoder ();
+    virtual void setup (NetDec *nd) = 0;
     virtual bool decode (Property *p) = 0;
   };
 
@@ -117,6 +119,8 @@ namespace swarm {
     std::vector <Decoder *> dec_mod_;
     std::vector <std::string> dec_name_;
 
+    dec_id dec_ether_;
+    
   public:
     NetDec ();
     ~NetDec ();
@@ -127,6 +131,7 @@ namespace swarm {
     std::string lookup_ev_name (ev_id eid);
     param_id lookup_param_id (const std::string &name);
     std::string lookup_param_name (param_id pid);
+    dec_id lookup_dec_id (const std::string &name);
 
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
     bool unset_handler (hdlr_id hid);

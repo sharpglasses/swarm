@@ -35,16 +35,23 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_ETH_PKT_;
-    param_id P_SRC_, P_DST_, P_PROTO_;
-
+    param_id P_SRC_, P_DST_, P_PROTO_, P_HDR_;
+    dec_id D_IPV4_;
+    dec_id D_IPV6_;
+    
   public:
     EtherDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_ETH_PKT_ = nd->assign_event ("ether.packet");
       this->P_SRC_   = nd->assign_param ("ether.src");
       this->P_DST_   = nd->assign_param ("ether.dst");
       this->P_PROTO_ = nd->assign_param ("ether.param");
+      this->P_HDR_   = nd->assign_param ("ether.hdr");
     }
-    
+    void setup (NetDec * nd) {
+      this->D_IPV4_ = nd->lookup_dec_id ("ipv4");
+      this->D_IPV6_ = nd->lookup_dec_id ("ipv6");
+    };
+
     static Decoder * New (NetDec * nd) { return new EtherDecoder (nd); }
 
     bool decode (Property *p) {

@@ -60,7 +60,7 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Decoder
-  void Decoder::emit (Property *p) {
+  void Decoder::emit (dec_id dec, Property *p) {
   }
 
   // -------------------------------------------------------
@@ -104,8 +104,11 @@ namespace swarm {
     for (int i = 0; i < mod_count; i++) {
       this->dict_dec_.insert (std::make_pair (this->dec_name_[i], i));
     } 
+
+    this->dec_ether_ = this->lookup_dec_id ("ether");    
   }
   NetDec::~NetDec () {
+    
   }
 
 
@@ -131,6 +134,10 @@ namespace swarm {
   param_id NetDec::lookup_param_id (const std::string &name) {
     return PARAM_NULL;
   }
+  dec_id NetDec::lookup_dec_id (const std::string &name) {
+    return DEC_NULL;
+  }
+
 
   hdlr_id NetDec::set_handler (ev_id eid, Handler * hdlr) {
     return HDLR_NULL;

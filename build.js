@@ -10,7 +10,7 @@
   {"build_command": "./build/my_test",
    "build_args":  [],
    "file_list": {"build": ["my_test"]},
-   "enable": 0
+   "enable": 1
   }
 ]
  
