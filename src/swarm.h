@@ -19,23 +19,12 @@ namespace swarm {
   const static dec_id   DEC_NULL = -1;
 
   class NetDec;
-
+  class Var; // in var.h
   
-  class Var {
-  private:
-    byte_t * ptr_;
-    size_t len_;
-
-  public:
-    void init ();
-    void set (byte_t *ptr, size_t len);
-    byte_t * get (size_t *len) const;
-  };
-
   class Param {
   private:
     std::vector <Var *> var_set_;
-    size_t len_;
+    size_t idx_;
 
   public:
     const static std::string errmsg_;
@@ -49,8 +38,7 @@ namespace swarm {
 
     int32_t int32 (size_t idx = 0);
     u_int32_t uint32 (size_t idx = 0);
-    int64_t int64 (size_t idx = 0);
-    u_int64_t uint64 (size_t idx = 0);
+    
     std::string str (size_t idx = 0);
     std::string hex (size_t idx = 0);
     std::string ip4 (size_t idx = 0);

@@ -1,8 +1,12 @@
 #include "swarm.h"
 #include "decode.h"
+#include "var.h"
 
 #include <pcap.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <arpa/inet.h>
+
 
 namespace swarm {
   // -------------------------------------------------------
@@ -12,51 +16,143 @@ namespace swarm {
   Handler::~Handler () {
   }
 
+
   // -------------------------------------------------------
   // Param
   const std::string Param::errmsg_ = "(error)";
 
-  Param::Param () : len_(0) {
+  Param::Param () : idx_(0) {
   }
   Param::~Param () {
   }
   void Param::init () {
-    this->len_ = 0;
+    this->idx_ = 0;
   }
   size_t Param::size () const {
-    return this->len_;
+    return this->idx_;
   }
   void Param::push (byte_t *data, size_t len, bool copy) {
+    Var * v;
+    if (this->idx_ >= this->var_set_.size ())  {
+      v = new Var ();
+      this->var_set_.push_back (v);
+      this->idx_++;
+      assert (this->idx_ == this->var_set_.size ());
+    }
+    else {
+      v = this->var_set_[this->idx_];
+      this->idx_++;
+    }
+
+    if (copy) {
+      v->copy (data, len);
+    }
+    else {
+      v->set (data, len);
+    }
   }
   byte_t * Param::get (size_t *len, size_t idx) {
-    return NULL;
+    if (idx < this->idx_) {
+      return this->var_set_[idx]->get (len);
+    }
+    else {
+      return NULL;
+    }
   }
 
-  int32_t Param::int32 (size_t idx) { return 0; }
-  u_int32_t Param::uint32 (size_t idx) { return 0; }
-  int64_t Param::int64 (size_t idx) { return 0; }
-  u_int64_t Param::uint64 (size_t idx) { return 0; }
-  std::string Param::str (size_t idx) {
-    return Param::errmsg_;
+  int32_t Param::int32 (size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->num <int32_t> ();
+    }
+    else {
+      return 0;
+    }
+  }
+  u_int32_t Param::uint32 (size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->num <u_int32_t> ();
+    }
+    else {
+      return 0;
+    }
+  }
+
+
+  std::string Param::str (size_t idx) {    
+    std::string buf;
+    return (this->str (&buf, idx)) ? buf : Param::errmsg_;
   }
   std::string Param::hex (size_t idx) {
-    return Param::errmsg_;
+    std::string buf;
+    return (this->hex (&buf, idx)) ? buf : Param::errmsg_;
   }
   std::string Param::ip4 (size_t idx) {
-    return Param::errmsg_;
+    std::string buf;
+    return (this->ip4 (&buf, idx)) ? buf : Param::errmsg_;
   }
   std::string Param::ip6 (size_t idx) {
-    return Param::errmsg_;
+    std::string buf;
+    return (this->ip6 (&buf, idx)) ? buf : Param::errmsg_;
   }
   std::string Param::mac (size_t idx) {
-    return Param::errmsg_;
+    std::string buf;
+    return (this->mac (&buf, idx)) ? buf : Param::errmsg_;
   }
 
-  bool Param::str (std::string *s, size_t idx) { return false; }
-  bool Param::hex (std::string *s, size_t idx) { return false; }
-  bool Param::ip4 (std::string *s, size_t idx) { return false; }
-  bool Param::ip6 (std::string *s, size_t idx) { return false; }
-  bool Param::mac (std::string *s, size_t idx) { return false; }    
+  bool Param::str (std::string *s, size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->str (s);
+    }
+    else {
+      return false;
+    }
+  }
+  bool Param::hex (std::string *s, size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->hex (s);
+    }
+    else {
+      return false;
+    }
+  }
+  bool Param::ip4 (std::string *s, size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->ip4 (s);
+    }
+    else {
+      return false;
+    }
+  }
+  bool Param::ip6 (std::string *s, size_t idx) { 
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->ip6 (s);
+    }
+    else {
+      return false;
+    }
+  }
+  bool Param::mac (std::string *s, size_t idx) {
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->mac (s);
+    }
+    else {
+      return false;
+    }
+  }
 
   // -------------------------------------------------------
   // Decoder
