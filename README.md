@@ -1,5 +1,5 @@
 # Swarm
-C++ based network traffic capturing and decoding library.
+C++ based lightweight and high-speed network traffic decoding library.
 
 ## Required
 - libpcap
@@ -21,7 +21,7 @@ C++ based network traffic capturing and decoding library.
     
     class DnsHandler : public swarm::Handler {
     public:
-      void recv (ev_id ev, const swarm::Property &p) {
+      void recv (swarm::ev_id ev, const swarm::Property &p) {
         std::cout << p.param ("dns.query")->str () << std::endl;
       }
     };

@@ -1,6 +1,7 @@
 #include "swarm.h"
 #include "decode.h"
 #include "var.h"
+#include "debug.h"
 
 #include <pcap.h>
 #include <stdlib.h>
@@ -176,11 +177,14 @@ namespace swarm {
         (::realloc (static_cast <void*> (this->buf_), this->buf_len_));
     }
 
-    this->tv_sec_ = 0;
-    this->tv_usec_ = 0;
-    this->data_len_ = 0;
-    this->cap_len_ = 0;
-    this->ptr_ = 0;
+    this->tv_sec_   = tv.tv_sec;
+    this->tv_usec_  = tv.tv_usec;
+    this->data_len_ = data_len;
+    this->cap_len_  = cap_len;
+    this->ptr_      = 0;
+
+    assert (this->buf_len_ >= cap_len);
+    ::memcpy (this->buf_, data, cap_len);
   }
   Param * Property::param (const std::string &key) const {
     return NULL;
@@ -189,7 +193,18 @@ namespace swarm {
     return NULL;
   }
   byte_t * Property::payload (size_t alloc_size) {
-    return NULL;
+    // Swarm supports maximum 16MB for one packet lengtsh
+    assert (alloc_size < 0xfffffff);
+    assert (this->ptr_ < 0xfffffff);
+
+    if (this->ptr_ + alloc_size < this->cap_len_) {
+      size_t p = this->ptr_;
+      this->ptr_ += alloc_size;
+      return &(this->buf_[p]);
+    }
+    else {
+      return NULL;
+    }
   }
 
   // -------------------------------------------------------
