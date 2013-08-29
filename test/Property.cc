@@ -59,6 +59,7 @@ TEST (Property, param) {
   swarm::param_id p1_id = nd->assign_param (p1_name);
   swarm::param_id p2_id = nd->assign_param (p2_name);
   swarm::Property * p = new swarm::Property (nd);
+  size_t len;
 
   char * w1 = const_cast <char *> (static_cast <const char *> ("not sane"));
   char * w2 = const_cast <char *> (static_cast <const char *> ("all is right"));
@@ -93,10 +94,11 @@ TEST (Property, param) {
 
     const swarm::Param * p1 = p->param (p1_id);
     ASSERT_TRUE (NULL != p1);
-    EXPECT_EQ (p1->str (), w1);
-    EXPECT_EQ (p1->str (0), w1);
-    EXPECT_EQ (p1->str (1), w2);
-    EXPECT_EQ (p1->str (2), swarm::Param::errmsg_);
+    EXPECT_EQ (w1, p1->str ());
+    EXPECT_EQ (w1, p1->str (0));
+    EXPECT_EQ (w2, p1->str (1));
+    EXPECT_EQ (swarm::Param::errmsg_, p1->str (2));
+    EXPECT_TRUE (w1 == reinterpret_cast<char *> (p1->get (&len)));
   }
 
   {
@@ -123,5 +125,6 @@ TEST (Property, param) {
     EXPECT_EQ (p2->str (0), w1);
     EXPECT_EQ (p2->str (1), w2);
     EXPECT_EQ (p2->str (2), swarm::Param::errmsg_);
+    EXPECT_TRUE (w1 != reinterpret_cast<char *> (p2->get (&len)));
   }  
 }

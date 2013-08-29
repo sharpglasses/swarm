@@ -64,8 +64,12 @@ public:
 
 TEST (NetDec, param) {
   swarm::NetDec *nd = new swarm::NetDec ();
+  
+  EXPECT_EQ (0, nd->param_size ());
   swarm::param_id p_blue   = nd->assign_param ("blue");
+  EXPECT_EQ (1, nd->param_size ());
   swarm::param_id p_orange = nd->assign_param ("orange");
+  EXPECT_EQ (2, nd->param_size ());
 
   EXPECT_NE (swarm::PARAM_NULL, p_blue);
   EXPECT_NE (swarm::PARAM_NULL, p_orange);
@@ -82,19 +86,23 @@ TEST (NetDec, param) {
 
 TEST (NetDec, event) {
   swarm::NetDec *nd = new swarm::NetDec ();
+
+  EXPECT_EQ (0, nd->event_size ());
   swarm::ev_id p_blue   = nd->assign_event ("blue");
+  EXPECT_EQ (1, nd->event_size ());
   swarm::ev_id p_orange = nd->assign_event ("orange");
+  EXPECT_EQ (2, nd->event_size ());
 
   EXPECT_NE (swarm::EV_NULL, p_blue);
   EXPECT_NE (swarm::EV_NULL, p_orange);
   EXPECT_NE (p_blue, p_orange);
 
-  EXPECT_EQ (p_blue,   nd->lookup_ev_id ("blue"));
-  EXPECT_EQ (p_orange, nd->lookup_ev_id ("orange"));
-  EXPECT_EQ (swarm::EV_NULL, nd->lookup_ev_id ("red"));
+  EXPECT_EQ (p_blue,   nd->lookup_event_id ("blue"));
+  EXPECT_EQ (p_orange, nd->lookup_event_id ("orange"));
+  EXPECT_EQ (swarm::EV_NULL, nd->lookup_event_id ("red"));
 
-  EXPECT_EQ ("blue",   nd->lookup_ev_name (p_blue));
-  EXPECT_EQ ("orange", nd->lookup_ev_name (p_orange));
+  EXPECT_EQ ("blue",   nd->lookup_event_name (p_blue));
+  EXPECT_EQ ("orange", nd->lookup_event_name (p_orange));
   delete nd;
 }
 
@@ -103,8 +111,8 @@ TEST (NetDec, handler) {
   EtherHandler * eth_h = new EtherHandler (nd);
   IPv4Handler * ip4_h = new IPv4Handler (nd);
   
-  swarm::ev_id eth_ev  = nd->lookup_ev_id ("ether.packet");
-  swarm::ev_id ip4_ev = nd->lookup_ev_id ("ipv4.packet");
+  swarm::ev_id eth_ev  = nd->lookup_event_id ("ether.packet");
+  swarm::ev_id ip4_ev = nd->lookup_event_id ("ipv4.packet");
 
   swarm::hdlr_id eth_hdlr = nd->set_handler (eth_ev, eth_h);
   swarm::hdlr_id ip4_hdlr = nd->set_handler (ip4_ev, ip4_h);
@@ -125,9 +133,9 @@ TEST (NetDec, basic_scenario) {
   EtherHandler * eth_h = new EtherHandler (nd);
   IPv4Handler * ip4_h = new IPv4Handler (nd);
 
-  swarm::ev_id eth_ev  = nd->lookup_ev_id ("ether.packet");
-  swarm::ev_id ip4_ev = nd->lookup_ev_id ("ipv4.packet");
-  swarm::ev_id dns_ev  = nd->lookup_ev_id ("dns.packet");
+  swarm::ev_id eth_ev  = nd->lookup_event_id ("ether.packet");
+  swarm::ev_id ip4_ev = nd->lookup_event_id ("ipv4.packet");
+  swarm::ev_id dns_ev  = nd->lookup_event_id ("dns.packet");
 
   swarm::hdlr_id eth_hdlr = nd->set_handler (eth_ev, eth_h);
   swarm::hdlr_id ip4_hdlr = nd->set_handler (ip4_ev, ip4_h);

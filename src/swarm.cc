@@ -230,26 +230,33 @@ namespace swarm {
 
 
   bool NetDec::input (const byte_t *data, const size_t cap_len, 
-                      const size_t data_len, 
-                      const struct timeval &tv, const int dlt) {    
+                      const size_t data_len, const struct timeval &tv, const int dlt) { 
     if (dlt == DLT_EN10MB) {
       return false;
     }
     return false;
   }
-  ev_id NetDec::lookup_ev_id (const std::string &name) {
+  ev_id NetDec::lookup_event_id (const std::string &name) {
     return EV_NULL;
   }
 
-  std::string NetDec::lookup_ev_name (ev_id eid) {
+  std::string NetDec::lookup_event_name (ev_id eid) {
     return this->none_;
   }
+  size_t NetDec::event_size () const {
+    return 0;
+  }
+
   std::string NetDec::lookup_param_name (param_id pid) {
     return this->none_;
   }
   param_id NetDec::lookup_param_id (const std::string &name) {
     return PARAM_NULL;
   }
+  size_t NetDec::param_size () const {
+    return 0;
+  }
+
   dec_id NetDec::lookup_dec_id (const std::string &name) {
     return DEC_NULL;
   }

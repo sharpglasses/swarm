@@ -120,10 +120,14 @@ namespace swarm {
 
     bool input (const byte_t *data, const size_t cap_len, 
                 const size_t data_len, const struct timeval &tv, int dlt);
-    ev_id lookup_ev_id (const std::string &name);
-    std::string lookup_ev_name (ev_id eid);
+    ev_id lookup_event_id (const std::string &name);
+    std::string lookup_event_name (ev_id eid);
+    size_t event_size () const;
+
     param_id lookup_param_id (const std::string &name);
     std::string lookup_param_name (param_id pid);
+    size_t param_size () const;
+
     dec_id lookup_dec_id (const std::string &name);
 
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
