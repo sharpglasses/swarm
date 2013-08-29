@@ -163,6 +163,10 @@ namespace swarm {
   // -------------------------------------------------------
   // Property
   Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), buf_len_(0) {
+    this->param_.resize (nd->param_size ());
+    for (size_t i = 0; i < this->param_.size (); i++) {
+      this->param_[i] = new Param ();
+    }
   }
   Property::~Property () {
     if (this->buf_) {
@@ -187,10 +191,12 @@ namespace swarm {
     ::memcpy (this->buf_, data, cap_len);
   }
   Param * Property::param (const std::string &key) const {
-    return NULL;
+    const param_id pid = this->nd_->lookup_param_id (key);
+    return (pid != PARAM_NULL) ? this->param (pid) : NULL;
   }
   Param * Property::param (const param_id pid) const {
-    return NULL;
+    size_t idx = Property::pid2idx (pid);
+    return (idx < this->param_.size ()) ? this->param_[idx] : NULL;
   }
   byte_t * Property::payload (size_t alloc_size) {
     // Swarm supports maximum 16MB for one packet lengtsh
@@ -207,18 +213,59 @@ namespace swarm {
     }
   }
 
-  bool Property::set (const std::string &param_name, void * ptr, size_t len) { return false; }
-  bool Property::set (const param_id pid, void * ptr, size_t len) { return false; }
-  bool Property::copy (const std::string &param_name, void * ptr, size_t len) { return false; }
-  bool Property::copy (const param_id pid, void * ptr, size_t len) { return false; }
+  bool Property::set (const std::string &param_name, void * ptr, size_t len) { 
+    const param_id pid = this->nd_->lookup_param_id (param_name);
+    if (pid == PARAM_NULL) {
+      return false;
+    }
+    else {
+      return this->set (pid, ptr, len);
+    }
+  }
+
+  bool Property::set (const param_id pid, void * ptr, size_t len) { 
+    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
+    if (idx < this->param_.size ()) {
+      assert (idx < this->param_.size () && this->param_[idx] != NULL);
+      this->param_[idx]->push (static_cast <byte_t*> (ptr), len);
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  bool Property::copy (const std::string &param_name, void * ptr, size_t len) {
+    const param_id pid = this->nd_->lookup_param_id (param_name);
+    if (pid == PARAM_NULL) {
+      return false;
+    }
+    else {
+      return this->copy (pid, ptr, len);
+    }
+  }
+  bool Property::copy (const param_id pid, void * ptr, size_t len) { 
+    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
+    if (idx < this->param_.size ()) {
+      assert (idx < this->param_.size () && this->param_[idx] != NULL);
+      this->param_[idx]->push (static_cast <byte_t*> (ptr), len, true);
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
   // -------------------------------------------------------
   //NetDec
-  NetDec::NetDec () : none_("") {
+  NetDec::NetDec () : 
+    base_eid_(0),
+    base_pid_(0),
+    none_("") {
     int mod_count = 
       DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_)); 
     for (int i = 0; i < mod_count; i++) {
-      this->dict_dec_.insert (std::make_pair (this->dec_name_[i], i));
+      this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
+      this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
     } 
 
     this->dec_ether_ = this->lookup_dec_id ("ether");    
@@ -244,21 +291,26 @@ namespace swarm {
     return this->none_;
   }
   size_t NetDec::event_size () const {
-    return 0;
+    assert (this->base_eid_ >= 0);
+    assert (this->base_eid_ == this->fwd_event_.size ());
+    return this->fwd_event_.size ();
   }
 
   std::string NetDec::lookup_param_name (param_id pid) {
     return this->none_;
   }
   param_id NetDec::lookup_param_id (const std::string &name) {
-    return PARAM_NULL;
+    auto it = this->fwd_param_.find (name);    
+    return (it != this->fwd_param_.end ()) ? it->second : PARAM_NULL;
   }
   size_t NetDec::param_size () const {
-    return 0;
+    assert (this->base_pid_ >= 0);
+    assert (this->base_pid_ == this->fwd_param_.size ());
+    return this->fwd_param_.size ();
   }
 
   dec_id NetDec::lookup_dec_id (const std::string &name) {
-    return DEC_NULL;
+    return this->fwd_dec_.size ();
   }
 
 
@@ -270,10 +322,28 @@ namespace swarm {
   }
 
   ev_id NetDec::assign_event (const std::string &name) {
-    return EV_NULL;
+    if (this->fwd_event_.end () != this->fwd_event_.find (name)) {
+      return EV_NULL;
+    }
+    else {
+      const ev_id eid = this->base_eid_;
+      this->fwd_event_.insert (std::make_pair (name, eid));
+      this->rev_event_.insert (std::make_pair (eid, name));
+      this->base_eid_++;
+      return eid;
+    }
   }
   param_id NetDec::assign_param (const std::string &name) {
-    return PARAM_NULL;
+    if (this->fwd_param_.end () != this->fwd_param_.find (name)) {
+      return PARAM_NULL;
+    }
+    else {
+      const ev_id pid = this->base_pid_;
+      this->fwd_param_.insert (std::make_pair (name, pid));
+      this->rev_param_.insert (std::make_pair (pid, name));
+      this->base_pid_++;
+      return pid;
+    }
   }
 
 

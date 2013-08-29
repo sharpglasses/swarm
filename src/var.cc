@@ -27,10 +27,14 @@ namespace swarm {
     }
 
     ::memcpy (this->buf_, ptr, len);
+    this->ptr_ = this->buf_;
+    this->len_ = len;
   }
 
   byte_t * Var::get (size_t *len) const {
-    *len = this->len_;
+    if (len) {
+      *len = this->len_;
+    }
     return this->ptr_;
   }
 

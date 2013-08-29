@@ -46,10 +46,11 @@ TEST (Param, basic) {
   __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
 
 
-  param->push (&a[3], 4);
+  param->push (&a[3], 4, true);
+  swarm::byte_t *copied_ptr = param->get (NULL, 1);
   EXPECT_EQ (2, param->size ());
   __TEST (0, a, 4, *s32[0], *u32[0], "0123", "30 31 32 33", "48.49.50.51", err, err);
-  __TEST (1, &a[3], 4, *s32[1], *u32[1], "3456", "33 34 35 36", "51.52.53.54", err, err);
+  __TEST (1, copied_ptr, 4, *s32[1], *u32[1], "3456", "33 34 35 36", "51.52.53.54", err, err);
   __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
 
 #undef __TEST

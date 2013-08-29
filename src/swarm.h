@@ -8,14 +8,16 @@
 
 namespace swarm {
   typedef u_int8_t  byte_t;
-  typedef u_int64_t ev_id;    // Event ID
-  typedef u_int64_t param_id; // Parameter ID
-  typedef u_int64_t hdlr_id;  // Handler Entry ID
+  typedef int64_t ev_id;    // Event ID
+  typedef int64_t param_id; // Parameter ID
+  typedef int64_t hdlr_id;  // Handler Entry ID
   typedef int       dec_id;   // Decoder ID
 
-  const static ev_id    EV_NULL = 0;
-  const static hdlr_id  HDLR_NULL = 0;
-  const static param_id PARAM_NULL = 0;
+  const static ev_id    EV_NULL = -1;
+  const static ev_id    EV_BASE =  0;
+  const static hdlr_id  HDLR_NULL = -1;
+  const static param_id PARAM_NULL = -1;  
+  const static param_id PARAM_BASE =  0;  
   const static dec_id   DEC_NULL = -1;
 
   class NetDec;
@@ -64,6 +66,10 @@ namespace swarm {
     std::vector <Param *> param_;
     size_t ptr_;
 
+    inline static size_t pid2idx (param_id pid) {
+      return static_cast <size_t> (pid - PARAM_BASE);
+    }
+
   public:
     Property (NetDec * nd);
     ~Property ();
@@ -104,9 +110,14 @@ namespace swarm {
 
   class NetDec {
   private:
-    std::map <std::string, ev_id> dict_event_;
-    std::map <std::string, param_id> dict_param_;
-    std::map <std::string, dec_id> dict_dec_;
+    std::map <std::string, ev_id> fwd_event_;
+    std::map <ev_id, std::string> rev_event_;
+    std::map <std::string, param_id> fwd_param_;
+    std::map <param_id, std::string> rev_param_;
+    std::map <std::string, dec_id> fwd_dec_;
+    std::map <dec_id, std::string> rev_dec_;
+    ev_id base_eid_;
+    param_id base_pid_;
 
     const std::string none_ ;
     std::vector <Decoder *> dec_mod_;

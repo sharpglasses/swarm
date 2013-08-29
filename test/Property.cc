@@ -73,58 +73,68 @@ TEST (Property, param) {
   } while (0);
 
   CHECK_CONS ();
-  EXPECT_TRUE (NULL == p->param (p1_id));
-  EXPECT_TRUE (NULL == p->param (p2_id));
+  EXPECT_NE (p1_id, p2_id);
+  ASSERT_TRUE (NULL != p->param (p1_id));
+  ASSERT_TRUE (NULL != p->param (p1_name));
+  ASSERT_TRUE (NULL != p->param (p2_id));
+  ASSERT_TRUE (NULL != p->param (p2_name));
+  ASSERT_TRUE (NULL == p->param (p3_name));
 
-  {
-    EXPECT_EQ (true, p->set (p1_name, w1, strlen (w1)));
-    CHECK_CONS ();
-    EXPECT_TRUE (NULL != p->param (p1_id));
-    EXPECT_TRUE (NULL == p->param (p2_id));
+  const swarm::Param *p1, *p2;
 
-    EXPECT_EQ (true, p->set (p1_name, w2, strlen (w2)));
-    CHECK_CONS ();
-    EXPECT_TRUE (NULL != p->param (p1_id));
-    EXPECT_TRUE (NULL == p->param (p2_id));
+  // add a value to p1
+  EXPECT_EQ (true, p->set (p1_name, w1, strlen (w1)));
+  CHECK_CONS ();
+  EXPECT_EQ (1, p->param (p1_id)->size ());
+  EXPECT_EQ (0, p->param (p2_id)->size ());
 
-    EXPECT_EQ (true, p->set (p1_id, w3, strlen (w3)));
-    CHECK_CONS ();
-    EXPECT_TRUE (NULL != p->param (p1_id));
-    EXPECT_TRUE (NULL == p->param (p2_id));
+  // add a value to 2nd index of p1
+  EXPECT_EQ (true, p->set (p1_name, w2, strlen (w2)));
+  CHECK_CONS ();
+  EXPECT_EQ (2, p->param (p1_id)->size ());
+  EXPECT_EQ (0, p->param (p2_id)->size ());
 
-    const swarm::Param * p1 = p->param (p1_id);
-    ASSERT_TRUE (NULL != p1);
-    EXPECT_EQ (w1, p1->str ());
-    EXPECT_EQ (w1, p1->str (0));
-    EXPECT_EQ (w2, p1->str (1));
-    EXPECT_EQ (swarm::Param::errmsg_, p1->str (2));
-    EXPECT_TRUE (w1 == reinterpret_cast<char *> (p1->get (&len)));
-  }
+  // add a value to 3rd index of p1
+  EXPECT_EQ (true, p->set (p1_id, w3, strlen (w3)));
+  CHECK_CONS ();
+  EXPECT_EQ (3, p->param (p1_id)->size ());
+  EXPECT_EQ (0, p->param (p2_id)->size ());
 
-  {
-    EXPECT_EQ (true, p->copy (p2_name, w1, strlen (w1)));
-    CHECK_CONS ();
-    EXPECT_TRUE (NULL != p->param (p1_id));
-    EXPECT_TRUE (NULL != p->param (p2_id));
+  // check values in p1
+  p1 = p->param (p1_id);
+  ASSERT_TRUE (NULL != p1);
+  EXPECT_EQ (w1, p1->str ());
+  EXPECT_EQ (w1, p1->str (0));
+  EXPECT_EQ (w2, p1->str (1));
+  EXPECT_EQ (w3, p1->str (2));
+  EXPECT_EQ (swarm::Param::errmsg_, p1->str (3));
+  EXPECT_TRUE (w1 == reinterpret_cast<char *> (p1->get (&len)));
 
-    EXPECT_EQ (true, p->copy (p2_name, w2, strlen (w2)));
-    CHECK_CONS ();
-    EXPECT_TRUE (NULL != p->param (p1_id));
-    EXPECT_TRUE (NULL != p->param (p2_id));
+  // add a value to p2
+  EXPECT_EQ (true, p->copy (p2_name, w1, strlen (w1)));
+  CHECK_CONS ();
+  EXPECT_EQ (3, p->param (p1_id)->size ());
+  EXPECT_EQ (1, p->param (p2_id)->size ());
 
-    const swarm::Param * p1 = p->param (p1_id);
-    ASSERT_TRUE (NULL != p1);
-    EXPECT_EQ (p1->str (), w1);
-    EXPECT_EQ (p1->str (0), w1);
-    EXPECT_EQ (p1->str (1), w2);
-    EXPECT_EQ (p1->str (2), swarm::Param::errmsg_);
+  // add a value to 2nd index of p2
+  EXPECT_EQ (true, p->copy (p2_name, w2, strlen (w2)));
+  CHECK_CONS ();
+  EXPECT_EQ (3, p->param (p1_id)->size ());
+  EXPECT_EQ (2, p->param (p2_id)->size ());
 
-    const swarm::Param * p2 = p->param (p2_id);
-    ASSERT_TRUE (NULL != p2);
-    EXPECT_EQ (p2->str (), w1);
-    EXPECT_EQ (p2->str (0), w1);
-    EXPECT_EQ (p2->str (1), w2);
-    EXPECT_EQ (p2->str (2), swarm::Param::errmsg_);
-    EXPECT_TRUE (w1 != reinterpret_cast<char *> (p2->get (&len)));
-  }  
+  p1 = p->param (p1_id);
+  p2 = p->param (p2_id);
+  ASSERT_TRUE (NULL != p1);
+  EXPECT_EQ (w1, p1->str ());
+  EXPECT_EQ (w1, p1->str (0));
+  EXPECT_EQ (w2, p1->str (1));
+  EXPECT_EQ (w3, p1->str (2));
+
+  ASSERT_TRUE (NULL != p2);
+  EXPECT_EQ (w1, p2->str ());
+  EXPECT_EQ (w2, p2->str (1));
+  EXPECT_EQ (swarm::Param::errmsg_, p2->str (2));
+  EXPECT_TRUE (w1 != reinterpret_cast<char *> (p2->get (&len)));
+
+
 }
