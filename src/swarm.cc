@@ -52,7 +52,7 @@ namespace swarm {
       v->set (data, len);
     }
   }
-  byte_t * Param::get (size_t *len, size_t idx) {
+  byte_t * Param::get (size_t *len, size_t idx) const {
     if (idx < this->idx_) {
       return this->var_set_[idx]->get (len);
     }
@@ -61,7 +61,7 @@ namespace swarm {
     }
   }
 
-  int32_t Param::int32 (size_t idx) { 
+  int32_t Param::int32 (size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -71,7 +71,7 @@ namespace swarm {
       return 0;
     }
   }
-  u_int32_t Param::uint32 (size_t idx) { 
+  u_int32_t Param::uint32 (size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -83,28 +83,28 @@ namespace swarm {
   }
 
 
-  std::string Param::str (size_t idx) {    
+  std::string Param::str (size_t idx) const {
     std::string buf;
     return (this->str (&buf, idx)) ? buf : Param::errmsg_;
   }
-  std::string Param::hex (size_t idx) {
+  std::string Param::hex (size_t idx) const {
     std::string buf;
     return (this->hex (&buf, idx)) ? buf : Param::errmsg_;
   }
-  std::string Param::ip4 (size_t idx) {
+  std::string Param::ip4 (size_t idx) const {
     std::string buf;
     return (this->ip4 (&buf, idx)) ? buf : Param::errmsg_;
   }
-  std::string Param::ip6 (size_t idx) {
+  std::string Param::ip6 (size_t idx) const {
     std::string buf;
     return (this->ip6 (&buf, idx)) ? buf : Param::errmsg_;
   }
-  std::string Param::mac (size_t idx) {
+  std::string Param::mac (size_t idx) const {
     std::string buf;
     return (this->mac (&buf, idx)) ? buf : Param::errmsg_;
   }
 
-  bool Param::str (std::string *s, size_t idx) { 
+  bool Param::str (std::string *s, size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -114,7 +114,7 @@ namespace swarm {
       return false;
     }
   }
-  bool Param::hex (std::string *s, size_t idx) { 
+  bool Param::hex (std::string *s, size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -124,7 +124,7 @@ namespace swarm {
       return false;
     }
   }
-  bool Param::ip4 (std::string *s, size_t idx) { 
+  bool Param::ip4 (std::string *s, size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -134,7 +134,7 @@ namespace swarm {
       return false;
     }
   }
-  bool Param::ip6 (std::string *s, size_t idx) { 
+  bool Param::ip6 (std::string *s, size_t idx) const { 
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -144,7 +144,7 @@ namespace swarm {
       return false;
     }
   }
-  bool Param::mac (std::string *s, size_t idx) {
+  bool Param::mac (std::string *s, size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
@@ -206,6 +206,11 @@ namespace swarm {
       return NULL;
     }
   }
+
+  bool Property::set (const std::string &param_name, void * ptr, size_t len) { return false; }
+  bool Property::set (const param_id pid, void * ptr, size_t len) { return false; }
+  bool Property::copy (const std::string &param_name, void * ptr, size_t len) { return false; }
+  bool Property::copy (const param_id pid, void * ptr, size_t len) { return false; }
 
   // -------------------------------------------------------
   //NetDec

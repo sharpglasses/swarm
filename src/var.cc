@@ -35,7 +35,7 @@ namespace swarm {
   }
 
 
-  bool Var::str (std::string *s, char ng) { 
+  bool Var::str (std::string *s) const { 
     if (this->ptr_) {
       s->assign (reinterpret_cast<char *> (this->ptr_), this->len_);
       return true;
@@ -45,7 +45,7 @@ namespace swarm {
     }
   }
 
-  bool Var::hex (std::string *s) { 
+  bool Var::hex (std::string *s) const { 
     std::string &buf = *s;
     byte_t * p = this->ptr_;
 
@@ -66,7 +66,7 @@ namespace swarm {
     return false; 
   }
 
-  bool Var::ip4 (std::string *s) { 
+  bool Var::ip4 (std::string *s) const { 
     byte_t * p = this->ptr_;
 
     if (p && this->len_ >= 4) {
@@ -79,7 +79,7 @@ namespace swarm {
     return false; 
   }
 
-  bool Var::ip6 (std::string *s) { 
+  bool Var::ip6 (std::string *s) const { 
     byte_t * p = this->ptr_;
 
     if (p && this->len_ >= 16) {
@@ -92,7 +92,7 @@ namespace swarm {
     return false; 
   }
 
-  bool Var::mac (std::string *s) { 
+  bool Var::mac (std::string *s) const { 
     std::string &buf = *s;
     byte_t * p = this->ptr_;
 

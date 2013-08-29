@@ -34,21 +34,21 @@ namespace swarm {
 
     size_t size () const;
     void push (byte_t *data, size_t len, bool copy=false);
-    byte_t * get (size_t *len = NULL, size_t idx = 0);
+    byte_t * get (size_t *len = NULL, size_t idx = 0) const;
 
-    int32_t int32 (size_t idx = 0);
-    u_int32_t uint32 (size_t idx = 0);
+    int32_t int32 (size_t idx = 0) const;
+    u_int32_t uint32 (size_t idx = 0) const;
     
-    std::string str (size_t idx = 0);
-    std::string hex (size_t idx = 0);
-    std::string ip4 (size_t idx = 0);
-    std::string ip6 (size_t idx = 0);
-    std::string mac (size_t idx = 0);    
-    bool str (std::string *s, size_t idx);
-    bool hex (std::string *s, size_t idx);
-    bool ip4 (std::string *s, size_t idx);
-    bool ip6 (std::string *s, size_t idx);
-    bool mac (std::string *s, size_t idx);    
+    std::string str (size_t idx = 0) const;
+    std::string hex (size_t idx = 0) const;
+    std::string ip4 (size_t idx = 0) const;
+    std::string ip6 (size_t idx = 0) const;
+    std::string mac (size_t idx = 0) const; 
+    bool str (std::string *s, size_t idx) const;
+    bool hex (std::string *s, size_t idx) const;
+    bool ip4 (std::string *s, size_t idx) const;
+    bool ip6 (std::string *s, size_t idx) const;
+    bool mac (std::string *s, size_t idx) const;
   };
 
   class Property {
@@ -69,6 +69,11 @@ namespace swarm {
     ~Property ();
     void init (const byte_t *data, const size_t cap_len, 
                const size_t data_len, const struct timeval &tv);
+
+    bool set (const std::string &param_name, void * ptr, size_t len);
+    bool set (const param_id pid, void * ptr, size_t len);
+    bool copy (const std::string &param_name, void * ptr, size_t len);
+    bool copy (const param_id pid, void * ptr, size_t len);
 
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;

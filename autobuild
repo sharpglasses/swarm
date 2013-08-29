@@ -38,29 +38,29 @@ conf = JSON.parse (fs.readFileSync ('./build.js'));
 
 
 function set_trigger (conf) {
-    for (var d in conf['file_list']) {
-        new function () {
-            var dir_name = d;
-            fs.readdir (d, function (err, files) {
-                var regex_list = conf['file_list'][dir_name];
-                for (var c = 0; c < files.length; c++) {
-                    regex_list.forEach (function (rgx_ptn) {
-                        rgx = new RegExp (rgx_ptn);
-                        if (files[c].match (rgx)) {
-                            var file = dir_name + '/' + files[c];
-                            console.log ('target: ' + file);
-                            fs.watchFile(file, { presistent: true, interval: 1000},
-                                         function(curr, prev) {
-                                             run_build (conf, file, curr, prev);
-                                         });
-                        }
-                    });
-                }
-            });
+  for (var d in conf['file_list']) {
+    new function () {
+      var dir_name = d;
+      fs.readdir (d, function (err, files) {
+        var regex_list = conf['file_list'][dir_name];
+        for (var c = 0; c < files.length; c++) {
+          regex_list.forEach (function (rgx_ptn) {
+            rgx = new RegExp (rgx_ptn);
+            if (files[c].match (rgx)) {
+              var file = dir_name + '/' + files[c];
+              console.log ('target: ' + file);
+              fs.watchFile(file, { presistent: true, interval: 1000},
+                           function(curr, prev) {
+                             run_build (conf, file, curr, prev);
+                           });
+            }
+          });
         }
+      });
     }
+  }
 
-    run_build (conf, "INIT");
+  run_build (conf, "INIT");
 }
 
 
