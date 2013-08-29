@@ -1,5 +1,31 @@
-#ifndef __LIB_SWARM_H__
-#define __LIB_SWARM_H__
+/*-
+ * Copyright (c) 2013 Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef SRC_SWARM_H__
+#define SRC_SWARM_H__
 
 #include <sys/types.h>
 #include <string>
@@ -13,23 +39,25 @@ namespace swarm {
   typedef int64_t hdlr_id;  // Handler Entry ID
   typedef int       dec_id;   // Decoder ID
 
-  const static ev_id    EV_NULL = -1;
-  const static ev_id    EV_BASE =  0;
-  const static hdlr_id  HDLR_NULL = -1;
-  const static param_id PARAM_NULL = -1;  
-  const static param_id PARAM_BASE =  0;  
-  const static dec_id   DEC_NULL = -1;
+  const ev_id    EV_NULL = -1;
+  const ev_id    EV_BASE =  0;
+  const hdlr_id  HDLR_NULL = -1;
+  const param_id PARAM_NULL = -1;
+  const param_id PARAM_BASE =  0;
+  const dec_id   DEC_NULL = -1;
 
   class NetDec;
   class Var; // in var.h
-  
+
   class Param {
+  public:
+    const static std::string errmsg_;
+
   private:
     std::vector <Var *> var_set_;
     size_t idx_;
 
   public:
-    const static std::string errmsg_;
     Param ();
     ~Param ();
     void init ();
@@ -40,12 +68,12 @@ namespace swarm {
 
     int32_t int32 (size_t idx = 0) const;
     u_int32_t uint32 (size_t idx = 0) const;
-    
+
     std::string str (size_t idx = 0) const;
     std::string hex (size_t idx = 0) const;
     std::string ip4 (size_t idx = 0) const;
     std::string ip6 (size_t idx = 0) const;
-    std::string mac (size_t idx = 0) const; 
+    std::string mac (size_t idx = 0) const;
     bool str (std::string *s, size_t idx) const;
     bool hex (std::string *s, size_t idx) const;
     bool ip4 (std::string *s, size_t idx) const;
@@ -71,9 +99,9 @@ namespace swarm {
     }
 
   public:
-    Property (NetDec * nd);
+    explicit Property (NetDec * nd);
     ~Property ();
-    void init (const byte_t *data, const size_t cap_len, 
+    void init (const byte_t *data, const size_t cap_len,
                const size_t data_len, const struct timeval &tv);
 
     bool set (const std::string &param_name, void * ptr, size_t len);
@@ -101,7 +129,7 @@ namespace swarm {
     void emit (dec_id dec, Property *p);
 
   public:
-    Decoder (NetDec * nd);
+    explicit Decoder (NetDec * nd);
     virtual ~Decoder ();
     virtual void setup (NetDec *nd) = 0;
     virtual bool decode (Property *p) = 0;
@@ -124,12 +152,12 @@ namespace swarm {
     std::vector <std::string> dec_name_;
 
     dec_id dec_ether_;
-    
+
   public:
     NetDec ();
     ~NetDec ();
 
-    bool input (const byte_t *data, const size_t cap_len, 
+    bool input (const byte_t *data, const size_t cap_len,
                 const size_t data_len, const struct timeval &tv, int dlt);
     ev_id lookup_event_id (const std::string &name);
     std::string lookup_event_name (ev_id eid);
@@ -147,6 +175,6 @@ namespace swarm {
     ev_id assign_event (const std::string &name);
     param_id assign_param (const std::string &name);
   };
-}
+} // namespace swarm
 
-#endif
+#endif  // SRC_SWARM_H__

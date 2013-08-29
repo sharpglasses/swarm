@@ -1,12 +1,39 @@
-#include "swarm.h"
-#include "decode.h"
-#include "var.h"
-#include "debug.h"
+/*-
+ * Copyright (c) 2013 Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 
 #include <pcap.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
+
+#include "./swarm.h"
+#include "./decode.h"
+#include "./var.h"
+#include "./debug.h"
 
 
 namespace swarm {
@@ -39,45 +66,40 @@ namespace swarm {
       this->var_set_.push_back (v);
       this->idx_++;
       assert (this->idx_ == this->var_set_.size ());
-    }
-    else {
+    } else {
       v = this->var_set_[this->idx_];
       this->idx_++;
     }
 
     if (copy) {
       v->copy (data, len);
-    }
-    else {
+    } else {
       v->set (data, len);
     }
   }
   byte_t * Param::get (size_t *len, size_t idx) const {
     if (idx < this->idx_) {
       return this->var_set_[idx]->get (len);
-    }
-    else {
+    } else {
       return NULL;
     }
   }
 
-  int32_t Param::int32 (size_t idx) const { 
+  int32_t Param::int32 (size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->num <int32_t> ();
-    }
-    else {
+    } else {
       return 0;
     }
   }
-  u_int32_t Param::uint32 (size_t idx) const { 
+  u_int32_t Param::uint32 (size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->num <u_int32_t> ();
-    }
-    else {
+    } else {
       return 0;
     }
   }
@@ -104,43 +126,39 @@ namespace swarm {
     return (this->mac (&buf, idx)) ? buf : Param::errmsg_;
   }
 
-  bool Param::str (std::string *s, size_t idx) const { 
+  bool Param::str (std::string *s, size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->str (s);
-    }
-    else {
+    } else {
       return false;
     }
   }
-  bool Param::hex (std::string *s, size_t idx) const { 
+  bool Param::hex (std::string *s, size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->hex (s);
-    }
-    else {
+    } else {
       return false;
     }
   }
-  bool Param::ip4 (std::string *s, size_t idx) const { 
+  bool Param::ip4 (std::string *s, size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->ip4 (s);
-    }
-    else {
+    } else {
       return false;
     }
   }
-  bool Param::ip6 (std::string *s, size_t idx) const { 
+  bool Param::ip6 (std::string *s, size_t idx) const {
     if (idx < this->idx_) {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->ip6 (s);
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -149,8 +167,7 @@ namespace swarm {
       assert (idx < this->var_set_.size ());
       assert (this->var_set_[idx] != NULL);
       return this->var_set_[idx]->mac (s);
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -170,10 +187,10 @@ namespace swarm {
   }
   Property::~Property () {
     if (this->buf_) {
-      free (this->buf_); 
+      free (this->buf_);
     }
   }
-  void Property::init  (const byte_t *data, const size_t cap_len, 
+  void Property::init  (const byte_t *data, const size_t cap_len,
                         const size_t data_len, const struct timeval &tv) {
     if (this->buf_len_ < cap_len) {
       this->buf_len_ = cap_len;
@@ -207,30 +224,27 @@ namespace swarm {
       size_t p = this->ptr_;
       this->ptr_ += alloc_size;
       return &(this->buf_[p]);
-    }
-    else {
+    } else {
       return NULL;
     }
   }
 
-  bool Property::set (const std::string &param_name, void * ptr, size_t len) { 
+  bool Property::set (const std::string &param_name, void * ptr, size_t len) {
     const param_id pid = this->nd_->lookup_param_id (param_name);
     if (pid == PARAM_NULL) {
       return false;
-    }
-    else {
+    } else {
       return this->set (pid, ptr, len);
     }
   }
 
-  bool Property::set (const param_id pid, void * ptr, size_t len) { 
+  bool Property::set (const param_id pid, void * ptr, size_t len) {
     size_t idx = static_cast <size_t> (pid - PARAM_BASE);
     if (idx < this->param_.size ()) {
       assert (idx < this->param_.size () && this->param_[idx] != NULL);
       this->param_[idx]->push (static_cast <byte_t*> (ptr), len);
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -238,46 +252,44 @@ namespace swarm {
     const param_id pid = this->nd_->lookup_param_id (param_name);
     if (pid == PARAM_NULL) {
       return false;
-    }
-    else {
+    } else {
       return this->copy (pid, ptr, len);
     }
   }
-  bool Property::copy (const param_id pid, void * ptr, size_t len) { 
+  bool Property::copy (const param_id pid, void * ptr, size_t len) {
     size_t idx = static_cast <size_t> (pid - PARAM_BASE);
     if (idx < this->param_.size ()) {
       assert (idx < this->param_.size () && this->param_[idx] != NULL);
       this->param_[idx]->push (static_cast <byte_t*> (ptr), len, true);
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   }
 
   // -------------------------------------------------------
   //NetDec
-  NetDec::NetDec () : 
+  NetDec::NetDec () :
     base_eid_(0),
     base_pid_(0),
     none_("") {
-    int mod_count = 
-      DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_)); 
+    int mod_count =
+      DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_));
     for (int i = 0; i < mod_count; i++) {
       this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
       this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
-    } 
+    }
 
-    this->dec_ether_ = this->lookup_dec_id ("ether");    
+    this->dec_ether_ = this->lookup_dec_id ("ether");
   }
   NetDec::~NetDec () {
-    
+
   }
 
 
 
-  bool NetDec::input (const byte_t *data, const size_t cap_len, 
-                      const size_t data_len, const struct timeval &tv, const int dlt) { 
+  bool NetDec::input (const byte_t *data, const size_t cap_len,
+                      const size_t data_len, const struct timeval &tv, const int dlt) {
     if (dlt == DLT_EN10MB) {
       return false;
     }
@@ -300,7 +312,7 @@ namespace swarm {
     return this->none_;
   }
   param_id NetDec::lookup_param_id (const std::string &name) {
-    auto it = this->fwd_param_.find (name);    
+    auto it = this->fwd_param_.find (name);
     return (it != this->fwd_param_.end ()) ? it->second : PARAM_NULL;
   }
   size_t NetDec::param_size () const {
@@ -324,8 +336,7 @@ namespace swarm {
   ev_id NetDec::assign_event (const std::string &name) {
     if (this->fwd_event_.end () != this->fwd_event_.find (name)) {
       return EV_NULL;
-    }
-    else {
+    } else {
       const ev_id eid = this->base_eid_;
       this->fwd_event_.insert (std::make_pair (name, eid));
       this->rev_event_.insert (std::make_pair (eid, name));
@@ -336,8 +347,7 @@ namespace swarm {
   param_id NetDec::assign_param (const std::string &name) {
     if (this->fwd_param_.end () != this->fwd_param_.find (name)) {
       return PARAM_NULL;
-    }
-    else {
+    } else {
       const ev_id pid = this->base_pid_;
       this->fwd_param_.insert (std::make_pair (name, pid));
       this->rev_param_.insert (std::make_pair (pid, name));
@@ -346,6 +356,5 @@ namespace swarm {
     }
   }
 
-
-}
+} // namespace swarm
 
