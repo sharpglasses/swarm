@@ -90,12 +90,12 @@ public:
 
 TEST (NetDec, param) {
   swarm::NetDec *nd = new swarm::NetDec ();
-  
-  EXPECT_EQ (0, nd->param_size ());
+  size_t base_size = nd->param_size ();
+  EXPECT_EQ (0 + base_size, nd->param_size ());
   swarm::param_id p_blue   = nd->assign_param ("blue");
-  EXPECT_EQ (1, nd->param_size ());
+  EXPECT_EQ (1 + base_size, nd->param_size ());
   swarm::param_id p_orange = nd->assign_param ("orange");
-  EXPECT_EQ (2, nd->param_size ());
+  EXPECT_EQ (2 + base_size, nd->param_size ());
 
   EXPECT_NE (swarm::PARAM_NULL, p_blue);
   EXPECT_NE (swarm::PARAM_NULL, p_orange);
@@ -112,12 +112,12 @@ TEST (NetDec, param) {
 
 TEST (NetDec, event) {
   swarm::NetDec *nd = new swarm::NetDec ();
-
-  EXPECT_EQ (0, nd->event_size ());
+  size_t base_size = nd->event_size ();
+  EXPECT_EQ (0 + base_size, nd->event_size ());
   swarm::ev_id p_blue   = nd->assign_event ("blue");
-  EXPECT_EQ (1, nd->event_size ());
+  EXPECT_EQ (1 + base_size, nd->event_size ());
   swarm::ev_id p_orange = nd->assign_event ("orange");
-  EXPECT_EQ (2, nd->event_size ());
+  EXPECT_EQ (2 + base_size, nd->event_size ());
 
   EXPECT_NE (swarm::EV_NULL, p_blue);
   EXPECT_NE (swarm::EV_NULL, p_orange);

@@ -296,11 +296,13 @@ namespace swarm {
     return false;
   }
   ev_id NetDec::lookup_event_id (const std::string &name) {
-    return EV_NULL;
+    auto it = this->fwd_event_.find (name);
+    return (it != this->fwd_event_.end ()) ? it->second : EV_NULL;
   }
 
   std::string NetDec::lookup_event_name (ev_id eid) {
-    return this->none_;
+    auto it = this->rev_event_.find (eid);
+    return (it != this->rev_event_.end ()) ? it->second : this->none_;
   }
   size_t NetDec::event_size () const {
     assert (this->base_eid_ >= 0);
@@ -309,7 +311,8 @@ namespace swarm {
   }
 
   std::string NetDec::lookup_param_name (param_id pid) {
-    return this->none_;
+    auto it = this->rev_param_.find (pid);
+    return (it != this->rev_param_.end ()) ? it->second : this->none_;
   }
   param_id NetDec::lookup_param_id (const std::string &name) {
     auto it = this->fwd_param_.find (name);
