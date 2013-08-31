@@ -48,10 +48,37 @@ namespace swarm {
     void copy (byte_t *ptr, size_t len);
     byte_t * get (size_t *len) const;
 
-    template <typename T>  T num () const {
-      T * p = reinterpret_cast <T *> (this->ptr_);
-      return (this->len_ < sizeof (T) || p == NULL) ? 0 : *p;
+#define __CAST(S, D)                              \
+    {                                             \
+      S *p = reinterpret_cast<S* > (this->ptr_);  \
+      n = static_cast<D> (*p);                    \
     }
+
+    template <typename T>  T num () const {
+      if (this->len_ >= sizeof (T)) {
+        T * p = reinterpret_cast <T *> (this->ptr_);
+        return (this->len_ < sizeof (T) || p == NULL) ? 0 : *p;
+      } else {
+        // when not enough lenght, adjust to unsigned integer
+        T n;
+
+        switch (this->len_) {
+        case 1:
+          __CAST (u_int8_t, T); break;
+        case 2:
+        case 3:
+          __CAST (u_int16_t, T); break;
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+          __CAST (u_int32_t, T); break;
+        }
+        return n;
+      }
+    }
+
+#undef __CAST
 
     bool str (std::string *s) const;
     bool hex (std::string *s) const;
