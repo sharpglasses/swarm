@@ -187,14 +187,6 @@ namespace swarm {
   }
 
   // -------------------------------------------------------
-  // Decoder
-  void Decoder::emit (dec_id dec, Property *p) {
-    if (dec != DEC_NULL) {
-      this->nd_->decode (dec, p);
-    }
-  }
-
-  // -------------------------------------------------------
   // Property
   Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), buf_len_(0) {
     this->param_.resize (nd->param_size ());

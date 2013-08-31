@@ -36,6 +36,21 @@
 #include "./debug.h"
 
 namespace swarm {
+  class Decoder {
+  private:
+    NetDec * nd_;
+
+  protected:
+    void emit (dec_id dec, Property *p);
+
+  public:
+    explicit Decoder (NetDec * nd);
+    virtual ~Decoder ();
+    virtual void setup (NetDec *nd) = 0;
+    virtual bool decode (Property *p) = 0;
+  };
+
+
   class DecoderMap {
   private:
     static std::map <std::string, Decoder * (*)(NetDec * nd)>

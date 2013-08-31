@@ -56,6 +56,14 @@ namespace swarm {
     return i;
   }
 
+  // -------------------------------------------------------
+  // Decoder
+  void Decoder::emit (dec_id dec, Property *p) {
+    if (dec != DEC_NULL) {
+      this->nd_->decode (dec, p);
+    }
+  }
+
   Decoder::Decoder (NetDec *nd) : nd_(nd) {
   }
   Decoder::~Decoder () {
