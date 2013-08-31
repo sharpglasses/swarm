@@ -44,6 +44,20 @@ namespace swarm {
   Handler::~Handler () {
   }
 
+  HandlerEntry::HandlerEntry (hdlr_id hid, ev_id ev, Handler * hdlr) :
+    id_(hid), ev_(ev), hdlr_(hdlr) {
+  }
+  HandlerEntry::~HandlerEntry () {
+  }
+  Handler * HandlerEntry::hdlr () const {
+    return this->hdlr_;
+  }
+  hdlr_id HandlerEntry::id () const {
+    return this->id_;
+  }
+  ev_id HandlerEntry::ev () const {
+    return this->ev_;
+  }
 
   // -------------------------------------------------------
   // Param
@@ -206,6 +220,10 @@ namespace swarm {
 
     assert (this->buf_len_ >= cap_len);
     ::memcpy (this->buf_, data, cap_len);
+
+    for (size_t i = 0; i < this->param_.size (); i++) {
+      this->param_[i]->init ();
+    }
   }
   Param * Property::param (const std::string &key) const {
     const param_id pid = this->nd_->lookup_param_id (key);
@@ -270,20 +288,39 @@ namespace swarm {
   // -------------------------------------------------------
   //NetDec
   NetDec::NetDec () :
-    base_eid_(0),
-    base_pid_(0),
+    base_eid_(EV_BASE),
+    base_pid_(PARAM_BASE),
+    base_hid_(HDLR_BASE),
     none_("") {
+
+    // 
     int mod_count =
       DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_));
-    for (int i = 0; i < mod_count; i++) {
+    for (size_t i = 0; i < mod_count; i++) {
       this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
       this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
     }
 
+    // allocate event handler array to call handler
+    /*
+    this->event_handler_.resize (this->rev_event_.size ());
+    for (auto it = this->rev_event_.begin (); it != this->rev_event_.end (); it++) {
+      size_t i = static_cast<size_t> (it->first - EV_BASE);
+      assert (i < this->event_handler_.size ());
+      this->event_handler_[i] = new std::deque <Handler *> ();
+    }
+    */
+
     this->dec_ether_ = this->lookup_dec_id ("ether");
   }
   NetDec::~NetDec () {
+    for (auto it = this->rev_event_.begin (); it != this->rev_event_.end (); it++) {
+      size_t i = static_cast<size_t> (it->first - EV_BASE);
+      delete this->event_handler_[i];
+    }
 
+    this->fwd_dec_.clear ();
+    this->rev_dec_.clear ();
   }
 
 
@@ -330,10 +367,37 @@ namespace swarm {
 
 
   hdlr_id NetDec::set_handler (ev_id eid, Handler * hdlr) {
-    return HDLR_NULL;
+    const size_t idx = NetDec::eid2idx (eid);
+    if (eid < EV_BASE || this->event_handler_.size () <= idx) {
+      return HDLR_NULL;
+    } else {
+      hdlr_id hid = this->base_hid_++;
+      HandlerEntry * ent = new HandlerEntry (hid, eid, hdlr);
+      this->event_handler_[idx]->push_back (ent);
+      auto p = std::make_pair (hid, ent);
+      this->rev_hdlr_.insert (p);
+      return hid;
+    }
   }
-  bool NetDec::unset_handler (hdlr_id entry) {
-    return false;
+  Handler * NetDec::unset_handler (hdlr_id entry) {
+    auto it = this->rev_hdlr_.find (entry);
+    if (it == this->rev_hdlr_.end ()) {
+      return NULL;
+    } else {
+      HandlerEntry * ent = it->second;
+      this->rev_hdlr_.erase (it);
+      size_t idx = NetDec::eid2idx (ent->ev ());
+      auto dq = this->event_handler_[idx];
+      for (auto dit = dq->begin (); dit != dq->end (); dit++) {
+        if ((*dit)->id () == ent->id ()) {
+          dq->erase (dit);
+          break;
+        }
+      }
+      Handler * hdlr = ent->hdlr ();
+      delete ent;
+      return hdlr;
+    }
   }
 
   ev_id NetDec::assign_event (const std::string &name) {
@@ -343,6 +407,13 @@ namespace swarm {
       const ev_id eid = this->base_eid_;
       this->fwd_event_.insert (std::make_pair (name, eid));
       this->rev_event_.insert (std::make_pair (eid, name));
+
+      const size_t idx = NetDec::eid2idx (eid);
+      if (this->event_handler_.size () <= idx) {
+        this->event_handler_.resize (idx + 1);
+      }
+      this->event_handler_[idx] = new std::deque <HandlerEntry *> ();
+
       this->base_eid_++;
       return eid;
     }

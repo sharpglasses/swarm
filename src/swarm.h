@@ -27,10 +27,12 @@
 #ifndef SRC_SWARM_H__
 #define SRC_SWARM_H__
 
+#include <assert.h>
 #include <sys/types.h>
 #include <string>
 #include <map>
 #include <vector>
+#include <deque>
 
 namespace swarm {
   typedef u_int8_t  byte_t;
@@ -41,6 +43,7 @@ namespace swarm {
 
   const ev_id    EV_NULL = -1;
   const ev_id    EV_BASE =  0;
+  const hdlr_id  HDLR_BASE =  0;
   const hdlr_id  HDLR_NULL = -1;
   const param_id PARAM_NULL = -1;
   const param_id PARAM_BASE =  0;
@@ -121,6 +124,22 @@ namespace swarm {
     virtual void recv (ev_id eid, const Property &p) = 0;
   };
 
+  class HandlerEntry {
+  private:
+    hdlr_id id_;
+    ev_id ev_;
+    Handler * hdlr_;
+    
+  public:
+    HandlerEntry (hdlr_id hid, ev_id eid, Handler * hdlr_);
+    ~HandlerEntry ();
+    Handler * hdlr () const;
+    hdlr_id id () const;
+    ev_id ev () const;
+  };
+
+
+
   class Decoder {
   private:
     NetDec * nd_;
@@ -135,7 +154,6 @@ namespace swarm {
     virtual bool decode (Property *p) = 0;
   };
 
-
   class NetDec {
   private:
     std::map <std::string, ev_id> fwd_event_;
@@ -144,14 +162,21 @@ namespace swarm {
     std::map <param_id, std::string> rev_param_;
     std::map <std::string, dec_id> fwd_dec_;
     std::map <dec_id, std::string> rev_dec_;
+    std::map <hdlr_id, HandlerEntry *> rev_hdlr_;
     ev_id base_eid_;
     param_id base_pid_;
+    hdlr_id base_hid_;
 
     const std::string none_ ;
     std::vector <Decoder *> dec_mod_;
     std::vector <std::string> dec_name_;
-
+    
+    std::vector <std::deque <HandlerEntry *> * > event_handler_;
     dec_id dec_ether_;
+
+    inline static size_t eid2idx (const ev_id eid) {
+      return static_cast <size_t> (eid - EV_BASE);
+    }
 
   public:
     NetDec ();
@@ -170,7 +195,7 @@ namespace swarm {
     dec_id lookup_dec_id (const std::string &name);
 
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
-    bool unset_handler (hdlr_id hid);
+    Handler * unset_handler (hdlr_id hid);
 
     ev_id assign_event (const std::string &name);
     param_id assign_param (const std::string &name);

@@ -39,6 +39,12 @@ public:
   }
 };
 
+class TestHandler : public Counter {
+public:
+  void recv (swarm::ev_id eid, const swarm::Property &prop) {    
+  }
+};
+
 class EtherHandler : public Counter {
 private:
   swarm::param_id src_;
@@ -134,23 +140,25 @@ TEST (NetDec, event) {
 
 TEST (NetDec, handler) {
   swarm::NetDec *nd = new swarm::NetDec ();
-  EtherHandler * eth_h = new EtherHandler (nd);
-  IPv4Handler * ip4_h = new IPv4Handler (nd);
-  
-  swarm::ev_id eth_ev  = nd->lookup_event_id ("ether.packet");
-  swarm::ev_id ip4_ev = nd->lookup_event_id ("ipv4.packet");
+  TestHandler * th1 = new TestHandler ();
+  TestHandler * th2 = new TestHandler ();
 
-  swarm::hdlr_id eth_hdlr = nd->set_handler (eth_ev, eth_h);
-  swarm::hdlr_id ip4_hdlr = nd->set_handler (ip4_ev, ip4_h);
+  const std::string ev1_name ("blue");
+  const std::string ev2_name ("orange");
+  swarm::ev_id eid1 = nd->assign_event (ev1_name);
+  swarm::ev_id eid2 = nd->assign_event (ev2_name);
   
-  EXPECT_NE (swarm::HDLR_NULL, eth_hdlr);
-  EXPECT_NE (swarm::HDLR_NULL, ip4_hdlr);
-  EXPECT_NE (eth_hdlr, ip4_hdlr);
+  swarm::hdlr_id t1 = nd->set_handler (eid1, th1);
+  swarm::hdlr_id t2 = nd->set_handler (eid2, th2);
+  
+  EXPECT_NE (swarm::HDLR_NULL, t1);
+  EXPECT_NE (swarm::HDLR_NULL, t2);
+  EXPECT_NE (t1, t2);
 
-  EXPECT_EQ (true,  nd->unset_handler (eth_hdlr));
-  EXPECT_EQ (false, nd->unset_handler (eth_hdlr));
-  EXPECT_EQ (true,  nd->unset_handler (ip4_hdlr));
-  EXPECT_EQ (false, nd->unset_handler (ip4_hdlr));
+  EXPECT_TRUE (th1  == nd->unset_handler (t1));
+  EXPECT_TRUE (NULL == nd->unset_handler (t1));
+  EXPECT_TRUE (th2  == nd->unset_handler (t2));
+  EXPECT_TRUE (NULL == nd->unset_handler (t2));
 }
 
 TEST (NetDec, basic_scenario) {
