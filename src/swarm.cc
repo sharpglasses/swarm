@@ -286,35 +286,25 @@ namespace swarm {
   }
 
   // -------------------------------------------------------
-  //NetDec
+  // NetDec
   NetDec::NetDec () :
     base_eid_(EV_BASE),
     base_pid_(PARAM_BASE),
     base_hid_(HDLR_BASE),
     none_("") {
-
-    // 
     int mod_count =
-      DecoderMap::build_decoder_vector (this, &(this->dec_mod_), &(this->dec_name_));
+      DecoderMap::build_decoder_vector (this, &(this->dec_mod_),
+                                        &(this->dec_name_));
     for (size_t i = 0; i < mod_count; i++) {
       this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
       this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
     }
 
-    // allocate event handler array to call handler
-    /*
-    this->event_handler_.resize (this->rev_event_.size ());
-    for (auto it = this->rev_event_.begin (); it != this->rev_event_.end (); it++) {
-      size_t i = static_cast<size_t> (it->first - EV_BASE);
-      assert (i < this->event_handler_.size ());
-      this->event_handler_[i] = new std::deque <Handler *> ();
-    }
-    */
-
     this->dec_ether_ = this->lookup_dec_id ("ether");
   }
   NetDec::~NetDec () {
-    for (auto it = this->rev_event_.begin (); it != this->rev_event_.end (); it++) {
+    for (auto it = this->rev_event_.begin ();
+         it != this->rev_event_.end (); it++) {
       size_t i = static_cast<size_t> (it->first - EV_BASE);
       delete this->event_handler_[i];
     }
@@ -326,7 +316,8 @@ namespace swarm {
 
 
   bool NetDec::input (const byte_t *data, const size_t cap_len,
-                      const size_t data_len, const struct timeval &tv, const int dlt) {
+                      const size_t data_len, const struct timeval &tv,
+                      const int dlt) {
     if (dlt == DLT_EN10MB) {
       return false;
     }
@@ -430,5 +421,5 @@ namespace swarm {
     }
   }
 
-} // namespace swarm
+}  // namespace swarm
 

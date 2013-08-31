@@ -37,18 +37,22 @@
 namespace swarm {
   class DecoderMap {
   private:
-    static std::map <std::string, Decoder * (*)(NetDec * nd)> protocol_decoder_map_;
+    static std::map <std::string, Decoder * (*)(NetDec * nd)>
+      protocol_decoder_map_;
 
   public:
     DecoderMap ();
-    static bool reg_protocol_decoder (const std::string &name, Decoder * (*New) (NetDec * nd));
-    static int build_decoder_vector (NetDec * nd, std::vector <Decoder *> *dec_vec, 
+    static bool reg_protocol_decoder (const std::string &name,
+                                      Decoder * (*New) (NetDec * nd));
+    static int build_decoder_vector (NetDec * nd,
+                                     std::vector <Decoder *> *dec_vec,
                                      std::vector <std::string> *dec_name);
   };
 
-#define INIT_DECODER(NAME,FUNC)                                         \
-  bool __is_protocol_decoder_##NAME##_enable = DecoderMap::reg_protocol_decoder (#NAME, FUNC)
+#define INIT_DECODER(NAME, FUNC)                    \
+  bool __is_protocol_decoder_##NAME##_enable =      \
+    DecoderMap::reg_protocol_decoder (#NAME, FUNC)
 
-} // namespace swarm
+}  // namespace swarm
 
 #endif  // SRC_DECODE_H__

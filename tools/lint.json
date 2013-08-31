@@ -1,0 +1,11 @@
+[
+  {"build_command": "./tools/cpplint.py",
+   "build_args":  ["--filter=-whitespace/parens", "$TARGET"],
+   "file_list": {"src":  ["^[A-Za-z0-9].*\\.(cc|h)"],
+                 "src/proto": ["^[A-Za-z0-9].*\\.(cc|h)"],
+                 "test": ["^[A-Za-z0-9].*\\.(cc|h)"]
+                },
+   "enable": 1
+  }
+]
+ 

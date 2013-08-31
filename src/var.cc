@@ -66,16 +66,16 @@ namespace swarm {
   }
 
 
-  bool Var::str (std::string *s) const { 
+  bool Var::str (std::string *s) const {
     if (this->ptr_) {
       s->assign (reinterpret_cast<char *> (this->ptr_), this->len_);
       return true;
     } else {
-      return false; 
+      return false;
     }
   }
 
-  bool Var::hex (std::string *s) const { 
+  bool Var::hex (std::string *s) const {
     std::string &buf = *s;
     byte_t * p = this->ptr_;
 
@@ -93,10 +93,10 @@ namespace swarm {
       return true;
     }
 
-    return false; 
+    return false;
   }
 
-  bool Var::ip4 (std::string *s) const { 
+  bool Var::ip4 (std::string *s) const {
     byte_t * p = this->ptr_;
 
     if (p && this->len_ >= 4) {
@@ -106,10 +106,10 @@ namespace swarm {
       return true;
     }
 
-    return false; 
+    return false;
   }
 
-  bool Var::ip6 (std::string *s) const { 
+  bool Var::ip6 (std::string *s) const {
     byte_t * p = this->ptr_;
 
     if (p && this->len_ >= 16) {
@@ -119,10 +119,10 @@ namespace swarm {
       return true;
     }
 
-    return false; 
+    return false;
   }
 
-  bool Var::mac (std::string *s) const { 
+  bool Var::mac (std::string *s) const {
     std::string &buf = *s;
     byte_t * p = this->ptr_;
 
@@ -139,6 +139,6 @@ namespace swarm {
       return true;
     }
 
-    return false; 
+    return false;
   }
-} // namespace swarm
+}  // namespace swarm

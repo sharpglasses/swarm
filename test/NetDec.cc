@@ -30,26 +30,26 @@
 #include "../src/swarm.h"
 
 class Counter  : public swarm::Handler {
-protected:
+ protected:
   int count_;
-public:
+ public:
   Counter () : count_(0) {}
-  int count () const { 
-    return this->count_; 
+  int count () const {
+    return this->count_;
   }
 };
 
 class TestHandler : public Counter {
-public:
-  void recv (swarm::ev_id eid, const swarm::Property &prop) {    
+ public:
+  void recv (swarm::ev_id eid, const swarm::Property &prop) {
   }
 };
 
 class EtherHandler : public Counter {
-private:
+ private:
   swarm::param_id src_;
 
-public:
+ public:
   explicit EtherHandler (swarm::NetDec * nd) {
     this->src_ = nd->lookup_param_id ("eth.src");
     EXPECT_NE (swarm::PARAM_NULL, this->src_);
@@ -62,10 +62,10 @@ public:
 };
 
 class IPv4Handler : public Counter {
-private:
+ private:
   swarm::param_id src_;
 
-public:
+ public:
   explicit IPv4Handler (swarm::NetDec * nd) {
     this->src_ = nd->lookup_param_id ("ipv4.src");
     EXPECT_NE (swarm::PARAM_NULL, this->src_);
@@ -78,10 +78,10 @@ public:
 };
 
 class DnsHandler : public Counter {
-private:
+ private:
   swarm::param_id type_;
 
-public:
+ public:
   explicit DnsHandler (swarm::NetDec * nd) {
     this->type_ = nd->lookup_param_id ("dns.type");
     EXPECT_NE (swarm::PARAM_NULL, this->type_);
@@ -147,10 +147,10 @@ TEST (NetDec, handler) {
   const std::string ev2_name ("orange");
   swarm::ev_id eid1 = nd->assign_event (ev1_name);
   swarm::ev_id eid2 = nd->assign_event (ev2_name);
-  
+
   swarm::hdlr_id t1 = nd->set_handler (eid1, th1);
   swarm::hdlr_id t2 = nd->set_handler (eid2, th2);
-  
+
   EXPECT_NE (swarm::HDLR_NULL, t1);
   EXPECT_NE (swarm::HDLR_NULL, t2);
   EXPECT_NE (t1, t2);

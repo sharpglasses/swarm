@@ -69,7 +69,7 @@ TEST (Property, length) {
   b = p->payload (4);
   EXPECT_EQ (a[0], b[0]);
   b = p->payload (4);
-  EXPECT_EQ (NULL, reinterpret_cast<char*> (b)); 
+  EXPECT_EQ (NULL, reinterpret_cast<char*> (b));
   b = p->payload (4);
   EXPECT_EQ (NULL, reinterpret_cast<char*> (b));
 
@@ -90,7 +90,8 @@ TEST (Property, param) {
 
   char * w1 = const_cast <char *> (static_cast <const char *> ("not sane"));
   char * w2 = const_cast <char *> (static_cast <const char *> ("all is right"));
-  char * w3 = const_cast <char *> (static_cast <const char *> ("the order has fallen"));
+  char * w3 = const_cast <char *> (static_cast <const char *>
+                                   ("the order has fallen"));
 
   // macro for check consistency of looking up by id and string name
 #define CHECK_CONS()                                      \
@@ -162,6 +163,4 @@ TEST (Property, param) {
   EXPECT_EQ (w2, p2->str (1));
   EXPECT_EQ (swarm::Param::errmsg_, p2->str (2));
   EXPECT_TRUE (w1 != reinterpret_cast<char *> (p2->get (&len)));
-
-
 }

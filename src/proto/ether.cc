@@ -54,8 +54,7 @@ namespace swarm {
   private:
     static const size_t ETHER_ADDR_LEN = 6;
 
-    struct ether_header
-    {
+    struct ether_header {
       u_int8_t dst_[ETHER_ADDR_LEN];
       u_int8_t src_[ETHER_ADDR_LEN];
       u_int16_t type_;
@@ -65,7 +64,7 @@ namespace swarm {
     param_id P_SRC_, P_DST_, P_PROTO_, P_HDR_;
     dec_id D_IPV4_;
     dec_id D_IPV6_;
-    
+
   public:
     explicit EtherDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_ETH_PKT_ = nd->assign_event ("ether.packet");
@@ -93,4 +92,4 @@ namespace swarm {
   };
 
   INIT_DECODER (ether, EtherDecoder::New);
-} // namespace swarm
+}  // namespace swarm

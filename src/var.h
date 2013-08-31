@@ -57,9 +57,9 @@ namespace swarm {
     bool hex (std::string *s) const;
     bool ip4 (std::string *s) const;
     bool ip6 (std::string *s) const;
-    bool mac (std::string *s) const;    
+    bool mac (std::string *s) const;
   };
 
-} // namespace swarm
+}  // namespace swarm
 
 #endif  // SRC_VAR_H__

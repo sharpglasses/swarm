@@ -35,11 +35,11 @@
 #include <deque>
 
 namespace swarm {
-  typedef u_int8_t  byte_t;
-  typedef int64_t ev_id;    // Event ID
-  typedef int64_t param_id; // Parameter ID
-  typedef int64_t hdlr_id;  // Handler Entry ID
-  typedef int       dec_id;   // Decoder ID
+  typedef u_int8_t  byte_t;  // 1 byte data type
+  typedef int64_t    ev_id;  // Event ID
+  typedef int64_t param_id;  // Parameter ID
+  typedef int64_t  hdlr_id;  // Handler Entry ID
+  typedef int       dec_id;  // Decoder ID
 
   const ev_id    EV_NULL = -1;
   const ev_id    EV_BASE =  0;
@@ -50,23 +50,22 @@ namespace swarm {
   const dec_id   DEC_NULL = -1;
 
   class NetDec;
-  class Var; // in var.h
+  class Var;  // defined in var.h
 
   class Param {
-  public:
-    const static std::string errmsg_;
-
   private:
     std::vector <Var *> var_set_;
     size_t idx_;
 
   public:
+    static const std::string errmsg_;
+
     Param ();
     ~Param ();
     void init ();
 
     size_t size () const;
-    void push (byte_t *data, size_t len, bool copy=false);
+    void push (byte_t *data, size_t len, bool copy = false);
     byte_t * get (size_t *len = NULL, size_t idx = 0) const;
 
     int32_t int32 (size_t idx = 0) const;
@@ -129,7 +128,7 @@ namespace swarm {
     hdlr_id id_;
     ev_id ev_;
     Handler * hdlr_;
-    
+
   public:
     HandlerEntry (hdlr_id hid, ev_id eid, Handler * hdlr_);
     ~HandlerEntry ();
@@ -167,10 +166,10 @@ namespace swarm {
     param_id base_pid_;
     hdlr_id base_hid_;
 
-    const std::string none_ ;
+    const std::string none_;
     std::vector <Decoder *> dec_mod_;
     std::vector <std::string> dec_name_;
-    
+
     std::vector <std::deque <HandlerEntry *> * > event_handler_;
     dec_id dec_ether_;
 
@@ -200,6 +199,6 @@ namespace swarm {
     ev_id assign_event (const std::string &name);
     param_id assign_param (const std::string &name);
   };
-} // namespace swarm
+}  // namespace swarm
 
 #endif  // SRC_SWARM_H__

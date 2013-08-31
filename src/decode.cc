@@ -28,17 +28,19 @@
 #include "./decode.h"
 
 namespace swarm {
-  std::map <std::string, Decoder * (*)(NetDec *nd)> DecoderMap::protocol_decoder_map_;
+  std::map <std::string, Decoder * (*)(NetDec *nd)>
+  DecoderMap::protocol_decoder_map_;
 
 
-  bool DecoderMap::reg_protocol_decoder (const std::string &name, 
+  bool DecoderMap::reg_protocol_decoder (const std::string &name,
                                          Decoder * (*New) (NetDec * nd)) {
     DecoderMap::protocol_decoder_map_.insert (std::make_pair (name, New));
     return true;
-  } 
+  }
 
-  int DecoderMap::build_decoder_vector (NetDec * nd, std::vector <Decoder *> *dec_vec, 
-                                         std::vector <std::string> *dec_name) {
+  int DecoderMap::build_decoder_vector (NetDec * nd,
+                                        std::vector <Decoder *> *dec_vec,
+                                        std::vector <std::string> *dec_name) {
     // TODO(masa): need to check contents of dec_vec, dec_name
     const size_t len = DecoderMap::protocol_decoder_map_.size ();
     size_t i = 0;
@@ -61,4 +63,4 @@ namespace swarm {
   }
   Decoder::~Decoder () {
   }
-} // namespace swarm
+}  // namespace swarm
