@@ -108,11 +108,28 @@ def build(bld):
 
     bld.install_files('${PREFIX}/include', lib_fname) 
 
+
+    inc_dir = os.path.join (bld.path.abspath(), 'src')
+
+    # example code
+    src_list = get_src_list ('example', cc_file)
+    for src in src_list:
+        bld.program(features = 'cxxprogram',
+                    source = [src],
+                    target = src.split ('.')[0],
+                    use = [target_name],
+                    lib = ['pthread', 'pcap'],
+                    includes = [inc_dir],
+                    LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
+                    rpath = [os.path.join (bld.env.PREFIX, 'lib'),
+                             os.path.join (bld.path.abspath(), 'build', '..', 'src')])
+
+
+
     # test code
     if bld.env.test:
         src_list = []
         src_list.extend (get_src_list ('test', cc_file))
-        inc_dir = os.path.join (bld.path.abspath(), 'src')
 
         libs = ['gtest', 'pthread', 'pcap']
         bld.program(features = 'cxxprogram',
