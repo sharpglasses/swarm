@@ -89,12 +89,21 @@ namespace swarm {
     time_t tv_sec_;
     time_t tv_usec_;
 
+    // buffer for payload management
     byte_t *buf_;
     size_t buf_len_;
     size_t data_len_;
     size_t cap_len_;
-    std::vector <Param *> param_;
     size_t ptr_;
+
+    // Parameter management
+    std::vector <Param *> param_;
+
+    // Event management
+    std::vector <ev_id> ev_queue_;
+    size_t ev_pop_ptr_;
+    size_t ev_push_ptr_;
+    const size_t EV_QUEUE_WIDTH = 128;
 
     inline static size_t pid2idx (param_id pid) {
       return static_cast <size_t> (pid - PARAM_BASE);
@@ -114,6 +123,9 @@ namespace swarm {
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
     byte_t * payload (size_t alloc_size);
+
+    ev_id pop_event ();
+    void push_event (const ev_id eid);
   };
 
   class Handler {
@@ -183,21 +195,29 @@ namespace swarm {
 
     bool input (const byte_t *data, const size_t cap_len,
                 const size_t data_len, const struct timeval &tv, int dlt);
+
+    // Event
     ev_id lookup_event_id (const std::string &name);
     std::string lookup_event_name (ev_id eid);
     size_t event_size () const;
 
+    // Parameter
     param_id lookup_param_id (const std::string &name);
     std::string lookup_param_name (param_id pid);
     size_t param_size () const;
 
+    // Decoder
     dec_id lookup_dec_id (const std::string &name);
 
+    // Handler
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
     Handler * unset_handler (hdlr_id hid);
 
+    // ----------------------------------------------
+    // for modules, not used for external program
     ev_id assign_event (const std::string &name);
     param_id assign_param (const std::string &name);
+    void decode (dec_id dec, Property *p);
   };
 }  // namespace swarm
 

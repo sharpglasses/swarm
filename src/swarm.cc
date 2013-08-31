@@ -189,6 +189,9 @@ namespace swarm {
   // -------------------------------------------------------
   // Decoder
   void Decoder::emit (dec_id dec, Property *p) {
+    if (dec != DEC_NULL) {
+      this->nd_->decode (dec, p);
+    }
   }
 
   // -------------------------------------------------------
@@ -224,6 +227,9 @@ namespace swarm {
     for (size_t i = 0; i < this->param_.size (); i++) {
       this->param_[i]->init ();
     }
+
+    this->ev_push_ptr_ = 0;
+    this->ev_pop_ptr_ = 0;
   }
   Param * Property::param (const std::string &key) const {
     const param_id pid = this->nd_->lookup_param_id (key);
@@ -285,6 +291,25 @@ namespace swarm {
     }
   }
 
+  ev_id Property::pop_event () {
+    assert (this->ev_pop_ptr_ <= this->ev_push_ptr_);
+    if (this->ev_pop_ptr_ < this->ev_push_ptr_) {
+      const size_t i = this->ev_pop_ptr_++;
+      return this->ev_queue_[i];
+    } else {
+      return EV_NULL;
+    }
+  }
+  void Property::push_event (const ev_id eid) {
+    if (this->ev_push_ptr_ >= this->ev_queue_.size ()) {
+      // prevent frequet call of memory allocation
+      this->ev_queue_.resize (this->ev_queue_.size () +
+                              Property::EV_QUEUE_WIDTH);
+    }
+    this->ev_queue_[this->ev_push_ptr_] = eid;
+    this->ev_push_ptr_++;
+  }
+
   // -------------------------------------------------------
   // NetDec
   NetDec::NetDec () :
@@ -301,6 +326,7 @@ namespace swarm {
     }
 
     this->dec_ether_ = this->lookup_dec_id ("ether");
+    assert (this->dec_ether_ != DEC_NULL);
   }
   NetDec::~NetDec () {
     for (auto it = this->rev_event_.begin ();
@@ -318,10 +344,30 @@ namespace swarm {
   bool NetDec::input (const byte_t *data, const size_t cap_len,
                       const size_t data_len, const struct timeval &tv,
                       const int dlt) {
+    // main process of NetDec
     if (dlt == DLT_EN10MB) {
+      Property * prop = new Property (this);
+      prop->init (data, cap_len, data_len, tv);
+      this->decode (this->dec_ether_, prop);
+
+      ev_id eid;
+      while (EV_NULL != (eid = prop->pop_event ())) {
+        assert (0 <= eid && eid < this->event_handler_.size ());
+        auto hdlr_list = this->event_handler_[eid];
+        if (hdlr_list) {
+          for (auto it = hdlr_list->begin (); it != hdlr_list->end (); it++) {
+            Handler * hdlr = (*it)->hdlr ();
+            assert (hdlr != NULL);
+            hdlr->recv (eid, *prop);
+          }
+        }
+      }
+
+      delete prop;
+      return true;
+    } else {
       return false;
     }
-    return false;
   }
   ev_id NetDec::lookup_event_id (const std::string &name) {
     auto it = this->fwd_event_.find (name);
@@ -353,7 +399,12 @@ namespace swarm {
   }
 
   dec_id NetDec::lookup_dec_id (const std::string &name) {
-    return this->fwd_dec_.size ();
+    auto it = this->fwd_dec_.find (name);
+    if (it != this->fwd_dec_.end ()) {
+      return it->second;
+    } else {
+      return DEC_NULL;
+    }
   }
 
 
@@ -370,6 +421,7 @@ namespace swarm {
       return hid;
     }
   }
+
   Handler * NetDec::unset_handler (hdlr_id entry) {
     auto it = this->rev_hdlr_.find (entry);
     if (it == this->rev_hdlr_.end ()) {
@@ -421,5 +473,9 @@ namespace swarm {
     }
   }
 
+  void NetDec::decode (dec_id dec, Property *p) {
+    assert (0 <= dec && dec < this->dec_mod_.size ());
+    this->dec_mod_[dec]->decode (p);
+  }
 }  // namespace swarm
 

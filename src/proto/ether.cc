@@ -61,19 +61,20 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_ETH_PKT_;
-    param_id P_SRC_, P_DST_, P_PROTO_, P_HDR_;
-    dec_id D_IPV4_;
-    dec_id D_IPV6_;
+    param_id P_SRC_, P_DST_, P_TYPE_, P_HDR_;
+    dec_id D_ARP_, D_VLAN_, D_IPV4_, D_IPV6_;
 
   public:
     explicit EtherDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_ETH_PKT_ = nd->assign_event ("ether.packet");
       this->P_SRC_   = nd->assign_param ("ether.src");
       this->P_DST_   = nd->assign_param ("ether.dst");
-      this->P_PROTO_ = nd->assign_param ("ether.param");
+      this->P_TYPE_  = nd->assign_param ("ether.type");
       this->P_HDR_   = nd->assign_param ("ether.hdr");
     }
     void setup (NetDec * nd) {
+      this->D_ARP_  = nd->lookup_dec_id ("arp");
+      this->D_VLAN_ = nd->lookup_dec_id ("vlan");
       this->D_IPV4_ = nd->lookup_dec_id ("ipv4");
       this->D_IPV6_ = nd->lookup_dec_id ("ipv6");
     };
@@ -83,11 +84,26 @@ namespace swarm {
     bool decode (Property *p) {
       auto eth_hdr = reinterpret_cast <struct ether_header *>
         (p->payload (sizeof (struct ether_header)));
+
       if (eth_hdr == NULL) {
         return false;
       }
 
-      return false;
+      p->set (this->P_HDR_, eth_hdr, sizeof (struct ether_header));
+      p->set (this->P_SRC_, eth_hdr->src_, sizeof (eth_hdr->src_));
+      p->set (this->P_DST_, eth_hdr->dst_, sizeof (eth_hdr->dst_));
+      p->set (this->P_TYPE_, &(eth_hdr->type_), sizeof (eth_hdr->type_));
+      p->push_event (this->EV_ETH_PKT_);
+
+      switch (eth_hdr->type_) {
+      case ETHERTYPE_ARP:  this->emit (this->D_ARP_,  p); break;
+      case ETHERTYPE_VLAN: this->emit (this->D_VLAN_, p); break;
+      case ETHERTYPE_IP:   this->emit (this->D_IPV4_, p); break;
+      case ETHERTYPE_IPV6: this->emit (this->D_IPV6_, p); break;
+        // case ETHERTYPE_LOOPBACK: this->emit (this->D_IPV4_, p); break;
+      }
+
+      return true;
     }
   };
 

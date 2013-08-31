@@ -51,7 +51,7 @@ class EtherHandler : public Counter {
 
  public:
   explicit EtherHandler (swarm::NetDec * nd) {
-    this->src_ = nd->lookup_param_id ("eth.src");
+    this->src_ = nd->lookup_param_id ("ether.src");
     EXPECT_NE (swarm::PARAM_NULL, this->src_);
   }
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
