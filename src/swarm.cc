@@ -264,7 +264,7 @@ namespace swarm {
 
   bool Property::set (const param_id pid, void * ptr, size_t len) {
     size_t idx = static_cast <size_t> (pid - PARAM_BASE);
-    if (idx < this->param_.size ()) {
+    if (idx < this->param_.size () && ptr) {
       assert (idx < this->param_.size () && this->param_[idx] != NULL);
       this->param_[idx]->push (static_cast <byte_t*> (ptr), len);
       return true;
@@ -282,7 +282,7 @@ namespace swarm {
   }
   bool Property::copy (const param_id pid, void * ptr, size_t len) {
     size_t idx = static_cast <size_t> (pid - PARAM_BASE);
-    if (idx < this->param_.size ()) {
+    if (idx < this->param_.size () && ptr) {
       assert (idx < this->param_.size () && this->param_[idx] != NULL);
       this->param_[idx]->push (static_cast <byte_t*> (ptr), len, true);
       return true;

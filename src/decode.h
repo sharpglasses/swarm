@@ -53,6 +53,11 @@ namespace swarm {
   bool __is_protocol_decoder_##NAME##_enable =      \
     DecoderMap::reg_protocol_decoder (#NAME, FUNC)
 
+#define ASSIGN_PARAM(N, P, K)                   \
+  do {                                          \
+    this->P = (N)->assign_param (K);            \
+    assert (this->P != PARAM_NULL);             \
+  }  while (0);
 }  // namespace swarm
 
 #endif  // SRC_DECODE_H__
