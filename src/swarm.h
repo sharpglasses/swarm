@@ -211,6 +211,7 @@ namespace swarm {
 
     // Handler
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
+    hdlr_id set_handler (const std::string ev_name, Handler * hdlr);
     Handler * unset_handler (hdlr_id hid);
 
     // ----------------------------------------------

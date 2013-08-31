@@ -422,6 +422,15 @@ namespace swarm {
     }
   }
 
+  hdlr_id NetDec::set_handler (const std::string ev_name, Handler * hdlr) {
+    auto it = this->fwd_event_.find (ev_name);
+    if (it == this->fwd_event_.end ()) {
+      return HDLR_NULL;
+    } else {
+      return this->set_handler (it->second, hdlr);
+    }
+  }
+
   Handler * NetDec::unset_handler (hdlr_id entry) {
     auto it = this->rev_hdlr_.find (entry);
     if (it == this->rev_hdlr_.end ()) {

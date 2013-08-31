@@ -197,7 +197,7 @@ TEST (NetDec, basic_scenario) {
   }
 
   EXPECT_EQ ( 707, dns_h->count ());
-  EXPECT_EQ (2247, dns_h->count ());
+  EXPECT_EQ (2247, ip4_h->count ());
   EXPECT_EQ (2263, eth_h->count ());
 
   delete nd;
