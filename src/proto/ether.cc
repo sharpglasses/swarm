@@ -95,7 +95,7 @@ namespace swarm {
       p->set (this->P_TYPE_, &(eth_hdr->type_), sizeof (eth_hdr->type_));
       p->push_event (this->EV_ETH_PKT_);
 
-      switch (eth_hdr->type_) {
+      switch (ntohs (eth_hdr->type_)) {
       case ETHERTYPE_ARP:  this->emit (this->D_ARP_,  p); break;
       case ETHERTYPE_VLAN: this->emit (this->D_VLAN_, p); break;
       case ETHERTYPE_IP:   this->emit (this->D_IPV4_, p); break;

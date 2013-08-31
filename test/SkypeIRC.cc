@@ -93,13 +93,15 @@ namespace SkypeIRC {
   class Counter  : public swarm::Handler {
   private:
     int count_;
+
+  protected:
     void countup () {
       this->count_++;
     }
 
   public:
     Counter () : count_(0) {}
-    void recv (swarm::ev_id eid, const swarm::Property &prop) {
+    virtual void recv (swarm::ev_id eid, const swarm::Property &prop) {
       this->countup ();
     }
     int count () const {
@@ -109,8 +111,60 @@ namespace SkypeIRC {
 
 
   TEST_F (SkypeIRCFix, arp) {
+    class RepCount : public Counter {
+      bool DEBUG = false;
+      void recv (swarm::ev_id eid, const swarm::Property &prop) {
+        std::string src_pr = prop.param ("arp.src_pr")->ip4 ();
+        std::string dst_pr = prop.param ("arp.dst_pr")->ip4 ();
+        std::string src_hw = prop.param ("arp.src_hw")->mac ();
+        std::string dst_hw = prop.param ("arp.dst_hw")->mac ();
+
+        if (DEBUG) {
+          debug (1, "src_pr = %s", src_pr.c_str ());
+          debug (1, "src_hw = %s", src_hw.c_str ());
+          debug (1, "dst_pr = %s", dst_pr.c_str ());
+          debug (1, "dst_hw = %s", dst_hw.c_str ());
+        }
+        if (dst_pr == "192.168.1.1" && dst_hw == "00:16:E3:19:27:15" &&
+            src_pr == "192.168.1.2" && src_hw == "00:04:76:96:7B:DA") {
+          this->countup ();
+        }
+      }
+    };
+
+    class ReqCount : public Counter {
+      bool DEBUG = false;
+      void recv (swarm::ev_id eid, const swarm::Property &prop) {
+        std::string src_pr = prop.param ("arp.src_pr")->ip4 ();
+        std::string dst_pr = prop.param ("arp.dst_pr")->ip4 ();
+        std::string src_hw = prop.param ("arp.src_hw")->mac ();
+        std::string dst_hw = prop.param ("arp.dst_hw")->mac ();
+
+        if (DEBUG) {
+          debug (1, "src_pr = %s", src_pr.c_str ());
+          debug (1, "src_hw = %s", src_hw.c_str ());
+          debug (1, "dst_pr = %s", dst_pr.c_str ());
+          debug (1, "dst_hw = %s", dst_hw.c_str ());
+        }
+        if (src_pr == "192.168.1.1" && src_hw == "00:16:E3:19:27:15" &&
+            dst_pr == "192.168.1.2" && dst_hw == "00:00:00:00:00:00") {
+          this->countup ();
+        }
+      }
+    };
+
     Counter *h1 = new Counter ();
-    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.packet", h1));
+    Counter *h2 = new Counter ();
+    Counter *h3 = new Counter ();
+    Counter *req = new ReqCount ();
+    Counter *rep = new RepCount ();
+
+    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.packet",  h1));
+    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.request", h2));
+    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.reply",   h3));
+
+    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.request", req));
+    ASSERT_NE (swarm::HDLR_NULL, nd->set_handler ("arp.reply",   rep));
 
     for (auto it = test_data.begin (); it != test_data.end (); it++) {
       PcapData * p = (*it);
@@ -119,6 +173,10 @@ namespace SkypeIRC {
     }
 
     EXPECT_EQ (10, h1->count ());
+    EXPECT_EQ (5, h2->count ());
+    EXPECT_EQ (5, h3->count ());
+    EXPECT_EQ (5, req->count ());
+    EXPECT_EQ (5, rep->count ());
   }
 
   TEST_F (SkypeIRCFix, ether) {

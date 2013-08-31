@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "./swarm.h"
+#include "./debug.h"
 
 namespace swarm {
   class DecoderMap {
@@ -52,6 +53,12 @@ namespace swarm {
 #define INIT_DECODER(NAME, FUNC)                    \
   bool __is_protocol_decoder_##NAME##_enable =      \
     DecoderMap::reg_protocol_decoder (#NAME, FUNC)
+
+  // developer can confirm if your module is enable by
+  //
+  //   extern bool __is_protocol_decoder_{{ module_name }}_enable;
+  //   printf ("{{ module_name}} is enable? -> %s\n",
+  //          (__is_protocol_decoder_{{ module_name }}_enable_) ? "Yes" : "No");
 
 #define ASSIGN_PARAM(N, P, K)                   \
   do {                                          \

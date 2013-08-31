@@ -244,7 +244,7 @@ namespace swarm {
     assert (alloc_size < 0xfffffff);
     assert (this->ptr_ < 0xfffffff);
 
-    if (this->ptr_ + alloc_size < this->cap_len_) {
+    if (this->ptr_ + alloc_size <= this->cap_len_) {
       size_t p = this->ptr_;
       this->ptr_ += alloc_size;
       return &(this->buf_[p]);
@@ -323,6 +323,10 @@ namespace swarm {
     for (size_t i = 0; i < mod_count; i++) {
       this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
       this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
+    }
+
+    for (size_t n = 0; n < mod_count; n++) {
+      this->dec_mod_[n]->setup (this);
     }
 
     this->dec_ether_ = this->lookup_dec_id ("ether");

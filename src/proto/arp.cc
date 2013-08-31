@@ -61,8 +61,8 @@ namespace swarm {
       this->EV_REP_ = nd->assign_event ("arp.reply");
 
       this->P_SRC_HW_   = nd->assign_param ("arp.src_hw");
-      this->P_DST_HW_   = nd->assign_param ("arp.dst_hw");
       this->P_SRC_PR_   = nd->assign_param ("arp.src_pr");
+      this->P_DST_HW_   = nd->assign_param ("arp.dst_hw");
       this->P_DST_PR_   = nd->assign_param ("arp.dst_pr");
       this->P_OP_       = nd->assign_param ("arp.op");
     }
@@ -82,15 +82,16 @@ namespace swarm {
 
       p->set (this->P_OP_, &(arp_hdr->op_), sizeof (arp_hdr->op_));
       const size_t hw_len = static_cast <size_t> (arp_hdr->hw_addr_len_);
-      const size_t pr_len = static_cast <size_t> (arp_hdr->hw_addr_len_);
+      const size_t pr_len = static_cast <size_t> (arp_hdr->pr_addr_len_);
+
 
       p->set (this->P_SRC_HW_, p->payload (hw_len), hw_len);
-      p->set (this->P_DST_HW_, p->payload (hw_len), hw_len);
       p->set (this->P_SRC_PR_, p->payload (pr_len), pr_len);
+      p->set (this->P_DST_HW_, p->payload (hw_len), hw_len);
       p->set (this->P_DST_PR_, p->payload (pr_len), pr_len);
 
       p->push_event (this->EV_ARP_PKT_);
-      switch (arp_hdr->op_) {
+      switch (ntohs (arp_hdr->op_)) {
       case ARPOP_REQUEST: p->push_event (this->EV_REQ_); break;
       case ARPOP_REPLY:   p->push_event (this->EV_REP_); break;
       }

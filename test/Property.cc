@@ -69,7 +69,7 @@ TEST (Property, length) {
   b = p->payload (4);
   EXPECT_EQ (a[0], b[0]);
   b = p->payload (4);
-  EXPECT_EQ (NULL, reinterpret_cast<char*> (b));
+  EXPECT_EQ (a[4], b[0]);
   b = p->payload (4);
   EXPECT_EQ (NULL, reinterpret_cast<char*> (b));
 

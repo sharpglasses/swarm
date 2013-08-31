@@ -53,9 +53,6 @@ namespace swarm {
       (*dec_vec)[i] = (it->second) (nd);
     }
 
-    for (size_t n = 0; n < dec_vec->size (); n++) {
-      (*dec_vec)[n]->setup (nd);
-    }
     return i;
   }
 
