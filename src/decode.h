@@ -34,6 +34,7 @@
 
 #include "./swarm.h"
 #include "./debug.h"
+#include "./var.h"
 
 namespace swarm {
   class Decoder {
@@ -75,11 +76,14 @@ namespace swarm {
   //   printf ("{{ module_name}} is enable? -> %s\n",
   //          (__is_protocol_decoder_{{ module_name }}_enable_) ? "Yes" : "No");
 
-#define ASSIGN_PARAM(N, P, K)                   \
-  do {                                          \
-    this->P = (N)->assign_param (K);            \
-    assert (this->P != PARAM_NULL);             \
-  }  while (0);
+#define DEF_REPR_CLASS(V_NAME, F_NAME)            \
+  class V_NAME : public Var {                     \
+  public:  bool repr (std::string *s) const;      \
+  };                                              \
+  class F_NAME : public VarFactory {              \
+  public: Var * New () { return new V_NAME (); }  \
+  };
+
 }  // namespace swarm
 
 #endif  // SRC_DECODE_H__

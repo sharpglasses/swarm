@@ -27,7 +27,9 @@
 
 #include "../decode.h"
 
+
 namespace swarm {
+
   class ArpDecoder : public Decoder {
   private:
     struct arp_header {
@@ -55,16 +57,20 @@ namespace swarm {
     param_id P_SRC_HW_, P_DST_HW_, P_SRC_PR_, P_DST_PR_, P_OP_;
 
   public:
+    DEF_REPR_CLASS (VarPR, FacPR);
+    DEF_REPR_CLASS (VarHW, FacHW);
+    DEF_REPR_CLASS (VarOP, FacOP);
+
     explicit ArpDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_ARP_PKT_ = nd->assign_event ("arp.packet");
       this->EV_REQ_ = nd->assign_event ("arp.request");
       this->EV_REP_ = nd->assign_event ("arp.reply");
 
-      this->P_SRC_HW_   = nd->assign_param ("arp.src_hw");
-      this->P_SRC_PR_   = nd->assign_param ("arp.src_pr");
-      this->P_DST_HW_   = nd->assign_param ("arp.dst_hw");
-      this->P_DST_PR_   = nd->assign_param ("arp.dst_pr");
-      this->P_OP_       = nd->assign_param ("arp.op");
+      this->P_SRC_HW_   = nd->assign_param ("arp.src_hw", new FacHW ());
+      this->P_SRC_PR_   = nd->assign_param ("arp.src_pr", new FacPR ());
+      this->P_DST_HW_   = nd->assign_param ("arp.dst_hw", new FacHW ());
+      this->P_DST_PR_   = nd->assign_param ("arp.dst_pr", new FacPR ());
+      this->P_OP_       = nd->assign_param ("arp.op", new FacOP ());
     }
     void setup (NetDec * nd) {
       // nothing to do
@@ -99,6 +105,27 @@ namespace swarm {
       return true;
     }
   };
+
+  bool ArpDecoder::VarPR::repr (std::string *s) const {
+    return this->ip4 (s);
+  }
+  bool ArpDecoder::VarHW::repr (std::string *s) const {
+    return this->mac (s);
+  }
+  bool ArpDecoder::VarOP::repr (std::string *s) const {
+    u_int16_t op = this->num <u_int16_t> ();
+    switch (ntohs (op)) {
+    case ARPOP_REQUEST:    *s = "REQUEST"; break;
+    case ARPOP_REPLY:      *s = "REPLY"; break;
+    case ARPOP_REVREQUEST: *s = "REVREQUEST"; break;
+    case ARPOP_REVREPLY:   *s = "REVREPLY"; break;
+    case ARPOP_INVREQUEST: *s = "INVREQUEST"; break;
+    case ARPOP_INVREPLY:   *s = "INVREPLY"; break;
+    default:               *s = "unknown"; break;
+    }
+
+    return true;
+  }
 
   INIT_DECODER (arp, ArpDecoder::New);
 }  // namespace swarm

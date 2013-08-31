@@ -47,6 +47,7 @@ namespace swarm {
     void set (byte_t *ptr, size_t len);
     void copy (byte_t *ptr, size_t len);
     byte_t * get (size_t *len) const;
+    virtual bool repr (std::string *s) const;
 
 #define __CAST(S, D)                              \
     {                                             \
@@ -62,18 +63,14 @@ namespace swarm {
         // when not enough lenght, adjust to unsigned integer
         T n;
 
-        switch (this->len_) {
-        case 1:
-          __CAST (u_int8_t, T); break;
-        case 2:
-        case 3:
-          __CAST (u_int16_t, T); break;
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-          __CAST (u_int32_t, T); break;
+        if (this->len_ == 1) {
+          __CAST (u_int8_t, T);
+        } else if (2 == this->len_ || 3 == this->len_) {
+          __CAST (u_int16_t, T);
+        } else if (4 <= this->len_ && this->len_ <= 7) {
+          __CAST (u_int32_t, T);
         }
+
         return n;
       }
     }
@@ -87,6 +84,12 @@ namespace swarm {
     bool mac (std::string *s) const;
   };
 
+  class VarFactory {
+  public:
+    VarFactory () {}
+    virtual ~VarFactory () {}
+    virtual Var * New () { return new Var (); }
+  };
 }  // namespace swarm
 
 #endif  // SRC_VAR_H__

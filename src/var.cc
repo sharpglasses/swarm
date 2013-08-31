@@ -65,6 +65,9 @@ namespace swarm {
     return this->ptr_;
   }
 
+  bool Var::repr (std::string *s) const {
+    return this->str (s);
+  }
 
   bool Var::str (std::string *s) const {
     if (this->ptr_) {

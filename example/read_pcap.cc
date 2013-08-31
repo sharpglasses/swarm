@@ -27,6 +27,14 @@
 #include <pcap.h>
 #include <swarm.h>
 
+class ArpHandler : public swarm::Handler {
+ public:
+  void recv (swarm::ev_id eid, const  swarm::Property &p) {
+    std::string s_pr = p.param ("arp.src_pr")->repr ();
+    std::string d_pr = p.param ("arp.dst_pr")->repr ();
+    printf ("ARP: %s -> %s\n", s_pr.c_str (), d_pr.c_str ());
+  }
+};
 
 void read_pcapfile (const std::string &fpath) {
   printf ("open: \"%s\"\n", fpath.c_str ());
@@ -47,7 +55,7 @@ void read_pcapfile (const std::string &fpath) {
   // ----------------------------------------------
   // setup NetDec
   swarm::NetDec *nd = new swarm::NetDec ();
-
+  nd->set_handler ("arp.packet", new ArpHandler ());
 
   // ----------------------------------------------
   // processing packets from pcap file

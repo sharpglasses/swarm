@@ -63,7 +63,7 @@ namespace swarm {
   // Param
   const std::string Param::errmsg_ = "(error)";
 
-  Param::Param () : idx_(0) {
+  Param::Param (VarFactory * fac) : idx_(0), fac_(fac) {
   }
   Param::~Param () {
   }
@@ -76,7 +76,7 @@ namespace swarm {
   void Param::push (byte_t *data, size_t len, bool copy) {
     Var * v;
     if (this->idx_ >= this->var_set_.size ())  {
-      v = new Var ();
+      v = (this->fac_) ? this->fac_->New () : new Var ();
       this->var_set_.push_back (v);
       this->idx_++;
       assert (this->idx_ == this->var_set_.size ());
@@ -96,6 +96,20 @@ namespace swarm {
       return this->var_set_[idx]->get (len);
     } else {
       return NULL;
+    }
+  }
+
+  std::string Param::repr (size_t idx) const {
+    std::string buf;
+    return (this->repr (&buf, idx)) ? buf : Param::errmsg_;
+  }
+  bool Param::repr (std::string *s, size_t idx) const {
+    if (idx < this->idx_) {
+      assert (idx < this->var_set_.size ());
+      assert (this->var_set_[idx] != NULL);
+      return this->var_set_[idx]->repr (s);
+    } else {
+      return false;
     }
   }
 
@@ -187,12 +201,31 @@ namespace swarm {
   }
 
   // -------------------------------------------------------
+  // ParamEntry
+  ParamEntry::ParamEntry (param_id pid, const std::string name,
+                          VarFactory * fac) :
+    pid_(pid), name_(name), fac_(fac) {
+    // ParamEntry has responsibility to manage fac (VarFactory)
+  }
+  ParamEntry::~ParamEntry () {
+    delete this->fac_;
+  }
+  param_id ParamEntry::pid () const {
+    return this->pid_;
+  }
+  const std::string& ParamEntry::name () const {
+    return this->name_;
+  }
+  VarFactory * ParamEntry::fac () const {
+    return this->fac_;
+  }
+
+
+
+  // -------------------------------------------------------
   // Property
   Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), buf_len_(0) {
-    this->param_.resize (nd->param_size ());
-    for (size_t i = 0; i < this->param_.size (); i++) {
-      this->param_[i] = new Param ();
-    }
+    this->nd_->build_param_vector (&(this->param_));
   }
   Property::~Property () {
     if (this->buf_) {
@@ -382,11 +415,15 @@ namespace swarm {
 
   std::string NetDec::lookup_param_name (param_id pid) {
     auto it = this->rev_param_.find (pid);
-    return (it != this->rev_param_.end ()) ? it->second : this->none_;
+    if (it != this->rev_param_.end ()) {
+      return (it->second)->name ();
+    } else {
+      return this->none_;
+    }
   }
   param_id NetDec::lookup_param_id (const std::string &name) {
     auto it = this->fwd_param_.find (name);
-    return (it != this->fwd_param_.end ()) ? it->second : PARAM_NULL;
+    return (it != this->fwd_param_.end ()) ? (it->second)->pid () : PARAM_NULL;
   }
   size_t NetDec::param_size () const {
     assert (this->base_pid_ >= 0);
@@ -466,13 +503,15 @@ namespace swarm {
       return eid;
     }
   }
-  param_id NetDec::assign_param (const std::string &name) {
+  param_id NetDec::assign_param (const std::string &name, VarFactory * fac) {
     if (this->fwd_param_.end () != this->fwd_param_.find (name)) {
       return PARAM_NULL;
     } else {
       const ev_id pid = this->base_pid_;
-      this->fwd_param_.insert (std::make_pair (name, pid));
-      this->rev_param_.insert (std::make_pair (pid, name));
+
+      ParamEntry * ent = new ParamEntry (pid, name, fac);
+      this->fwd_param_.insert (std::make_pair (name, ent));
+      this->rev_param_.insert (std::make_pair (pid,  ent));
       this->base_pid_++;
       return pid;
     }
@@ -482,5 +521,18 @@ namespace swarm {
     assert (0 <= dec && dec < this->dec_mod_.size ());
     this->dec_mod_[dec]->decode (p);
   }
+
+  void NetDec::build_param_vector (std::vector <Param *> * prm_vec_) {
+    prm_vec_->resize (this->param_size ());
+
+    for (auto it = this->fwd_param_.begin ();
+         it != this->fwd_param_.end (); it++) {
+      ParamEntry * ent = it->second;
+      size_t idx = Property::pid2idx (ent->pid ());
+      assert (idx < prm_vec_->size ());
+      (*prm_vec_)[idx] = new Param (ent->fac ());
+    }
+  }
+
 }  // namespace swarm
 

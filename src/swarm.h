@@ -52,22 +52,27 @@ namespace swarm {
   class NetDec;
   class Decoder;  // defined in decode.h
   class Var;  // defined in var.h
+  class VarFactory;  // defined in var.h
 
   class Param {
   private:
     std::vector <Var *> var_set_;
     size_t idx_;
+    VarFactory * fac_;
 
   public:
     static const std::string errmsg_;
 
-    Param ();
+    explicit Param (VarFactory *fac = NULL);
     ~Param ();
     void init ();
 
     size_t size () const;
     void push (byte_t *data, size_t len, bool copy = false);
     byte_t * get (size_t *len = NULL, size_t idx = 0) const;
+
+    std::string repr (size_t idx = 0) const;
+    bool repr (std::string *s, size_t idx) const;
 
     int32_t int32 (size_t idx = 0) const;
     u_int32_t uint32 (size_t idx = 0) const;
@@ -82,6 +87,20 @@ namespace swarm {
     bool ip4 (std::string *s, size_t idx) const;
     bool ip6 (std::string *s, size_t idx) const;
     bool mac (std::string *s, size_t idx) const;
+  };
+
+  class ParamEntry {
+  private:
+    param_id pid_;
+    std::string name_;
+    VarFactory * fac_;
+
+  public:
+    ParamEntry (param_id pid, const std::string name, VarFactory * fac);
+    ~ParamEntry ();
+    param_id pid () const;
+    const std::string& name () const;
+    VarFactory * fac () const;
   };
 
   class Property {
@@ -106,9 +125,6 @@ namespace swarm {
     size_t ev_push_ptr_;
     const size_t EV_QUEUE_WIDTH = 128;
 
-    inline static size_t pid2idx (param_id pid) {
-      return static_cast <size_t> (pid - PARAM_BASE);
-    }
 
   public:
     explicit Property (NetDec * nd);
@@ -127,6 +143,10 @@ namespace swarm {
 
     ev_id pop_event ();
     void push_event (const ev_id eid);
+
+    inline static size_t pid2idx (param_id pid) {
+      return static_cast <size_t> (pid - PARAM_BASE);
+    }
   };
 
   class Handler {
@@ -156,8 +176,8 @@ namespace swarm {
   private:
     std::map <std::string, ev_id> fwd_event_;
     std::map <ev_id, std::string> rev_event_;
-    std::map <std::string, param_id> fwd_param_;
-    std::map <param_id, std::string> rev_param_;
+    std::map <std::string, ParamEntry *> fwd_param_;
+    std::map <param_id, ParamEntry *> rev_param_;
     std::map <std::string, dec_id> fwd_dec_;
     std::map <dec_id, std::string> rev_dec_;
     std::map <hdlr_id, HandlerEntry *> rev_hdlr_;
@@ -204,8 +224,9 @@ namespace swarm {
     // ----------------------------------------------
     // for modules, not used for external program
     ev_id assign_event (const std::string &name);
-    param_id assign_param (const std::string &name);
+    param_id assign_param (const std::string &name, VarFactory *fac = NULL);
     void decode (dec_id dec, Property *p);
+    void build_param_vector (std::vector <Param *> * prm_vec_);
   };
 }  // namespace swarm
 
