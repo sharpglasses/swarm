@@ -41,18 +41,37 @@ namespace swarm {
     dec_id D_NEXT_;
 
   public:
+    // DEF_REPR_CLASS defines a class extended by Var for repr() as
+    // representation. 1st argument is an extended class, and 2nd is
+    // a factory class. In SampleDecoder::VarSample (), you can provide
+    // original representation logic for special data type.
+    //
     DEF_REPR_CLASS (VarSample, FacSample);
 
     explicit SampleDecoder (NetDec * nd) : Decoder (nd) {
+      // assign_event () can assign name of event for the decoder.
+      // One of recommended events is a packet arrival
+      // such as "ether.packet" meaning an ethernet packet arrives
+      //
       this->EV_SAMPLE_PKT_ = nd->assign_event ("sample.packet");
-      this->P_OP_       = nd->assign_param ("sample.op", new FacSample ());
+
+      // assign_param () can assign name of parameter for the decoder
+      // and FactoryClass can be registered if you need.
+      //
+      this->P_OP_  = nd->assign_param ("sample.op", new FacSample ());
     }
     void setup (NetDec * nd) {
+      // In setup(), you should obtatin decoder ID of other decoder
+      // by lookup_dec_id (). You can obtain the IDs in decode (), however
+      // it's not good from performance view point.
+      //
       this->D_NEXT_ = nd->lookup_dec_id ("next");
     };
 
+    // Factory function for SampleDecoder
     static Decoder * New (NetDec * nd) { return new SampleDecoder (nd); }
 
+    // Main decoding function.
     bool decode (Property *p) {
       auto sample_hdr = reinterpret_cast <struct sample_header *>
         (p->payload (sizeof (struct sample_header)));
