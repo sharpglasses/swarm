@@ -277,6 +277,13 @@ namespace swarm {
       return NULL;
     }
   }
+  size_t Property::remain () const {
+    if (this->ptr_ < this->cap_len_) {
+      return (this->cap_len_ - this->ptr_);
+    } else {
+      return 0;
+    }
+  }
 
   bool Property::set (const std::string &param_name, void * ptr, size_t len) {
     const param_id pid = this->nd_->lookup_param_id (param_name);

@@ -139,7 +139,9 @@ namespace swarm {
 
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
+
     byte_t * payload (size_t alloc_size);
+    size_t remain () const;
 
     ev_id pop_event ();
     void push_event (const ev_id eid);
