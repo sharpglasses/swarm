@@ -49,12 +49,6 @@ namespace swarm {
     byte_t * get (size_t *len) const;
     virtual bool repr (std::string *s) const;
 
-#define __CAST(S, D)                              \
-    {                                             \
-      S *p = reinterpret_cast<S* > (this->ptr_);  \
-      n = static_cast<D> (*p);                    \
-    }
-
     template <typename T>  T num () const {
       if (this->len_ >= sizeof (T)) {
         T * p = reinterpret_cast <T *> (this->ptr_);
@@ -64,18 +58,19 @@ namespace swarm {
         T n;
 
         if (this->len_ == 1) {
-          __CAST (u_int8_t, T);
+          u_int8_t *p = reinterpret_cast<u_int8_t* > (this->ptr_);
+          n = static_cast<T> (*p);
         } else if (2 == this->len_ || 3 == this->len_) {
-          __CAST (u_int16_t, T);
+          u_int16_t *p = reinterpret_cast<u_int16_t* > (this->ptr_);
+          n = static_cast<T> (ntohs (*p));
         } else if (4 <= this->len_ && this->len_ <= 7) {
-          __CAST (u_int32_t, T);
+          u_int32_t *p = reinterpret_cast<u_int32_t* > (this->ptr_);
+          n = static_cast<T> (ntohl (*p));
         }
 
         return n;
       }
     }
-
-#undef __CAST
 
     bool str (std::string *s) const;
     bool hex (std::string *s) const;
@@ -90,6 +85,21 @@ namespace swarm {
     virtual ~VarFactory () {}
     virtual Var * New () { return new Var (); }
   };
+
+#define DEF_REPR_CLASS(V_NAME, F_NAME)            \
+  class V_NAME : public Var {                     \
+  public:  bool repr (std::string *s) const;      \
+  };                                              \
+  class F_NAME : public VarFactory {              \
+  public: Var * New () { return new V_NAME (); }  \
+  };
+
+
+  // extended classes
+  DEF_REPR_CLASS (VarIPv4, FacIPv4);
+  DEF_REPR_CLASS (VarNum,  FacNum);
+
+
 }  // namespace swarm
 
 #endif  // SRC_VAR_H__

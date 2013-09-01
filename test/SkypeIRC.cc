@@ -31,70 +31,71 @@
 #include "../src/debug.h"
 #include "../src/swarm.h"
 
-class PcapData {
- private:
-  u_char *pkt_data_;
-  struct timeval ts_;
-  int dlt_;
-  size_t len_, caplen_;
-
- public:
-  PcapData (const u_char *pkt_data, struct pcap_pkthdr *pkthdr, int dlt) {
-    this->pkt_data_ = static_cast<u_char*> (malloc (pkthdr->caplen));
-    ::memcpy (this->pkt_data_, pkt_data, pkthdr->caplen);
-    this->len_    = static_cast <size_t> (pkthdr->len);
-    this->caplen_ = static_cast <size_t> (pkthdr->caplen);
-    ::memcpy (&(this->ts_), &(pkthdr->ts), sizeof (this->ts_));
-    this->dlt_ = dlt;
-  }
-  ~PcapData () {
-    free (this->pkt_data_);
-  }
-
-  u_char * pkt_data () const { return this->pkt_data_; }
-  int dlt () const { return this->dlt_; }
-  struct timeval * ts () { return &(this->ts_); }
-  size_t len () const { return this->len_; }
-  size_t caplen () const { return this->caplen_; }
-};
-
-class SkypeIRCFix : public ::testing::Test {
- public:
-  swarm::NetDec *nd;
-  std::deque <PcapData *> test_data;
-
-  virtual void SetUp() {
-    pcap_t *pd;
-    nd = new swarm::NetDec ();
-    char errbuf[PCAP_ERRBUF_SIZE];
-    const std::string sample_file = "./data/SkypeIRC.cap";
-    struct pcap_pkthdr *pkthdr;
-    const u_char *pkt_data;
-    pd = pcap_open_offline(sample_file.c_str (), errbuf);
-    ASSERT_TRUE (pd != NULL);
-
-    int dlt = pcap_datalink (pd);
-    while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-      PcapData *p = new PcapData (pkt_data, pkthdr, dlt);
-      test_data.push_back (p);
-    }
-  }
-
-  virtual void TearDown() {
-    while (!test_data.empty ()) {
-      PcapData * p = test_data.front ();
-      delete p;
-      test_data.pop_front ();
-    }
-  }
-};
-
 namespace SkypeIRC {
+  class PcapData {
+  private:
+    u_char *pkt_data_;
+    struct timeval ts_;
+    int dlt_;
+    size_t len_, caplen_;
+
+  public:
+    PcapData (const u_char *pkt_data, struct pcap_pkthdr *pkthdr, int dlt) {
+      this->pkt_data_ = static_cast<u_char*> (malloc (pkthdr->caplen));
+      ::memcpy (this->pkt_data_, pkt_data, pkthdr->caplen);
+      this->len_    = static_cast <size_t> (pkthdr->len);
+      this->caplen_ = static_cast <size_t> (pkthdr->caplen);
+      ::memcpy (&(this->ts_), &(pkthdr->ts), sizeof (this->ts_));
+      this->dlt_ = dlt;
+    }
+    ~PcapData () {
+      free (this->pkt_data_);
+    }
+
+    u_char * pkt_data () const { return this->pkt_data_; }
+    int dlt () const { return this->dlt_; }
+    struct timeval * ts () { return &(this->ts_); }
+    size_t len () const { return this->len_; }
+    size_t caplen () const { return this->caplen_; }
+  };
+
+  class SkypeIRCFix : public ::testing::Test {
+  public:
+    swarm::NetDec *nd;
+    std::deque <PcapData *> test_data;
+
+    virtual void SetUp() {
+      pcap_t *pd;
+      nd = new swarm::NetDec ();
+      char errbuf[PCAP_ERRBUF_SIZE];
+      const std::string sample_file = "./data/SkypeIRC.cap";
+      struct pcap_pkthdr *pkthdr;
+      const u_char *pkt_data;
+      pd = pcap_open_offline(sample_file.c_str (), errbuf);
+      ASSERT_TRUE (pd != NULL);
+
+      int dlt = pcap_datalink (pd);
+      while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
+        PcapData *p = new PcapData (pkt_data, pkthdr, dlt);
+        test_data.push_back (p);
+      }
+    }
+
+    virtual void TearDown() {
+      while (!test_data.empty ()) {
+        PcapData * p = test_data.front ();
+        delete p;
+        test_data.pop_front ();
+      }
+    }
+  };
+
   class Counter  : public swarm::Handler {
   private:
     int count_;
 
   protected:
+    std::string tgt_;
     void countup () {
       this->count_++;
     }
@@ -108,6 +109,24 @@ namespace SkypeIRC {
       return this->count_;
     }
   };
+
+  class CountTest {
+  private:
+    Counter * hdlr_;
+    int count_;
+    std::string ev_;
+  public:
+    CountTest (Counter * hdlr, std::string ev, int count) :
+      hdlr_(hdlr), count_(count), ev_(ev) {}
+    void install (swarm::NetDec *nd) {
+      swarm::hdlr_id hid = nd->set_handler (this->ev_, this->hdlr_);
+      ASSERT_NE (swarm::HDLR_NULL, hid);
+    }
+    void check () {
+      EXPECT_EQ (this->count_, this->hdlr_->count ());
+    }
+  };
+
 
 
   TEST_F (SkypeIRCFix, arp) {
@@ -197,4 +216,72 @@ namespace SkypeIRC {
 
     EXPECT_EQ (2263, h1->count ());
   }
+
+
+
+  TEST_F (SkypeIRCFix, ipv4) {
+    class SrcCount : public Counter {
+    public:
+      explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("ipv4.src")->repr () == this->tgt_) { this->countup (); }
+      }
+    };
+
+    class DstCount : public Counter {
+    public:
+      explicit DstCount (const std::string &addr) { this->tgt_ = addr; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("ipv4.dst")->repr () == this->tgt_) { this->countup (); }
+      }
+    };
+
+    class ProtoCount : public Counter {
+    public:
+      explicit ProtoCount (const std::string &proto) { this->tgt_ = proto; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("ipv4.proto")->repr () == this->tgt_) { this->countup (); }
+      }
+    };
+
+    class LenCount : public Counter {
+    public:
+      explicit LenCount (const std::string &tgt) { this->tgt_ = tgt; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        std::string data = p.param ("ipv4.total")->repr ();
+        if (data == this->tgt_) { this->countup (); }
+      }
+    };
+
+
+    std::deque <CountTest *> tests_;
+    tests_.push_back (new CountTest (new Counter (), "ipv4.packet", 2247));
+    tests_.push_back (new CountTest (new SrcCount ("212.204.214.114"),
+                                     "ipv4.packet", 141));
+    tests_.push_back (new CountTest (new DstCount ("71.10.179.129"),
+                                     "ipv4.packet", 43));
+    tests_.push_back (new CountTest (new SrcCount ("212.204.214.114"),
+                                     "ipv4.packet", 141));
+    tests_.push_back (new CountTest (new ProtoCount ("TCP"),
+                                     "ipv4.packet", 1150));
+    tests_.push_back (new CountTest (new ProtoCount ("UDP"),
+                                     "ipv4.packet", 1072));
+    tests_.push_back (new CountTest (new LenCount ("79"),
+                                     "ipv4.packet", 28));
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->install (nd);
+    }
+
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
+                 p->dlt ());
+    }
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->check ();
+    }
+  }
+
 }  // namespace SkypeIRC

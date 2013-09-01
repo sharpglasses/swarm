@@ -25,57 +25,58 @@
  */
 
 
-#ifndef SRC_DECODE_H__
-#define SRC_DECODE_H__
+#include "../decode.h"
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include "./swarm.h"
-#include "./debug.h"
-#include "./var.h"
 
 namespace swarm {
-  class Decoder {
-  private:
-    NetDec * nd_;
 
-  protected:
-    void emit (dec_id dec, Property *p);
+  class SampleDecoder : public Decoder {
+  private:
+    struct sample_header {
+      u_int16_t op_;
+    } __attribute__((packed));
+
+    ev_id EV_SAMPLE_PKT_;
+    param_id P_OP_;
+    dec_id D_NEXT_;
 
   public:
-    explicit Decoder (NetDec * nd);
-    virtual ~Decoder ();
-    virtual void setup (NetDec *nd) = 0;
-    virtual bool decode (Property *p) = 0;
+    DEF_REPR_CLASS (VarSample, FacSample);
+
+    explicit SampleDecoder (NetDec * nd) : Decoder (nd) {
+      this->EV_SAMPLE_PKT_ = nd->assign_event ("sample.packet");
+      this->P_OP_       = nd->assign_param ("sample.op", new FacSample ());
+    }
+    void setup (NetDec * nd) {
+      this->D_NEXT_ = nd->lookup_dec_id ("next");
+    };
+
+    static Decoder * New (NetDec * nd) { return new SampleDecoder (nd); }
+
+    bool decode (Property *p) {
+      auto sample_hdr = reinterpret_cast <struct sample_header *>
+        (p->payload (sizeof (struct sample_header)));
+
+      if (sample_hdr == NULL) {
+        return false;
+      }
+
+      // set data to property
+      p->set (this->P_OP_, &(sample_hdr->op_), sizeof (sample_hdr->op_));
+
+      // push event
+      p->push_event (this->EV_SAMPLE_PKT_);
+
+      // call next decoder
+      this->emit (this->D_NEXT_, p);
+
+      return true;
+    }
   };
 
+  bool SampleDecoder::VarSample::repr (std::string *s) const {
+    return this->ip4 (s);
+  }
 
-  class DecoderMap {
-  private:
-    static std::map <std::string, Decoder * (*)(NetDec * nd)>
-      protocol_decoder_map_;
-
-  public:
-    DecoderMap ();
-    static bool reg_protocol_decoder (const std::string &name,
-                                      Decoder * (*New) (NetDec * nd));
-    static int build_decoder_vector (NetDec * nd,
-                                     std::vector <Decoder *> *dec_vec,
-                                     std::vector <std::string> *dec_name);
-  };
-
-#define INIT_DECODER(NAME, FUNC)                    \
-  bool __is_protocol_decoder_##NAME##_enable =      \
-    DecoderMap::reg_protocol_decoder (#NAME, FUNC)
-
-  // developer can confirm if your module is enable by
-  //
-  //   extern bool __is_protocol_decoder_{{ module_name }}_enable;
-  //   printf ("{{ module_name}} is enable? -> %s\n",
-  //          (__is_protocol_decoder_{{ module_name }}_enable_) ? "Yes" : "No");
-
+  INIT_DECODER (sample, SampleDecoder::New);
 }  // namespace swarm
-
-#endif  // SRC_DECODE_H__

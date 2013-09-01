@@ -144,4 +144,15 @@ namespace swarm {
 
     return false;
   }
+
+  bool VarIPv4::repr (std::string *s) const {
+    return this->ip4 (s);
+  }
+  bool VarNum::repr (std::string *s) const {
+    char buf[32];
+    snprintf (buf, sizeof (buf), "%llu", this->num <u_int64_t> ());
+    s->assign (buf);
+    return true;
+  }
+
 }  // namespace swarm
