@@ -1,0 +1,92 @@
+/*-
+ * Copyright (c) 2013 Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+#include "../decode.h"
+
+
+namespace swarm {
+
+  class UdpDecoder : public Decoder {
+  private:
+    struct udp_header {
+      u_int16_t src_port_;  // source port
+      u_int16_t dst_port_;  // destination port
+      u_int16_t length_;    // length
+      u_int16_t chksum_;    // checksum
+    } __attribute__((packed));
+
+    ev_id EV_UDP_PKT_;
+    param_id P_SRC_PORT_, P_DST_PORT_, P_LEN_;
+    dec_id D_DNS_;
+
+  public:
+    DEF_REPR_CLASS (VarUdp, FacUdp);
+
+    explicit UdpDecoder (NetDec * nd) : Decoder (nd) {
+      this->EV_UDP_PKT_ = nd->assign_event ("udp.packet");
+
+      this->P_SRC_PORT_ = nd->assign_param ("udp.src_port", new FacNum ());
+      this->P_DST_PORT_ = nd->assign_param ("udp.dst_port", new FacNum ());
+      this->P_LEN_      = nd->assign_param ("udp.len", new FacNum ());
+    }
+    void setup (NetDec * nd) {
+      this->D_DNS_ = nd->lookup_dec_id ("dns");
+    };
+
+    static Decoder * New (NetDec * nd) { return new UdpDecoder (nd); }
+
+    bool decode (Property *p) {
+      auto hdr = reinterpret_cast <struct udp_header *>
+        (p->payload (sizeof (struct udp_header)));
+
+      if (hdr == NULL) {
+        return false;
+      }
+
+      // set data to property
+      p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
+      p->set (this->P_DST_PORT_, &(hdr->dst_port_), sizeof (hdr->dst_port_));
+      p->set (this->P_LEN_, &(hdr->length_), sizeof (hdr->length_));
+
+      // push event
+      p->push_event (this->EV_UDP_PKT_);
+
+      // call next decoder
+      if (ntohs (hdr->src_port_) == 53 || ntohs (hdr->dst_port_) == 53) {
+        this->emit (this->D_DNS_, p);
+      }
+
+      return true;
+    }
+  };
+
+  bool UdpDecoder::VarUdp::repr (std::string *s) const {
+    return this->ip4 (s);
+  }
+
+  INIT_DECODER (udp, UdpDecoder::New);
+}  // namespace swarm

@@ -255,19 +255,76 @@ namespace SkypeIRC {
 
 
     std::deque <CountTest *> tests_;
-    tests_.push_back (new CountTest (new Counter (), "ipv4.packet", 2247));
-    tests_.push_back (new CountTest (new SrcCount ("212.204.214.114"),
-                                     "ipv4.packet", 141));
-    tests_.push_back (new CountTest (new DstCount ("71.10.179.129"),
-                                     "ipv4.packet", 43));
-    tests_.push_back (new CountTest (new SrcCount ("212.204.214.114"),
-                                     "ipv4.packet", 141));
-    tests_.push_back (new CountTest (new ProtoCount ("TCP"),
-                                     "ipv4.packet", 1150));
-    tests_.push_back (new CountTest (new ProtoCount ("UDP"),
-                                     "ipv4.packet", 1072));
-    tests_.push_back (new CountTest (new LenCount ("79"),
-                                     "ipv4.packet", 28));
+#define __REG_TC(HDLR, EV_NAME, COUNT) \
+    tests_.push_back (new CountTest ((HDLR), EV_NAME, COUNT));
+
+    __REG_TC (new Counter (), "ipv4.packet", 2247);
+    __REG_TC (new SrcCount ("212.204.214.114"), "ipv4.packet", 141);
+    __REG_TC (new DstCount ("71.10.179.129"), "ipv4.packet", 43);
+    __REG_TC (new SrcCount ("212.204.214.114"), "ipv4.packet", 141);
+    __REG_TC (new ProtoCount ("TCP"), "ipv4.packet", 1150);
+    __REG_TC (new ProtoCount ("UDP"), "ipv4.packet", 1072);
+    __REG_TC (new LenCount ("79"), "ipv4.packet", 28);
+#undef __REG_TC
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->install (nd);
+    }
+
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
+                 p->dlt ());
+    }
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->check ();
+    }
+  }
+
+
+  TEST_F (SkypeIRCFix, udp) {
+    class SrcCount : public Counter {
+    public:
+      explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("udp.src_port")->repr () == this->tgt_) {
+          this->countup ();
+        }
+      }
+    };
+
+    class DstCount : public Counter {
+    public:
+      explicit DstCount (const std::string &addr) { this->tgt_ = addr; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("udp.dst_port")->repr () == this->tgt_) {
+          this->countup ();
+        }
+      }
+    };
+
+    class LenCount : public Counter {
+    public:
+      explicit LenCount (const std::string &proto) { this->tgt_ = proto; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("udp.len")->repr () == this->tgt_) {
+          this->countup ();
+        }
+      }
+    };
+
+
+
+    std::deque <CountTest *> tests_;
+#define __REG_TC(HDLR, EV_NAME, COUNT) \
+    tests_.push_back (new CountTest ((HDLR), EV_NAME, COUNT));
+
+    __REG_TC (new Counter (), "udp.packet", 1072);
+    __REG_TC (new SrcCount ("53"), "udp.packet", 353);
+    __REG_TC (new DstCount ("53"), "udp.packet", 354);
+    __REG_TC (new LenCount ("38"), "udp.packet", 29);
+#undef  __REG_TC
 
     for (auto it = tests_.begin (); it != tests_.end (); it++) {
       (*it)->install (nd);

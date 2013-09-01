@@ -2,3 +2,5 @@
 .waf*
 build/
 config.log
+.gitconfig
+.DS_Store
