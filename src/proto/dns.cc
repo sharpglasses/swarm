@@ -109,7 +109,7 @@ namespace swarm {
       }
     }
 
-    ev_id EV_DNS_PKT_;
+    ev_id EV_DNS_PKT_, EV_TYPE_[4];
     param_id P_OP_, P_ID_;
     param_id DNS_NAME[4];
     param_id DNS_TYPE[4];
@@ -135,6 +135,9 @@ namespace swarm {
         case RR_AR: base = "ar"; break;
         default: assert (0);
         }
+
+        std::string ev_name = "dns." + base;
+        this->EV_TYPE_[i] = nd->assign_event (ev_name);
 
         std::string name_key = "dns." + base + "_name";
         std::string type_key = "dns." + base + "_type";
