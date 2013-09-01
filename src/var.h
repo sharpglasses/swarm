@@ -52,7 +52,14 @@ namespace swarm {
     template <typename T>  T num () const {
       if (this->len_ >= sizeof (T)) {
         T * p = reinterpret_cast <T *> (this->ptr_);
-        return (this->len_ < sizeof (T) || p == NULL) ? 0 : *p;
+
+        if (sizeof (T) == 2) {
+          return ntohs (*p);
+        } else if (sizeof (T) == 4) {
+          return ntohl (*p);
+        } else {
+          return *p;
+        }
       } else {
         // when not enough lenght, adjust to unsigned integer
         T n;

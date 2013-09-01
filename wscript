@@ -112,7 +112,7 @@ def build(bld):
     inc_dir = os.path.join (bld.path.abspath(), 'src')
 
     # example code
-    src_list = get_src_list ('example', cc_file)
+    src_list = get_src_list ('apps', cc_file)
     for src in src_list:
         bld.program(features = 'cxxprogram',
                     source = [src],

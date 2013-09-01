@@ -114,7 +114,7 @@ namespace swarm {
   }
   bool ArpDecoder::VarOP::repr (std::string *s) const {
     u_int16_t op = this->num <u_int16_t> ();
-    switch (ntohs (op)) {
+    switch (op) {
     case ARPOP_REQUEST:    *s = "REQUEST"; break;
     case ARPOP_REPLY:      *s = "REPLY"; break;
     case ARPOP_REVREQUEST: *s = "REVREQUEST"; break;

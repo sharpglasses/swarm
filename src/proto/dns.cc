@@ -116,7 +116,7 @@ namespace swarm {
     param_id DNS_DATA[4];
 
   public:
-    DEF_REPR_CLASS (VarDns, FacDns);
+    DEF_REPR_CLASS (VarDnsData, FacDnsData);
     DEF_REPR_CLASS (VarType, FacType);
 
     explicit DnsDecoder (NetDec * nd) : Decoder (nd) {
@@ -143,8 +143,8 @@ namespace swarm {
         std::string type_key = "dns." + base + "_type";
         std::string data_key = "dns." + base + "_data";
         this->DNS_NAME[i] = nd->assign_param (name_key);
-        this->DNS_TYPE[i] = nd->assign_param (type_key);
-        this->DNS_DATA[i] = nd->assign_param (data_key);
+        this->DNS_TYPE[i] = nd->assign_param (type_key, new FacType);
+        this->DNS_DATA[i] = nd->assign_param (data_key, new FacDnsData);
       }
     }
     void setup (NetDec * nd) {
@@ -175,6 +175,12 @@ namespace swarm {
       rr_count[RR_AR] = ntohs (hdr->ar_count_);
       int rr_total =
         rr_count[RR_QD] + rr_count[RR_AN] + rr_count[RR_NS] + rr_count[RR_AR];
+
+      for (int i = 0; i < 4; i++) {
+        if (rr_count[i] > 0) {
+          p->push_event (this->EV_TYPE_[i]);
+        }
+      }
 
       for (int i = 0; i < 4; i++) {
         rr_delim[i] = (i == 0 ? 0 : (rr_delim[i - 1] + rr_count[i - 1]));
@@ -247,7 +253,7 @@ namespace swarm {
           }
 
           // set value
-          p->set (this->DNS_DATA[target], ptr, rd_len - 1);
+          p->set (this->DNS_DATA[target], ptr, rd_len);
 
           // seek pointer
           ptr += rd_len;
@@ -263,9 +269,26 @@ namespace swarm {
   };
 
   bool DnsDecoder::VarType::repr (std::string *s) const {
-    return this->ip4 (s);
+    u_int16_t type = this->num <u_int16_t> ();
+    switch (type) {
+    case  1: s->assign ("A"); break;
+    case  2: s->assign ("NS"); break;
+    case  5: s->assign ("CNAME"); break;
+    case  6: s->assign ("SOA"); break;
+    case 12: s->assign ("PTR"); break;
+    case 15: s->assign ("MX"); break;
+    case 28: s->assign ("AAAA"); break;
+    default:
+      {
+        char buf[32];
+        snprintf (buf, sizeof (buf), "%u", type);
+        s->assign (buf);
+      }
+      break;
+    }
+    return true;
   }
-  bool DnsDecoder::VarDns::repr (std::string *s) const {
+  bool DnsDecoder::VarDnsData::repr (std::string *s) const {
     return this->ip4 (s);
   }
 

@@ -68,7 +68,7 @@ TEST (Param, basic) {
   s32[0] = reinterpret_cast <int32_t*> (a);
   u32[1] = reinterpret_cast <u_int32_t*> (&a[3]);
   s32[1] = reinterpret_cast <int32_t*> (&a[3]);
-  __TEST (0, a, 4, *s32[0], *u32[0],
+  __TEST (0, a, 4, ntohl (*s32[0]), ntohl (*u32[0]),
           "0123", "30 31 32 33", "48.49.50.51", err, err);
   __TEST (1, NULL, 0, 0, 0, err, err, err, err, err);
   __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
@@ -77,9 +77,9 @@ TEST (Param, basic) {
   param->push (&a[3], 4, true);
   swarm::byte_t *copied_ptr = param->get (NULL, 1);
   EXPECT_EQ (2, param->size ());
-  __TEST (0, a, 4, *s32[0], *u32[0],
+  __TEST (0, a, 4, ntohl (*s32[0]), ntohl (*u32[0]),
           "0123", "30 31 32 33", "48.49.50.51", err, err);
-  __TEST (1, copied_ptr, 4, *s32[1], *u32[1],
+  __TEST (1, copied_ptr, 4, ntohl (*s32[1]), ntohl (*u32[1]),
           "3456", "33 34 35 36", "51.52.53.54", err, err);
   __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
 
