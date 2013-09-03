@@ -26,6 +26,32 @@
 
 #include <gtest/gtest.h>
 #include "../src/swarm.h"
+#include "../src/var.h"
+
+TEST (Param, retain) {
+  swarm::Param * param = new swarm::Param ();
+  swarm::byte_t * a =
+    const_cast <swarm::byte_t *>
+    (reinterpret_cast <const swarm::byte_t *> ("0123456789"));
+
+  param->init ();
+  param->push (&a[0], 2);;
+  swarm::Var * v1 = param->retain ();
+  ASSERT_TRUE (v1);
+  v1->set (&a[2], 2);
+  param->push (&a[4], 2);
+  swarm::Var * v2 = param->retain ();
+  ASSERT_TRUE (v2);
+  v2->set (&a[6], 2);
+
+  for (size_t i = 0; i < param->size (); i++) {
+    size_t len;
+    swarm::byte_t * b = param->get (&len, i);
+    EXPECT_TRUE (b);
+    EXPECT_EQ (2, len);
+    EXPECT_EQ (a[i * 2], b[0]);
+  }
+}
 
 TEST (Param, basic) {
   swarm::Param * param = new swarm::Param ();

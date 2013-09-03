@@ -69,6 +69,7 @@ namespace swarm {
 
     size_t size () const;
     void push (byte_t *data, size_t len, bool copy = false);
+    Var * retain ();
     byte_t * get (size_t *len = NULL, size_t idx = 0) const;
 
     std::string repr (size_t idx = 0) const;
@@ -131,7 +132,8 @@ namespace swarm {
     ~Property ();
     void init (const byte_t *data, const size_t cap_len,
                const size_t data_len, const struct timeval &tv);
-
+    Var * retain (const std::string &param_name);
+    Var * retain (const param_id pid);
     bool set (const std::string &param_name, void * ptr, size_t len);
     bool set (const param_id pid, void * ptr, size_t len);
     bool copy (const std::string &param_name, void * ptr, size_t len);

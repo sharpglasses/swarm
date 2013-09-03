@@ -74,6 +74,15 @@ namespace swarm {
     return this->idx_;
   }
   void Param::push (byte_t *data, size_t len, bool copy) {
+    Var * v = this->retain ();
+
+    if (copy) {
+      v->copy (data, len);
+    } else {
+      v->set (data, len);
+    }
+  }
+  Var * Param::retain () {
     Var * v;
     if (this->idx_ >= this->var_set_.size ())  {
       v = (this->fac_) ? this->fac_->New () : new Var ();
@@ -85,11 +94,7 @@ namespace swarm {
       this->idx_++;
     }
 
-    if (copy) {
-      v->copy (data, len);
-    } else {
-      v->set (data, len);
-    }
+    return v;
   }
   byte_t * Param::get (size_t *len, size_t idx) const {
     if (idx < this->idx_) {
@@ -282,6 +287,24 @@ namespace swarm {
       return (this->cap_len_ - this->ptr_);
     } else {
       return 0;
+    }
+  }
+
+  Var * Property::retain (const std::string &param_name) {
+    const param_id pid = this->nd_->lookup_param_id (param_name);
+    if (pid == PARAM_NULL) {
+      return false;
+    } else {
+      return this->retain (pid);
+    }
+  }
+  Var * Property::retain (const param_id pid) {
+    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
+    if (idx < this->param_.size ()) {
+      Var * v = this->param_[idx]->retain ();
+      return v;
+    } else {
+      return NULL;
     }
   }
 
