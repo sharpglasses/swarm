@@ -43,16 +43,11 @@ class DnsFwdDB : public swarm::Handler {
   void recv (swarm::ev_id eid, const  swarm::Property &p) {
     for (size_t i = 0; i < p.param ("dns.an_name")->size (); i++) {
       std::string name = p.param ("dns.an_name")->repr (i);
-      u_int32_t type = p.param ("dns.an_type")->uint32 (i);
+      std::string type = p.param ("dns.an_type")->repr (i);
       std::string addr;
 
-      if (type == 1) {
-        addr = p.param ("dns.an_data")->ip4 (i);
-        printf ("%s %s\n", name.c_str (), addr.c_str ());
-      } else if (type == 28) {
-        addr = p.param ("dns.an_data")->ip6 (i);
-        printf ("%s %s\n", name.c_str (), addr.c_str ());
-      }
+      addr = p.param ("dns.an_data")->repr (i);
+      printf ("%s (%s) %s\n", name.c_str (), type.c_str (), addr.c_str ());
     }
     return;
   }

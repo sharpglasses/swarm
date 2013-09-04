@@ -66,57 +66,90 @@ namespace swarm {
     inline static byte_t * parse_label (byte_t * p, size_t remain,
                                         const byte_t * sp,
                                         const size_t total_len,
-                                        std::string * s) {
-      s->erase ();
-      byte_t * rp = NULL;
+                                        std::string * s);
 
-      for (;;) {
-        if (remain < 2) {
-          debug (DEBUG, "not enough length: %zd", remain);
-          return NULL;
-        }
-
-        if ((*p & 0xC0) == 0xC0) {
-          u_int16_t * h = reinterpret_cast <u_int16_t *>(p);
-          u_int16_t jmp = (ntohs (*h) & 0x3FFF);
-
-          if (jmp >= total_len) {
-            debug (DEBUG, "invalid jump point: %zd", jmp);
-            return NULL;
-          }
-          if (rp == NULL) {
-            rp = p + 2;
-          }
-          p = const_cast<byte_t*> (&(sp[jmp]));
-          remain = total_len - (jmp);
-        }
-
-        int data_len = *p;
-        if (data_len == 0) {
-          return (rp == NULL ? p + 1 : rp);
-        }
-        if (data_len + 2 >= remain) {
-          debug (DEBUG, "invalid data length: %zd (remain:%zd)",
-                 data_len, remain);
-          return NULL;
-        }
-
-        s->append (reinterpret_cast<char*>(p + 1), data_len);
-        s->append (".", 1);
-
-        p += data_len + 1;
-        remain -= data_len + 1;
-      }
-    }
 
     ev_id EV_DNS_PKT_, EV_TYPE_[4];
-    param_id P_OP_, P_ID_;
+    param_id P_ID_;
     param_id DNS_NAME[4];
     param_id DNS_TYPE[4];
     param_id DNS_DATA[4];
 
   public:
-    DEF_REPR_CLASS (VarDnsData, FacDnsData);
+    // VarDnsData for data part of DNS record
+    class VarDnsData : public Var {
+    private:
+      u_int16_t type_;
+      byte_t * base_ptr_;
+      size_t total_len_;
+
+    public:
+      bool repr (std::string *s) const {
+        bool rc = false;
+        switch (this->type_) {
+        case  1: rc = this->ip4 (s); break;  // A
+        case 28: rc = this->ip6 (s); break;  // AAAA
+        case  2:  // NS
+        case  5:  // CNAME
+        case  6:  // SOA
+        case 12:  // PTR
+        case 15:  // MX
+          {
+            size_t len;
+            byte_t * ptr = this->get (&len);
+            byte_t * rp;
+            rp = DnsDecoder::parse_label (ptr, len, this->base_ptr_,
+                                          this->total_len_, s);
+            rc = (rp != NULL);
+          }
+          break;
+
+        default:
+          debug (1, "? %d", this->type_);
+        }
+        return rc;
+      }
+      void set_data (byte_t * ptr, size_t len, u_int16_t type,
+                     byte_t * base_ptr, size_t total_len) {
+        this->set (ptr, len);
+        this->type_ = type;
+        this->base_ptr_ = base_ptr;
+        this->total_len_ = total_len;
+      }
+    };
+    class FacDnsData : public VarFactory {
+    public:
+      Var * New () { return new VarDnsData (); }
+    };
+
+    // VarDnsName for data part of DNS record
+    class VarDnsName : public Var {
+    private:
+      byte_t * base_ptr_;
+      size_t total_len_;
+
+    public:
+      bool repr (std::string *s) const {
+        size_t len;
+        byte_t * ptr = this->get (&len);
+        byte_t * rp;
+        rp = DnsDecoder::parse_label (ptr, len, this->base_ptr_,
+                                      this->total_len_, s);
+        return (rp != NULL);
+      }
+      void set_data (byte_t * ptr, size_t len, byte_t * base_ptr,
+                     size_t total_len) {
+        this->set (ptr, len);
+        this->base_ptr_ = base_ptr;
+        this->total_len_ = total_len;
+      }
+    };
+    class FacDnsName : public VarFactory {
+    public:
+      Var * New () { return new VarDnsName (); }
+    };
+
+
     DEF_REPR_CLASS (VarType, FacType);
 
     explicit DnsDecoder (NetDec * nd) : Decoder (nd) {
@@ -142,9 +175,9 @@ namespace swarm {
         std::string name_key = "dns." + base + "_name";
         std::string type_key = "dns." + base + "_type";
         std::string data_key = "dns." + base + "_data";
-        this->DNS_NAME[i] = nd->assign_param (name_key);
-        this->DNS_TYPE[i] = nd->assign_param (type_key, new FacType);
-        this->DNS_DATA[i] = nd->assign_param (data_key, new FacDnsData);
+        this->DNS_NAME[i] = nd->assign_param (name_key, new FacDnsName ());
+        this->DNS_TYPE[i] = nd->assign_param (type_key, new FacType ());
+        this->DNS_DATA[i] = nd->assign_param (data_key, new FacDnsData ());
       }
     }
     void setup (NetDec * nd) {
@@ -210,14 +243,17 @@ namespace swarm {
         int remain = ep - ptr;
         assert (ep - ptr > 0);
 
-        std::string s;
+        VarDnsName * vn =
+          dynamic_cast <VarDnsName*> (p->retain (this->DNS_NAME[target]));
+        assert (vn != NULL);
+        vn->set_data (ptr, remain, base_ptr, total_len);
+
         if (NULL == (ptr = DnsDecoder::parse_label (ptr, remain, base_ptr,
-                                                    total_len, &s))) {
+                                                    total_len, NULL))) {
           debug (DEBUG, "label parse error");
           break;
         }
 
-        debug (DEBUG, "name=\"%s\"", s.c_str ());
         assert (ep - ptr);
 
         if (ep - ptr < sizeof (struct dns_rr_header)) {
@@ -229,9 +265,6 @@ namespace swarm {
         ptr += sizeof (struct dns_rr_header);
 
         // set value
-        debug (DEBUG, "target:%d, %s", target, s.c_str ());
-        p->copy (this->DNS_NAME[target],
-                 const_cast<char *> (s.c_str ()), s.length ());
         p->set (this->DNS_TYPE[target], &(rr_hdr->type_),
                 sizeof (rr_hdr->type_));
 
@@ -253,7 +286,10 @@ namespace swarm {
           }
 
           // set value
-          p->set (this->DNS_DATA[target], ptr, rd_len);
+          VarDnsData * v = dynamic_cast <VarDnsData*>
+            (p->retain (this->DNS_DATA[target]));
+          assert (v != NULL);
+          v->set_data (ptr, rd_len, htons (rr_hdr->type_), base_ptr, total_len);
 
           // seek pointer
           ptr += rd_len;
@@ -267,6 +303,66 @@ namespace swarm {
       return true;
     }
   };
+
+  byte_t * DnsDecoder::parse_label (byte_t * p, size_t remain,
+                                    const byte_t * sp,
+                                    const size_t total_len,
+                                    std::string * s) {
+    const size_t min_len = 1;
+    const size_t dst_len = 2;
+
+    bool DEBUG = true;
+    if (s) {
+      s->erase ();
+    }
+
+    byte_t * rp = NULL;
+
+    for (;;) {
+      if (remain < min_len) {
+        debug (DEBUG, "not enough length: %zd", remain);
+        return NULL;
+      }
+
+      if ((*p & 0xC0) == 0xC0) {
+        if (remain < dst_len) {
+          debug (DEBUG, "not enough jump destination length: %zd", remain);
+          return NULL;
+        }
+
+        u_int16_t * h = reinterpret_cast <u_int16_t *>(p);
+        u_int16_t jmp = (ntohs (*h) & 0x3FFF);
+
+        if (jmp >= total_len) {
+          debug (DEBUG, "invalid jump point: %zd", jmp);
+          return NULL;
+        }
+        if (rp == NULL) {
+          rp = p + dst_len;
+        }
+        p = const_cast<byte_t*> (&(sp[jmp]));
+        remain = total_len - (jmp);
+      }
+
+      int data_len = *p;
+      if (data_len == 0) {
+        return (rp == NULL ? p + 1 : rp);
+      }
+      if (data_len + min_len >= remain) {
+        debug (DEBUG, "invalid data length: %zd (remain:%zd)",
+               data_len, remain);
+        return NULL;
+      }
+
+      if (s) {
+        s->append (reinterpret_cast<char*>(p + 1), data_len);
+        s->append (".", 1);
+      }
+
+      p += data_len + 1;
+      remain -= data_len + 1;
+    }
+  }
 
   bool DnsDecoder::VarType::repr (std::string *s) const {
     u_int16_t type = this->num <u_int16_t> ();
@@ -288,9 +384,7 @@ namespace swarm {
     }
     return true;
   }
-  bool DnsDecoder::VarDnsData::repr (std::string *s) const {
-    return this->ip4 (s);
-  }
+
 
   INIT_DECODER (dns, DnsDecoder::New);
 }  // namespace swarm
