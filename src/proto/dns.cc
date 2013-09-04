@@ -241,7 +241,10 @@ namespace swarm {
         rr_c++;
 
         int remain = ep - ptr;
-        assert (ep - ptr > 0);
+        // assert (ep - ptr > 0);
+        if (ep <= ptr) {
+          return false;
+        }
 
         VarDnsName * vn =
           dynamic_cast <VarDnsName*> (p->retain (this->DNS_NAME[target]));
@@ -254,7 +257,10 @@ namespace swarm {
           break;
         }
 
-        assert (ep - ptr);
+        // assert (ep - ptr);
+        if (ep <= ptr) {
+          return false;
+        }
 
         if (ep - ptr < sizeof (struct dns_rr_header)) {
           debug (DEBUG, "not enough length: %ld", ep - ptr);
@@ -310,20 +316,23 @@ namespace swarm {
                                     std::string * s) {
     const size_t min_len = 1;
     const size_t dst_len = 2;
+    const size_t max_len = 256;
+    size_t len = 0;
 
-    bool DEBUG = true;
+    bool DEBUG = false;
     if (s) {
       s->erase ();
     }
 
     byte_t * rp = NULL;
 
-    for (;;) {
+    while (len < max_len) {
       if (remain < min_len) {
         debug (DEBUG, "not enough length: %zd", remain);
         return NULL;
       }
 
+      // jump if needed
       if ((*p & 0xC0) == 0xC0) {
         if (remain < dst_len) {
           debug (DEBUG, "not enough jump destination length: %zd", remain);
@@ -344,6 +353,7 @@ namespace swarm {
         remain = total_len - (jmp);
       }
 
+      // retain payload
       int data_len = *p;
       if (data_len == 0) {
         return (rp == NULL ? p + 1 : rp);
@@ -358,10 +368,14 @@ namespace swarm {
         s->append (reinterpret_cast<char*>(p + 1), data_len);
         s->append (".", 1);
       }
+      len += data_len;
 
       p += data_len + 1;
       remain -= data_len + 1;
     }
+
+    // if exiting loop, too log domain name (invalid)
+    return NULL;
   }
 
   bool DnsDecoder::VarType::repr (std::string *s) const {

@@ -386,6 +386,8 @@ namespace swarm {
 
     this->dec_ether_ = this->lookup_dec_id ("ether");
     assert (this->dec_ether_ != DEC_NULL);
+
+    this->prop_ = new Property (this);
   }
   NetDec::~NetDec () {
     for (auto it = this->rev_event_.begin ();
@@ -404,8 +406,9 @@ namespace swarm {
                       const size_t data_len, const struct timeval &tv,
                       const int dlt) {
     // main process of NetDec
+    Property * prop = this->prop_;
+
     if (dlt == DLT_EN10MB) {
-      Property * prop = new Property (this);
       prop->init (data, cap_len, data_len, tv);
       this->decode (this->dec_ether_, prop);
 
@@ -422,7 +425,6 @@ namespace swarm {
         }
       }
 
-      delete prop;
       return true;
     } else {
       return false;
