@@ -260,6 +260,11 @@ namespace swarm {
 
     this->ev_push_ptr_ = 0;
     this->ev_pop_ptr_ = 0;
+
+    this->addr_len_ = 0;
+    this->port_len_ = 0;
+    this->proto_ = 0;
+    this->hash_value_ = 0;
   }
   Param * Property::param (const std::string &key) const {
     const param_id pid = this->nd_->lookup_param_id (key);
@@ -269,6 +274,10 @@ namespace swarm {
     size_t idx = Property::pid2idx (pid);
     return (idx < this->param_.size ()) ? this->param_[idx] : NULL;
   }
+  u_int64_t Property::get_5tuple_hash () const {
+    return this->hash_value_;
+  }
+
   byte_t * Property::payload (size_t alloc_size) {
     // Swarm supports maximum 16MB for one packet lengtsh
     assert (alloc_size < 0xfffffff);
@@ -293,7 +302,7 @@ namespace swarm {
   Var * Property::retain (const std::string &param_name) {
     const param_id pid = this->nd_->lookup_param_id (param_name);
     if (pid == PARAM_NULL) {
-      return false;
+      return NULL;
     } else {
       return this->retain (pid);
     }
@@ -344,6 +353,71 @@ namespace swarm {
     } else {
       return false;
     }
+  }
+
+  void Property::calc_hash () {
+    void *la, *ra;
+    void *lp, *rp;
+    if (::memcmp (this->src_addr_, this->dst_addr_, this->addr_len_) > 0) {
+      la = this->src_addr_;
+      ra = this->dst_addr_;
+      lp = this->src_port_;
+      rp = this->dst_port_;
+    } else {
+      ra = this->src_addr_;
+      la = this->dst_addr_;
+      rp = this->src_port_;
+      lp = this->dst_port_;
+    }
+
+    u_int64_t h = 1125899906842597;
+    u_int32_t * l32 = static_cast <u_int32_t *> (la);
+    u_int32_t * r32 = static_cast <u_int32_t *> (ra);
+
+#define __HASH(X)  (X + (h << 6) + (h << 16) - h)
+
+    if (this->addr_len_ == 4) {
+      // for IPv4
+      h = __HASH (*l32);
+      h = __HASH (*r32);
+    } else if (this->addr_len_ == 16) {
+      // for IPv6 + TCP/UDP
+      for (size_t i = 0; i < 4; i++) {
+        // expected to expaned by optimization
+        h = __HASH (l32[i]);
+        h = __HASH (r32[i]);
+      }
+    } else {
+      // in this moment, not support other IP version
+      assert (this->addr_len_ == 0);
+    }
+
+    h = __HASH (this->proto_);
+
+    if (this->port_len_ == 2) {
+      // for TCP or UDP
+      u_int16_t * l16 = static_cast <u_int16_t *> (lp);
+      u_int16_t * r16 = static_cast <u_int16_t *> (rp);
+      h = __HASH (*l16);
+      h = __HASH (*r16);
+    } else {
+      // in this moment, not support other protocol than TCP, UDP
+      assert (this->port_len_ == 0);
+    }
+
+    this->hash_value_ = h;
+  }
+  void Property::set_addr (void *src_addr, void *dst_addr, u_int8_t proto,
+                           size_t addr_len) {
+    this->addr_len_ = addr_len;
+    this->src_addr_ = src_addr;
+    this->dst_addr_ = dst_addr;
+    this->proto_ = proto;
+  }
+  void Property::set_port (void *src_port, void *dst_port, size_t port_len) {
+    this->port_len_ = port_len;
+    this->src_port_ = src_port;
+    this->dst_port_ = dst_port;
   }
 
   ev_id Property::pop_event () {
@@ -411,6 +485,7 @@ namespace swarm {
     if (dlt == DLT_EN10MB) {
       prop->init (data, cap_len, data_len, tv);
       this->decode (this->dec_ether_, prop);
+      prop->calc_hash ();
 
       ev_id eid;
       while (EV_NULL != (eid = prop->pop_event ())) {

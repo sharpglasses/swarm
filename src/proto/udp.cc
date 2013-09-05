@@ -75,6 +75,11 @@ namespace swarm {
       // push event
       p->push_event (this->EV_UDP_PKT_);
 
+      // set basic property (UDP port)
+      assert (sizeof (hdr->src_port_) == sizeof (hdr->dst_port_));
+      p->set_port (&(hdr->src_port_), &(hdr->dst_port_),
+                   sizeof (hdr->src_port_));
+
       // call next decoder
       if (ntohs (hdr->src_port_) == 53 || ntohs (hdr->dst_port_) == 53) {
         this->emit (this->D_DNS_, p);

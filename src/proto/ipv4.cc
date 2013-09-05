@@ -108,6 +108,8 @@ namespace swarm {
       p->push_event (this->EV_IPV4_PKT_);
 
       // ToDo(masa): Reassembling IP fragmentation
+      assert (sizeof (hdr->src_) == sizeof (hdr->dst_));
+      p->set_addr (&(hdr->src_), &(hdr->dst_), hdr->proto_, sizeof (hdr->src_));
 
       // call next decoder
       switch (hdr->proto_) {

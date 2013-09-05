@@ -127,6 +127,14 @@ namespace swarm {
     const size_t EV_QUEUE_WIDTH = 128;
 
 
+    u_int8_t proto_;
+    size_t addr_len_;
+    void *src_addr_, *dst_addr_;
+    size_t port_len_;
+    void *src_port_, *dst_port_;
+
+    u_int64_t hash_value_;
+
   public:
     explicit Property (NetDec * nd);
     ~Property ();
@@ -139,8 +147,14 @@ namespace swarm {
     bool copy (const std::string &param_name, void * ptr, size_t len);
     bool copy (const param_id pid, void * ptr, size_t len);
 
+    void set_addr (void *src_addr, void *dst_addr, u_int8_t proto,
+                   size_t addr_len);
+    void set_port (void *src_port, void *dst_port, size_t port_len);
+    void calc_hash ();
+
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
+    u_int64_t get_5tuple_hash () const;
 
     byte_t * payload (size_t alloc_size);
     size_t remain () const;
