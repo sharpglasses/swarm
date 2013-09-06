@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "./swarm.h"
 #include "./decode.h"

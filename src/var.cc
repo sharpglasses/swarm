@@ -25,6 +25,7 @@
  */
 
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "./var.h"
 #include "./debug.h"

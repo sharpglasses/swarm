@@ -124,7 +124,7 @@ namespace swarm {
     std::vector <ev_id> ev_queue_;
     size_t ev_pop_ptr_;
     size_t ev_push_ptr_;
-    const size_t EV_QUEUE_WIDTH = 128;
+    static const size_t EV_QUEUE_WIDTH = 128;
 
 
     u_int8_t proto_;

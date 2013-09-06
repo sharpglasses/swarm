@@ -131,8 +131,9 @@ namespace SkypeIRC {
 
   TEST_F (SkypeIRCFix, arp) {
     class RepCount : public Counter {
-      bool DEBUG = false;
+    public:
       void recv (swarm::ev_id eid, const swarm::Property &prop) {
+        const bool DEBUG = false;
         std::string src_pr = prop.param ("arp.src_pr")->repr ();
         std::string dst_pr = prop.param ("arp.dst_pr")->repr ();
         std::string src_hw = prop.param ("arp.src_hw")->mac ();
@@ -154,8 +155,8 @@ namespace SkypeIRC {
     };
 
     class ReqCount : public Counter {
-      bool DEBUG = false;
       void recv (swarm::ev_id eid, const swarm::Property &prop) {
+        const bool DEBUG = false;
         std::string src_pr = prop.param ("arp.src_pr")->ip4 ();
         std::string dst_pr = prop.param ("arp.dst_pr")->ip4 ();
         std::string src_hw = prop.param ("arp.src_hw")->mac ();

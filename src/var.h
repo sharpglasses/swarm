@@ -29,6 +29,7 @@
 #define SRC_VAR_H__
 
 #include <string>
+#include <arpa/inet.h>
 
 #include "./swarm.h"
 

@@ -122,7 +122,7 @@ def build(bld):
                     includes = [inc_dir],
                     LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
                     rpath = [os.path.join (bld.env.PREFIX, 'lib'),
-                             os.path.join (bld.path.abspath(), 'build', '..', 'src')])
+                             os.path.join (bld.path.abspath(), 'build')])
 
 
 
@@ -140,7 +140,7 @@ def build(bld):
                     includes = [inc_dir],
                     LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
                     rpath = [os.path.join (bld.env.PREFIX, 'lib'),
-                             os.path.join (bld.path.abspath(), 'build', '..', 'src')])
+                             os.path.join (bld.path.abspath(), 'build')])
     
 
 
