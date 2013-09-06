@@ -277,19 +277,33 @@ namespace swarm {
   u_int64_t Property::get_5tuple_hash () const {
     return this->hash_value_;
   }
+  size_t Property::org_len () const {
+    return this->data_len_;
+  }
+  size_t Property::cap_len () const {
+    return this->cap_len_;
+  }
 
-  byte_t * Property::payload (size_t alloc_size) {
+  byte_t * Property::refer (size_t alloc_size) {
     // Swarm supports maximum 16MB for one packet lengtsh
     assert (alloc_size < 0xfffffff);
     assert (this->ptr_ < 0xfffffff);
 
     if (this->ptr_ + alloc_size <= this->cap_len_) {
       size_t p = this->ptr_;
-      this->ptr_ += alloc_size;
       return &(this->buf_[p]);
     } else {
       return NULL;
     }
+  }
+
+  byte_t * Property::payload (size_t alloc_size) {
+    // Swarm supports maximum 16MB for one packet lengtsh
+    byte_t * p = this->refer (alloc_size);
+    if (p) {
+      this->ptr_ += alloc_size;
+    }
+    return p;
   }
   size_t Property::remain () const {
     if (this->ptr_ < this->cap_len_) {

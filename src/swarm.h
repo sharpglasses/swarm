@@ -155,7 +155,10 @@ namespace swarm {
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
     u_int64_t get_5tuple_hash () const;
+    size_t org_len () const;  // original data length
+    size_t cap_len () const;  // captured data length
 
+    byte_t * refer (size_t alloc_size);
     byte_t * payload (size_t alloc_size);
     size_t remain () const;
 

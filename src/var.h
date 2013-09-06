@@ -62,7 +62,7 @@ namespace swarm {
         }
       } else {
         // when not enough lenght, adjust to unsigned integer
-        T n;
+        T n = 0;
 
         if (this->len_ == 1) {
           u_int8_t *p = reinterpret_cast<u_int8_t* > (this->ptr_);

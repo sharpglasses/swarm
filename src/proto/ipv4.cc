@@ -74,6 +74,7 @@ namespace swarm {
       this->P_SRC_   = nd->assign_param ("ipv4.src",   new FacIPv4 ());
       this->P_DST_   = nd->assign_param ("ipv4.dst",   new FacIPv4 ());
       this->P_TLEN_  = nd->assign_param ("ipv4.total", new FacNum());
+      this->P_PL_    = nd->assign_param ("ipv4.payload");
     }
     void setup (NetDec * nd) {
       this->D_ICMP_  = nd->lookup_dec_id ("icmp");
@@ -103,6 +104,16 @@ namespace swarm {
 
       // just moving to next protocol header
       auto opt = p->payload (hdr_len - base_len);
+      if (!opt) {
+        // not enough length for IP options
+        return false;
+      }
+
+      size_t data_len = htons (hdr->total_len_) - (hdr_len);
+      auto ip_data = p->refer (data_len);
+      if (ip_data) {
+        p->set (this->P_PL_, ip_data, data_len);
+      }
 
       // push event
       p->push_event (this->EV_IPV4_PKT_);
