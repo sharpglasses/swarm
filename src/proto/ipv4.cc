@@ -37,11 +37,11 @@ namespace swarm {
 
   class IPv4Decoder : public Decoder {
   private:
-    static const u_int8_t IPPROTO_ICMP  = 1;
-    static const u_int8_t IPPROTO_TCP   = 6;
-    static const u_int8_t IPPROTO_UDP   = 17;
-    static const u_int8_t IPPROTO_IPV6  = 41;
-    static const u_int8_t IPPROTO_ICMP6 = 58;
+    static const u_int8_t PROTO_ICMP  = 1;
+    static const u_int8_t PROTO_TCP   = 6;
+    static const u_int8_t PROTO_UDP   = 17;
+    static const u_int8_t PROTO_IPV6  = 41;
+    static const u_int8_t PROTO_ICMP6 = 58;
 
     struct ipv4_header {
       // little endian mode
@@ -124,10 +124,10 @@ namespace swarm {
 
       // call next decoder
       switch (hdr->proto_) {
-      case IPPROTO_ICMP:  this->emit (this->D_ICMP_,  p); break;
-      case IPPROTO_TCP:   this->emit (this->D_TCP_,   p); break;
-      case IPPROTO_UDP:   this->emit (this->D_UDP_,   p); break;
-      case IPPROTO_ICMP6: this->emit (this->D_ICMP6_, p); break;
+      case PROTO_ICMP:  this->emit (this->D_ICMP_,  p); break;
+      case PROTO_TCP:   this->emit (this->D_TCP_,   p); break;
+      case PROTO_UDP:   this->emit (this->D_UDP_,   p); break;
+      case PROTO_ICMP6: this->emit (this->D_ICMP6_, p); break;
       }
 
       return true;
@@ -137,11 +137,11 @@ namespace swarm {
   bool IPv4Decoder::Proto::repr (std::string *s) const {
     u_int8_t proto = this->num <u_int8_t> ();
     switch (proto) {
-    case IPPROTO_ICMP:  *s = "ICMP";    break;
-    case IPPROTO_TCP:   *s = "TCP";     break;
-    case IPPROTO_UDP:   *s = "UDP";     break;
-    case IPPROTO_IPV6:  *s = "IPv6";    break;
-    case IPPROTO_ICMP6: *s = "ICMPv6";  break;
+    case PROTO_ICMP:  *s = "ICMP";    break;
+    case PROTO_TCP:   *s = "TCP";     break;
+    case PROTO_UDP:   *s = "UDP";     break;
+    case PROTO_IPV6:  *s = "IPv6";    break;
+    case PROTO_ICMP6: *s = "ICMPv6";  break;
     default:            *s = "unknown"; break;
     }
     return true;
