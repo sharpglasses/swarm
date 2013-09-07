@@ -107,7 +107,7 @@ TEST (Param, basic) {
   param->push (&a[3], 4, true);
   swarm::byte_t *copied_ptr = param->get (NULL, 1);
   EXPECT_EQ (2, param->size ());
-  __TEST (0, a, 4, ts1, tu2,
+  __TEST (0, a, 4, ts1, tu1,
           "0123", "30 31 32 33", "48.49.50.51", err, err);
   __TEST (1, copied_ptr, 4, ts2, tu2,
           "3456", "33 34 35 36", "51.52.53.54", err, err);
