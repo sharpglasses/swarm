@@ -59,13 +59,14 @@ class Flow {
 class FlowHandler : public swarm::Handler {
  private:
   std::map <u_int64_t, Flow *> flow_map_;
-  swarm::ev_id tcp_, udp_;
+  uint64_t size_, pkt_;
 
  public:
-  void set_eid(swarm::ev_id tcp, swarm::ev_id udp) {
-    this->tcp_ = tcp;
-    this->udp_ = udp;
-  }
+  FlowHandler () : size_(0), pkt_(0) {}
+  uint64_t size () const { return this->size_; }
+  uint64_t pkt () const { return this->pkt_; }
+  size_t flow_count () const { return this->flow_map_.size (); }
+
   void recv(swarm::ev_id eid, const  swarm::Property &p) {
     u_int64_t hv = p.get_5tuple_hash();
     std::string proto = p.param("ipv4.proto")->repr();
@@ -80,12 +81,14 @@ class FlowHandler : public swarm::Handler {
     }
 
     f->recv_pkt(p.org_len());
+    this->size_ += p.org_len ();
+    this->pkt_ += 1;
   }
   void dump() {
     for (auto it = this->flow_map_.begin();
          it != this->flow_map_.end(); it++) {
       Flow * f = it->second;
-      printf("%016llX, %s, %lld, %lld\n",
+      printf("%016lX, %s, %ld, %ld\n",
               it->first, f->proto().c_str(), f->len(), f->pkt());
     }
   }
@@ -99,7 +102,7 @@ class FlowHandler : public swarm::Handler {
       count++;
     }
 
-    printf("%llu, %llu, %llu\n", count, size, pkt);
+    printf("%lu, %lu, %lu\n", count, size, pkt);
   }
 };
 
@@ -132,7 +135,8 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   }
 
   if (opt.get("summary")) {
-    fh->summary();
+    printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
+            fh->size (), fh->pkt ());
   } else {
     fh->dump();
   }
