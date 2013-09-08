@@ -16,10 +16,10 @@
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
  * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -28,6 +28,9 @@
 #include <pcap.h>
 #include <swarm.h>
 #include <map>
+#include <vector>
+
+#include "./optparse.h"
 
 class Flow {
  private:
@@ -36,19 +39,19 @@ class Flow {
   std::string proto_;
 
  public:
-  explicit Flow (const std::string &proto) : len_(0), pkt_(0), proto_(proto) {
+  explicit Flow(const std::string &proto) : len_(0), pkt_(0), proto_(proto) {
   }
-  void recv_pkt (size_t len) {
+  void recv_pkt(size_t len) {
     this->len_ += len;
     this->pkt_ += 1;
   }
-  uint64_t len () const {
+  uint64_t len() const {
     return this->len_;
   }
-  uint64_t pkt () const {
+  uint64_t pkt() const {
     return this->pkt_;
   }
-  const std::string & proto () const {
+  const std::string & proto() const {
     return this->proto_;
   }
 };
@@ -59,69 +62,91 @@ class FlowHandler : public swarm::Handler {
   swarm::ev_id tcp_, udp_;
 
  public:
-  void set_eid (swarm::ev_id tcp, swarm::ev_id udp) {
+  void set_eid(swarm::ev_id tcp, swarm::ev_id udp) {
     this->tcp_ = tcp;
     this->udp_ = udp;
   }
-  void recv (swarm::ev_id eid, const  swarm::Property &p) {
-    u_int64_t hv = p.get_5tuple_hash ();
-    std::string proto = p.param ("ipv4.proto")->repr ();
+  void recv(swarm::ev_id eid, const  swarm::Property &p) {
+    u_int64_t hv = p.get_5tuple_hash();
+    std::string proto = p.param("ipv4.proto")->repr();
 
-    auto it = this->flow_map_.find (hv);
+    auto it = this->flow_map_.find(hv);
     Flow * f = NULL;
-    if (it == this->flow_map_.end ()) {
-      f = new Flow (proto);
-      this->flow_map_.insert (std::make_pair (hv, f));
+    if (it == this->flow_map_.end()) {
+      f = new Flow(proto);
+      this->flow_map_.insert(std::make_pair(hv, f));
     } else {
       f = it->second;
     }
 
-    f->recv_pkt (p.org_len ());
+    f->recv_pkt(p.org_len());
   }
-  void dump () {
-    for (auto it = this->flow_map_.begin ();
-         it != this->flow_map_.end (); it++) {
+  void dump() {
+    for (auto it = this->flow_map_.begin();
+         it != this->flow_map_.end(); it++) {
       Flow * f = it->second;
-      printf ("%016llX, %s, %lld, %lld\n",
-              it->first, f->proto ().c_str (), f->len (), f->pkt ());
+      printf("%016llX, %s, %lld, %lld\n",
+              it->first, f->proto().c_str(), f->len(), f->pkt());
     }
+  }
+  void summary() {
+    uint64_t size = 0, pkt = 0, count = 0;
+    for (auto it = this->flow_map_.begin();
+         it != this->flow_map_.end(); it++) {
+      Flow * f = it->second;
+      size += f->len();
+      pkt  += f->pkt();
+      count++;
+    }
+
+    printf("%llu, %llu, %llu\n", count, size, pkt);
   }
 };
 
-void read_pcapfile (const std::string &fpath) {
+void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   // ----------------------------------------------
   // setup pcap file
   pcap_t *pd;
   char errbuf[PCAP_ERRBUF_SIZE];
 
-  pd = pcap_open_offline(fpath.c_str (), errbuf);
+  pd = pcap_open_offline(fpath.c_str(), errbuf);
   if (pd == NULL) {
-    printf ("error: %s\n", errbuf);
+    printf("error: %s\n", errbuf);
     return;
   }
-  int dlt = pcap_datalink (pd);
+  int dlt = pcap_datalink(pd);
 
 
   // ----------------------------------------------
   // setup NetDec
-  swarm::NetDec *nd = new swarm::NetDec ();
-  FlowHandler * fh = new FlowHandler ();
-  nd->set_handler ("ipv4.packet", fh);
+  swarm::NetDec *nd = new swarm::NetDec();
+  FlowHandler * fh = new FlowHandler();
+  nd->set_handler("ipv4.packet", fh);
 
   // ----------------------------------------------
   // processing packets from pcap file
   struct pcap_pkthdr *pkthdr;
   const u_char *pkt_data;
-  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
+  while (0 < pcap_next_ex(pd, &pkthdr, &pkt_data)) {
+    nd->input(pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
   }
 
-  fh->dump ();
+  if (opt.get("summary")) {
+    fh->summary();
+  } else {
+    fh->dump();
+  }
   return;
 }
 
-int main (int argc, char *argv[]) {
-  for (int i = 1; i < argc; i++) {
-    read_pcapfile (std::string (argv[i]));
+int main(int argc, char *argv[]) {
+  optparse::OptionParser psr = optparse::OptionParser();
+  psr.add_option("-s", "--summary").action("store_true").dest("summary");
+
+  optparse::Values& opt = psr.parse_args(argc, argv);
+  std::vector <std::string> args = psr.args();
+
+  for (auto it = args.begin(); it != args.end(); it++) {
+    read_pcapfile((*it), opt);
   }
 }

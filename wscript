@@ -113,9 +113,11 @@ def build(bld):
 
     # example code
     src_list = get_src_list ('apps', cc_file)
+    obj_list = ['apps/optparse.cc']
     for src in src_list:
+        if src in obj_list: continue
         bld.program(features = 'cxxprogram',
-                    source = [src],
+                    source = [src] + obj_list,
                     target = src.split ('.')[0],
                     use = [target_name],
                     lib = ['pthread', 'pcap'],
