@@ -285,7 +285,7 @@ namespace optparse {
   public:
   OptionGroup(const OptionParser& p, const std::string& t,
               const std::string& d = "") :
-    _parser(p), _title(t), _group_description(d) {}
+    _title(t), _group_description(d) {}
     virtual ~OptionGroup() {}
 
     OptionGroup& title(const std::string& t) {
@@ -300,7 +300,6 @@ namespace optparse {
     }
 
   private:
-    const OptionParser& _parser;
     std::string _title;
     std::string _group_description;
   };
