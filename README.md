@@ -14,22 +14,21 @@ C++ based lightweight and high-speed network traffic decoding library.
 
 ## Sample
 
-    // NOTE: under development
-    
     #include <swarm.h>
     #include <iostream>
     
     class DnsHandler : public swarm::Handler {
     public:
       void recv (swarm::ev_id ev, const swarm::Property &p) {
-        std::cout << p.param ("dns.query")->str () << std::endl;
+        // print domain name of dns query
+        std::cout << p.param ("dns.qd_name")->repr () << std::endl;
       }
     };
     
     int main () {
-      swarm::NetCap * nc = new swarm::NetCap ();
       swarm::NetDec * nd = new swarm::NetDec ();
       nd->set_handler ("dns.packet", new DnsHandler ());
-      cap->start_capture_alldev ();
+      swarm::NetCap * nc = new swarm::NetCap (nd);
+      nc->capture ("eth0");
     }
 
