@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include <sys/types.h>
+#include <pcap.h>
 #include <string>
 #include <map>
 #include <vector>
@@ -249,6 +250,30 @@ namespace swarm {
     param_id assign_param (const std::string &name, VarFactory *fac = NULL);
     void decode (dec_id dec, Property *p);
     void build_param_vector (std::vector <Param *> * prm_vec_);
+  };
+
+  class NetCap {
+  private:
+    NetDec *nd_;
+    pcap_t *pcap_;
+    int dlt_;
+    std::string errmsg_;
+
+    static const int PCAP_BUFSIZE_ = 0xffff;
+    static const int PCAP_TIMEOUT_ = 1;
+    static void pcap_callback (u_char * user, const struct pcap_pkthdr *pkthdr,
+                               const u_char *pkt);
+    static bool set_pcap_filter (pcap_t *pd, const std::string &filter,
+                                 std::string *errmsg);
+
+  public:
+    explicit NetCap (NetDec *nd = NULL);
+    ~NetCap ();
+    void set_netdec (NetDec *nd);
+    bool capture (const std::string &dev, const std::string &filter="");
+    bool capture_alldev (const std::string &filter="");
+    bool read_pcapfile (const std::string &file, const std::string &filter="");
+    const std::string &errmsg () const;
   };
 }  // namespace swarm
 

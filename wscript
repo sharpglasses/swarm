@@ -7,7 +7,7 @@ VERSION = "0.1"
 target_name = 'swarm'
 lib_fname = 'swarm.h'
 test_cmd = 'my_test'
-main_lib = ['pthread']
+main_lib = ['pthread', 'pcap']
 
 
 import sys

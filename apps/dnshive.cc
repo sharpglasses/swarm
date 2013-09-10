@@ -129,14 +129,14 @@ void capture (const std::string &dev, const std::string &filter = "") {
   // set filter
   if (filter.length () > 0) {
     struct bpf_program fp;
-    bpf_u_int32 net;
-    bpf_u_int32 mask;
+    bpf_u_int32 net  = 0;
+    bpf_u_int32 mask = 0;
 
     if (pcap_lookupnet(dev.c_str (), &net, &mask, errbuf) == -1) {
       net = 0;
     }
 
-    if (pcap_compile (pd, &fp, filter.c_str (), 0, net) < 0 ||
+    if (pcap_compile (pd, &fp, filter.c_str (), net, mask) < 0 ||
         pcap_setfilter (pd, &fp) == -1) {
       std::string msg = "filter compile/set error: ";
       msg += pcap_geterr (pd);
