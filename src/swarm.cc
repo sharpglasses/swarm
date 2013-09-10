@@ -284,7 +284,10 @@ namespace swarm {
   size_t Property::cap_len () const {
     return this->cap_len_;
   }
-
+  void Property::tv (struct timeval *tv) const {
+    tv->tv_sec = this->tv_sec_;
+    tv->tv_usec = this->tv_usec_;
+  }
   byte_t * Property::refer (size_t alloc_size) {
     // Swarm supports maximum 16MB for one packet lengtsh
     assert (alloc_size < 0xfffffff);

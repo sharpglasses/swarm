@@ -157,7 +157,7 @@ namespace swarm {
     u_int64_t get_5tuple_hash () const;
     size_t org_len () const;  // original data length
     size_t cap_len () const;  // captured data length
-
+    void tv (struct timeval *tv) const;
     byte_t * refer (size_t alloc_size);
     byte_t * payload (size_t alloc_size);
     size_t remain () const;

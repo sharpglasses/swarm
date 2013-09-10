@@ -24,7 +24,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/time.h>
 #include <stdint.h>
+#include <string.h>
 #include <pcap.h>
 #include <swarm.h>
 #include <map>
@@ -37,11 +39,22 @@ class Flow {
   uint64_t len_;
   uint64_t pkt_;
   std::string proto_;
+  struct timeval tv_start_, tv_end_;
+
+  static inline double tv2d (const struct timeval &tv) {
+    return static_cast <double> (tv.tv_sec) +
+      static_cast <double> (tv.tv_usec) / 1000000;
+  }
 
  public:
   explicit Flow(const std::string &proto) : len_(0), pkt_(0), proto_(proto) {
   }
-  void recv_pkt(size_t len) {
+  void recv_pkt(size_t len, struct timeval *tv) {
+    if (this->pkt_ == 0) {
+      ::memcpy (&(this->tv_start_), tv, sizeof (this->tv_start_));
+    }
+
+    ::memcpy (&(this->tv_end_), tv, sizeof (this->tv_end_));
     this->len_ += len;
     this->pkt_ += 1;
   }
@@ -53,6 +66,14 @@ class Flow {
   }
   const std::string & proto() const {
     return this->proto_;
+  }
+  double ts () const {
+    return tv2d (this->tv_start_);
+  }
+  double duration () const {
+    struct timeval tvd;
+    timersub (&(this->tv_end_), &(this->tv_start_), &tvd);
+    return tv2d (tvd);
   }
 };
 
@@ -66,10 +87,11 @@ class FlowHandler : public swarm::Handler {
   uint64_t size () const { return this->size_; }
   uint64_t pkt () const { return this->pkt_; }
   size_t flow_count () const { return this->flow_map_.size (); }
-
   void recv(swarm::ev_id eid, const  swarm::Property &p) {
     u_int64_t hv = p.get_5tuple_hash();
     std::string proto = p.param("ipv4.proto")->repr();
+    struct timeval tv;
+    p.tv(&tv);
 
     auto it = this->flow_map_.find(hv);
     Flow * f = NULL;
@@ -80,7 +102,7 @@ class FlowHandler : public swarm::Handler {
       f = it->second;
     }
 
-    f->recv_pkt(p.org_len());
+    f->recv_pkt(p.org_len(), &tv);
     this->size_ += p.org_len ();
     this->pkt_ += 1;
   }
