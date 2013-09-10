@@ -106,9 +106,6 @@ static const int PCAP_BUFSIZE_ = 0xffff;
 static const int PCAP_TIMEOUT_ = 1;
 
 void capture (const std::string &dev, const std::string &filter = "") {
-  pcap_t * pd = NULL;
-  char errbuf[PCAP_ERRBUF_SIZE];
-
   // ----------------------------------------------
   // setup NetDec
   swarm::NetDec *nd = new swarm::NetDec ();
@@ -119,57 +116,15 @@ void capture (const std::string &dev, const std::string &filter = "") {
   nd->set_handler ("dns.an", dns_db);
   nd->set_handler ("ipv4.packet", ip4_flow);
 
-  // open interface
-  if (NULL == (pd = pcap_open_live (dev.c_str (), PCAP_BUFSIZE_,
-                                    1, PCAP_TIMEOUT_, errbuf))) {
-    printf ("error: %s", errbuf);
-    return;
+  swarm::NetCap *nc = new swarm::NetCap (nd);
+  if (!nc->capture (dev, filter)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
   }
-
-  // set filter
-  if (filter.length () > 0) {
-    struct bpf_program fp;
-    bpf_u_int32 net  = 0;
-    bpf_u_int32 mask = 0;
-
-    if (pcap_lookupnet(dev.c_str (), &net, &mask, errbuf) == -1) {
-      net = 0;
-    }
-
-    if (pcap_compile (pd, &fp, filter.c_str (), net, mask) < 0 ||
-        pcap_setfilter (pd, &fp) == -1) {
-      std::string msg = "filter compile/set error: ";
-      msg += pcap_geterr (pd);
-      msg += " \"" + filter + "\"";
-      printf ("error: %s\n", msg.c_str ());
-      return;
-    }
-  }
-
-  if (0 > pcap_loop (pd, 0, pcap_callback,
-                     reinterpret_cast<u_char*>(nd))) {
-    printf ("error: %s\n", pcap_geterr (pd));
-    return;
-  }
-
-  pcap_close (pd);
 }
+
 
 void read_pcapfile (const std::string &fpath) {
   printf ("open: \"%s\"\n", fpath.c_str ());
-
-  // ----------------------------------------------
-  // setup pcap file
-  pcap_t *pd;
-  char errbuf[PCAP_ERRBUF_SIZE];
-
-  pd = pcap_open_offline(fpath.c_str (), errbuf);
-  if (pd == NULL) {
-    printf ("error: %s\n", errbuf);
-    return;
-  }
-  int dlt = pcap_datalink (pd);
-
 
   // ----------------------------------------------
   // setup NetDec
@@ -183,10 +138,9 @@ void read_pcapfile (const std::string &fpath) {
 
   // ----------------------------------------------
   // processing packets from pcap file
-  struct pcap_pkthdr *pkthdr;
-  const u_char *pkt_data;
-  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
+  swarm::NetCap *nc = new swarm::NetCap (nd);
+  if (!nc->read_pcapfile (fpath)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 
   return;
