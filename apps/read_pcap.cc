@@ -40,29 +40,15 @@ void read_pcapfile (const std::string &fpath) {
   printf ("open: \"%s\"\n", fpath.c_str ());
 
   // ----------------------------------------------
-  // setup pcap file
-  pcap_t *pd;
-  char errbuf[PCAP_ERRBUF_SIZE];
-
-  pd = pcap_open_offline(fpath.c_str (), errbuf);
-  if (pd == NULL) {
-    printf ("error: %s\n", errbuf);
-    return;
-  }
-  int dlt = pcap_datalink (pd);
-
-
-  // ----------------------------------------------
   // setup NetDec
   swarm::NetDec *nd = new swarm::NetDec ();
   nd->set_handler ("arp.packet", new ArpHandler ());
 
   // ----------------------------------------------
   // processing packets from pcap file
-  struct pcap_pkthdr *pkthdr;
-  const u_char *pkt_data;
-  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
+  swarm::NetCap *nc = new swarm::NetCap (nd);
+  if (!nc->read_pcapfile (fpath)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 
   return;

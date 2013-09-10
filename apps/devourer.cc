@@ -130,19 +130,6 @@ class FlowHandler : public swarm::Handler {
 
 void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   // ----------------------------------------------
-  // setup pcap file
-  pcap_t *pd;
-  char errbuf[PCAP_ERRBUF_SIZE];
-
-  pd = pcap_open_offline(fpath.c_str(), errbuf);
-  if (pd == NULL) {
-    printf("error: %s\n", errbuf);
-    return;
-  }
-  int dlt = pcap_datalink(pd);
-
-
-  // ----------------------------------------------
   // setup NetDec
   swarm::NetDec *nd = new swarm::NetDec();
   FlowHandler * fh = new FlowHandler();
@@ -150,17 +137,16 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
 
   // ----------------------------------------------
   // processing packets from pcap file
-  struct pcap_pkthdr *pkthdr;
-  const u_char *pkt_data;
-  while (0 < pcap_next_ex(pd, &pkthdr, &pkt_data)) {
-    nd->input(pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
-  }
-
-  if (opt.get("summary")) {
-    printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
-            fh->size (), fh->pkt ());
+  swarm::NetCap *nc = new swarm::NetCap (nd);
+  if (!nc->read_pcapfile (fpath)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
   } else {
-    fh->dump();
+    if (opt.get("summary")) {
+      printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
+              fh->size (), fh->pkt ());
+    } else {
+      fh->dump();
+    }
   }
   return;
 }
