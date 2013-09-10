@@ -26,10 +26,10 @@
 
 #include <sys/types.h>
 #include <pcap.h>
-
 #include <swarm.h>
-
 #include <map>
+
+#include "./optparse.h"
 
 
 class DnsFwdDB : public swarm::Handler {
@@ -37,9 +37,15 @@ class DnsFwdDB : public swarm::Handler {
   std::map <u_int32_t, std::string> rev_map_;
 
  public:
-  const std::string * lookup (u_int32_t v4addr) {
-    return NULL;
+  const std::string * lookup (u_int32_t * v4addr) {
+    auto it = this->rev_map_.find (*v4addr);
+    if (it == this->rev_map_.end ()) {
+      return NULL;
+    } else {
+      return &(it->second);
+    }
   }
+
   void recv (swarm::ev_id eid, const  swarm::Property &p) {
     for (size_t i = 0; i < p.param ("dns.an_name")->size (); i++) {
       std::string name = p.param ("dns.an_name")->repr (i);
@@ -48,11 +54,106 @@ class DnsFwdDB : public swarm::Handler {
 
       addr = p.param ("dns.an_data")->repr (i);
       printf ("%s (%s) %s\n", name.c_str (), type.c_str (), addr.c_str ());
+
+      void * ptr = p.param ("dns.an_data")->get (NULL, i);
+      if (ptr) {
+        u_int32_t * a = static_cast<u_int32_t*> (ptr);
+        this->rev_map_.insert (std::make_pair (*a, name));
+      }
     }
     return;
   }
 };
 
+class IPFlow : public swarm::Handler {
+ private:
+  DnsFwdDB * db_;
+
+ public:
+  void set_db (DnsFwdDB *db) {
+    this->db_ = db;
+  }
+
+  void recv (swarm::ev_id eid, const  swarm::Property &p) {
+    std::string s_tmp, d_tmp;
+    const std::string *src, *dst;
+    void *s_addr = p.param ("ipv4.src")->get ();
+    void *d_addr = p.param ("ipv4.dst")->get ();
+    if (!s_addr || !d_addr) {
+      return;
+    }
+
+    if (NULL == (src = this->db_->lookup (static_cast<u_int32_t*>(s_addr)))) {
+      s_tmp = p.param("ipv4.src")->repr ();
+      src = &s_tmp;
+    }
+    if (NULL == (dst = this->db_->lookup (static_cast<u_int32_t*>(d_addr)))) {
+      d_tmp = p.param("ipv4.dst")->repr ();
+      dst = &d_tmp;
+    }
+
+    printf ("%s -> %s\n", src->c_str (), dst->c_str ());
+  }
+};
+
+void pcap_callback (u_char * user, const struct pcap_pkthdr *pkthdr,
+                    const u_char *pkt) {
+  swarm::NetDec * nd = reinterpret_cast<swarm::NetDec *> (user);
+  nd->input (pkt, pkthdr->len, pkthdr->caplen, pkthdr->ts, DLT_EN10MB);
+}
+
+static const int PCAP_BUFSIZE_ = 0xffff;
+static const int PCAP_TIMEOUT_ = 1;
+
+void capture (const std::string &dev, const std::string &filter = "") {
+  pcap_t * pd = NULL;
+  char errbuf[PCAP_ERRBUF_SIZE];
+
+  // ----------------------------------------------
+  // setup NetDec
+  swarm::NetDec *nd = new swarm::NetDec ();
+  DnsFwdDB *dns_db = new DnsFwdDB ();
+  IPFlow *ip4_flow = new IPFlow ();
+  ip4_flow->set_db (dns_db);
+
+  nd->set_handler ("dns.an", dns_db);
+  nd->set_handler ("ipv4.packet", ip4_flow);
+
+  // open interface
+  if (NULL == (pd = pcap_open_live (dev.c_str (), PCAP_BUFSIZE_,
+                                    1, PCAP_TIMEOUT_, errbuf))) {
+    printf ("error: %s", errbuf);
+    return;
+  }
+
+  // set filter
+  if (filter.length () > 0) {
+    struct bpf_program fp;
+    bpf_u_int32 net;
+    bpf_u_int32 mask;
+
+    if (pcap_lookupnet(dev.c_str (), &net, &mask, errbuf) == -1) {
+      net = 0;
+    }
+
+    if (pcap_compile (pd, &fp, filter.c_str (), 0, net) < 0 ||
+        pcap_setfilter (pd, &fp) == -1) {
+      std::string msg = "filter compile/set error: ";
+      msg += pcap_geterr (pd);
+      msg += " \"" + filter + "\"";
+      printf ("error: %s\n", msg.c_str ());
+      return;
+    }
+  }
+
+  if (0 > pcap_loop (pd, 0, pcap_callback,
+                     reinterpret_cast<u_char*>(nd))) {
+    printf ("error: %s\n", pcap_geterr (pd));
+    return;
+  }
+
+  pcap_close (pd);
+}
 
 void read_pcapfile (const std::string &fpath) {
   printf ("open: \"%s\"\n", fpath.c_str ());
@@ -74,7 +175,11 @@ void read_pcapfile (const std::string &fpath) {
   // setup NetDec
   swarm::NetDec *nd = new swarm::NetDec ();
   DnsFwdDB * dns_db = new DnsFwdDB ();
+  IPFlow * ip4_flow = new IPFlow ();
+  ip4_flow->set_db (dns_db);
+
   nd->set_handler ("dns.an", dns_db);
+  nd->set_handler ("ipv4.packet", ip4_flow);
 
   // ----------------------------------------------
   // processing packets from pcap file
@@ -89,6 +194,7 @@ void read_pcapfile (const std::string &fpath) {
 
 int main (int argc, char *argv[]) {
   for (int i = 1; i < argc; i++) {
-    read_pcapfile (std::string (argv[i]));
+    // read_pcapfile (std::string (argv[i]));
+    capture (std::string (argv[i]), "");
   }
 }
