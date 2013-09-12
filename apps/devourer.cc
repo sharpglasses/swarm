@@ -140,14 +140,15 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   swarm::NetCap *nc = new swarm::NetCap (nd);
   if (!nc->read_pcapfile (fpath)) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
-  } else {
-    if (opt.get("summary")) {
-      printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
-              fh->size (), fh->pkt ());
-    } else {
-      fh->dump();
-    }
   }
+
+  if (opt.get("summary")) {
+    printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
+            fh->size (), fh->pkt ());
+  } else {
+    fh->dump();
+  }
+
   return;
 }
 
