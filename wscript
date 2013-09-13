@@ -114,13 +114,14 @@ def build(bld):
     # example code
     src_list = get_src_list ('apps', cc_file)
     obj_list = ['apps/optparse.cc']
+    bld.objects (source=obj_list, target='optparse')
     for src in src_list:
         if src in obj_list: continue
         bld.program(features = 'cxxprogram',
-                    source = [src] + obj_list,
+                    source = [src],
                     target = src.split ('.')[0],
-                    use = [target_name],
-                    lib = ['pthread', 'pcap'],
+                    use = [target_name, 'optparse'],
+                    lib = ['pthread'],
                     includes = [inc_dir],
                     LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
                     rpath = [os.path.join (bld.env.PREFIX, 'lib'),
