@@ -5,12 +5,14 @@
 - Detection of interface up/down
 - Multi-thread based traffic capture
 
+
 ## Sample Applications
 
 - Overseer-lite
 - DnSHive-lite
 - Devourer
 - Drone
+
 
 ## Modules
 
@@ -21,6 +23,5 @@
 - tcp
     - session/state management
     - payload reassemble
-- vlan
 - http
 - netbios
