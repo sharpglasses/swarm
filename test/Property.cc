@@ -83,8 +83,8 @@ TEST (Property, param) {
   const std::string p2_name = "orange";
   const std::string p3_name = "red";
   swarm::NetDec * nd = new swarm::NetDec ();
-  swarm::param_id p1_id = nd->assign_param (p1_name);
-  swarm::param_id p2_id = nd->assign_param (p2_name);
+  swarm::param_id p1_id = nd->assign_param (p1_name, "Test P1");
+  swarm::param_id p2_id = nd->assign_param (p2_name, "Test P2");
   swarm::Property * p = new swarm::Property (nd);
   size_t len;
 

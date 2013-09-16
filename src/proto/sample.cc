@@ -53,12 +53,14 @@ namespace swarm {
       // One of recommended events is a packet arrival
       // such as "ether.packet" meaning an ethernet packet arrives
       //
-      this->EV_SAMPLE_PKT_ = nd->assign_event ("sample.packet");
+      this->EV_SAMPLE_PKT_ = nd->assign_event ("sample.packet",
+                                               "Sample Packet");
 
       // assign_param () can assign name of parameter for the decoder
       // and FactoryClass can be registered if you need.
       //
-      this->P_OP_  = nd->assign_param ("sample.op", new FacSample ());
+      this->P_OP_  = nd->assign_param ("sample.op", "Just Sample",
+                                       new FacSample ());
     }
     void setup (NetDec * nd) {
       // In setup(), you should obtatin decoder ID of other decoder

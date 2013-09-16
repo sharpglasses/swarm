@@ -69,12 +69,16 @@ namespace swarm {
     DEF_REPR_CLASS (Proto, FacProto);
 
     explicit IPv4Decoder (NetDec * nd) : Decoder (nd) {
-      this->EV_IPV4_PKT_ = nd->assign_event ("ipv4.packet");
-      this->P_PROTO_ = nd->assign_param ("ipv4.proto", new FacProto ());
-      this->P_SRC_   = nd->assign_param ("ipv4.src",   new FacIPv4 ());
-      this->P_DST_   = nd->assign_param ("ipv4.dst",   new FacIPv4 ());
-      this->P_TLEN_  = nd->assign_param ("ipv4.total", new FacNum());
-      this->P_PL_    = nd->assign_param ("ipv4.payload");
+      this->EV_IPV4_PKT_ = nd->assign_event ("ipv4.packet", "IPv4 Packet");
+      this->P_PROTO_ = nd->assign_param ("ipv4.proto", "IPv4 Protocol",
+                                         new FacProto ());
+      this->P_SRC_   = nd->assign_param ("ipv4.src", "IPv4 Source Address",
+                                         new FacIPv4 ());
+      this->P_DST_   = nd->assign_param ("ipv4.dst", "IPv4 Destination Address",
+                                         new FacIPv4 ());
+      this->P_TLEN_  = nd->assign_param ("ipv4.total", "IPv4 Total Length",
+                                         new FacNum());
+      this->P_PL_    = nd->assign_param ("ipv4.payload", "IPv4 Data Payload");
     }
     void setup (NetDec * nd) {
       this->D_ICMP_  = nd->lookup_dec_id ("icmp");

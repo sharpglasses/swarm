@@ -53,7 +53,7 @@ def configure(conf):
 
     # ----------------------------------
     # c++ flags setting
-    cxxflags = ['-Wall', '-std=c++0x']
+    cxxflags = ['-Wall', '-std=c++0x', '-Wunused-format']
     linkflags = []
 
     if conf.options.debug:

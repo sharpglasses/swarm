@@ -154,30 +154,34 @@ namespace swarm {
 
     explicit DnsDecoder (NetDec * nd) : Decoder (nd) {
       // Assign event name
-      this->EV_DNS_PKT_ = nd->assign_event ("dns.packet");
+      this->EV_DNS_PKT_ = nd->assign_event ("dns.packet", "DNS Packet");
 
       // Assign parameter name
-      this->P_ID_  = nd->assign_param ("dns.id", new FacNum ());
+      this->P_ID_  = nd->assign_param ("dns.id", "DNS Transaction ID",
+                                       new FacNum ());
 
       for (size_t i = 0; i < RR_CNT; i++) {
-        std::string base;
+        std::string base, desc;
         switch (i) {
-        case RR_QD: base = "qd"; break;
-        case RR_AN: base = "an"; break;
-        case RR_NS: base = "ns"; break;
-        case RR_AR: base = "ar"; break;
+        case RR_QD: base = "qd"; desc = "DNS Question"; break;
+        case RR_AN: base = "an"; desc = "DNS Answer RP"; break;
+        case RR_NS: base = "ns"; desc = "DNS Authority RP"; break;
+        case RR_AR: base = "ar"; desc = "DNS Additional RP"; break;
         default: assert (0);
         }
 
         std::string ev_name = "dns." + base;
-        this->EV_TYPE_[i] = nd->assign_event (ev_name);
+        this->EV_TYPE_[i] = nd->assign_event (ev_name, desc);
 
         std::string name_key = "dns." + base + "_name";
         std::string type_key = "dns." + base + "_type";
         std::string data_key = "dns." + base + "_data";
-        this->DNS_NAME[i] = nd->assign_param (name_key, new FacDnsName ());
-        this->DNS_TYPE[i] = nd->assign_param (type_key, new FacType ());
-        this->DNS_DATA[i] = nd->assign_param (data_key, new FacDnsData ());
+        this->DNS_NAME[i] = nd->assign_param (name_key, desc + " Name",
+                                              new FacDnsName ());
+        this->DNS_TYPE[i] = nd->assign_param (type_key, desc + " Type",
+                                              new FacType ());
+        this->DNS_DATA[i] = nd->assign_param (data_key, desc + " Data",
+                                              new FacDnsData ());
       }
     }
     void setup (NetDec * nd) {

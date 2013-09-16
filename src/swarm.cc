@@ -208,9 +208,9 @@ namespace swarm {
 
   // -------------------------------------------------------
   // ParamEntry
-  ParamEntry::ParamEntry (param_id pid, const std::string name,
-                          VarFactory * fac) :
-    pid_(pid), name_(name), fac_(fac) {
+  ParamEntry::ParamEntry (param_id pid, const std::string &name,
+                          const std::string &desc, VarFactory * fac) :
+    pid_(pid), name_(name), desc_(desc), fac_(fac) {
     // ParamEntry has responsibility to manage fac (VarFactory)
   }
   ParamEntry::~ParamEntry () {
@@ -221,6 +221,9 @@ namespace swarm {
   }
   const std::string& ParamEntry::name () const {
     return this->name_;
+  }
+  const std::string& ParamEntry::desc () const {
+    return this->desc_;
   }
   VarFactory * ParamEntry::fac () const {
     return this->fac_;
@@ -610,7 +613,8 @@ namespace swarm {
     }
   }
 
-  ev_id NetDec::assign_event (const std::string &name) {
+  ev_id NetDec::assign_event (const std::string &name,
+                              const std::string &desc) {
     if (this->fwd_event_.end () != this->fwd_event_.find (name)) {
       return EV_NULL;
     } else {
@@ -628,13 +632,14 @@ namespace swarm {
       return eid;
     }
   }
-  param_id NetDec::assign_param (const std::string &name, VarFactory * fac) {
+  param_id NetDec::assign_param (const std::string &name,
+                                 const std::string &desc, VarFactory * fac) {
     if (this->fwd_param_.end () != this->fwd_param_.find (name)) {
       return PARAM_NULL;
     } else {
       const ev_id pid = this->base_pid_;
 
-      ParamEntry * ent = new ParamEntry (pid, name, fac);
+      ParamEntry * ent = new ParamEntry (pid, name, desc, fac);
       this->fwd_param_.insert (std::make_pair (name, ent));
       this->rev_param_.insert (std::make_pair (pid,  ent));
       this->base_pid_++;

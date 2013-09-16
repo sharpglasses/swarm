@@ -98,9 +98,9 @@ TEST (NetDec, param) {
   swarm::NetDec *nd = new swarm::NetDec ();
   size_t base_size = nd->param_size ();
   EXPECT_EQ (0 + base_size, nd->param_size ());
-  swarm::param_id p_blue   = nd->assign_param ("blue");
+  swarm::param_id p_blue   = nd->assign_param ("blue", "Blue");
   EXPECT_EQ (1 + base_size, nd->param_size ());
-  swarm::param_id p_orange = nd->assign_param ("orange");
+  swarm::param_id p_orange = nd->assign_param ("orange", "Orange");
   EXPECT_EQ (2 + base_size, nd->param_size ());
 
   EXPECT_NE (swarm::PARAM_NULL, p_blue);
@@ -120,9 +120,9 @@ TEST (NetDec, event) {
   swarm::NetDec *nd = new swarm::NetDec ();
   size_t base_size = nd->event_size ();
   EXPECT_EQ (0 + base_size, nd->event_size ());
-  swarm::ev_id p_blue   = nd->assign_event ("blue");
+  swarm::ev_id p_blue   = nd->assign_event ("blue", "B");
   EXPECT_EQ (1 + base_size, nd->event_size ());
-  swarm::ev_id p_orange = nd->assign_event ("orange");
+  swarm::ev_id p_orange = nd->assign_event ("orange", "O");
   EXPECT_EQ (2 + base_size, nd->event_size ());
 
   EXPECT_NE (swarm::EV_NULL, p_blue);
@@ -145,8 +145,8 @@ TEST (NetDec, handler) {
 
   const std::string ev1_name ("blue");
   const std::string ev2_name ("orange");
-  swarm::ev_id eid1 = nd->assign_event (ev1_name);
-  swarm::ev_id eid2 = nd->assign_event (ev2_name);
+  swarm::ev_id eid1 = nd->assign_event (ev1_name, "E1");
+  swarm::ev_id eid2 = nd->assign_event (ev2_name, "E2");
 
   swarm::hdlr_id t1 = nd->set_handler (eid1, th1);
   swarm::hdlr_id t2 = nd->set_handler (eid2, th2);

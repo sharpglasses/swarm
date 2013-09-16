@@ -66,11 +66,15 @@ namespace swarm {
 
   public:
     explicit EtherDecoder (NetDec * nd) : Decoder (nd) {
-      this->EV_ETH_PKT_ = nd->assign_event ("ether.packet");
-      this->P_SRC_   = nd->assign_param ("ether.src");
-      this->P_DST_   = nd->assign_param ("ether.dst");
-      this->P_TYPE_  = nd->assign_param ("ether.type");
-      this->P_HDR_   = nd->assign_param ("ether.hdr");
+      this->EV_ETH_PKT_ = nd->assign_event ("ether.packet", "Ethernet Packet");
+      this->P_SRC_   = nd->assign_param ("ether.src",
+                                         "Ethernet Source MAC Address");
+      this->P_DST_   = nd->assign_param ("ether.dst",
+                                         "Ethernet Destination MAC Address");
+      this->P_TYPE_  = nd->assign_param ("ether.type",
+                                         "Ethernet Type");
+      this->P_HDR_   = nd->assign_param ("ether.hdr",
+                                         "Ethernet Header");
     }
     void setup (NetDec * nd) {
       this->D_ARP_  = nd->lookup_dec_id ("arp");

@@ -63,12 +63,17 @@ namespace swarm {
     DEF_REPR_CLASS (VarFlags, FacFlags);
 
     explicit TcpDecoder (NetDec * nd) : Decoder (nd) {
-      this->EV_PKT_ = nd->assign_event ("tcp.packet");
-      this->EV_SYN_ = nd->assign_event ("tcp.syn");
+      this->EV_PKT_ = nd->assign_event ("tcp.packet", "TCP Packet");
+      this->EV_SYN_ = nd->assign_event ("tcp.syn", "TCP SYN Packet");
 
-      this->P_SRC_PORT_ = nd->assign_param ("tcp.src_port", new FacNum ());
-      this->P_DST_PORT_ = nd->assign_param ("tcp.dst_port", new FacNum ());
-      this->P_FLAGS_    = nd->assign_param ("tcp.flags",    new FacFlags ());
+      this->P_SRC_PORT_ =
+        nd->assign_param ("tcp.src_port", "TCP Source Port",
+                          new FacNum ());
+      this->P_DST_PORT_ =
+        nd->assign_param ("tcp.dst_port", "TCP Destination Port",
+                          new FacNum ());
+      this->P_FLAGS_ =
+        nd->assign_param ("tcp.flags", "TCP Flags", new FacFlags ());
     }
     void setup (NetDec * nd) {
       // nothing to do

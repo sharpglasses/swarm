@@ -47,11 +47,16 @@ namespace swarm {
     DEF_REPR_CLASS (VarUdp, FacUdp);
 
     explicit UdpDecoder (NetDec * nd) : Decoder (nd) {
-      this->EV_UDP_PKT_ = nd->assign_event ("udp.packet");
+      this->EV_UDP_PKT_ = nd->assign_event ("udp.packet", "UDP Packet");
 
-      this->P_SRC_PORT_ = nd->assign_param ("udp.src_port", new FacNum ());
-      this->P_DST_PORT_ = nd->assign_param ("udp.dst_port", new FacNum ());
-      this->P_LEN_      = nd->assign_param ("udp.len", new FacNum ());
+      this->P_SRC_PORT_ =
+        nd->assign_param ("udp.src_port", "UDP Source Port",
+                          new FacNum ());
+      this->P_DST_PORT_ =
+        nd->assign_param ("udp.dst_port", "UDP Destination Port",
+                          new FacNum ());
+      this->P_LEN_ =
+        nd->assign_param ("udp.len", "UDP Data Length", new FacNum ());
     }
     void setup (NetDec * nd) {
       this->D_DNS_ = nd->lookup_dec_id ("dns");

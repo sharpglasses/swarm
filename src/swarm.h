@@ -95,13 +95,16 @@ namespace swarm {
   private:
     param_id pid_;
     std::string name_;
+    std::string desc_;
     VarFactory * fac_;
 
   public:
-    ParamEntry (param_id pid, const std::string name, VarFactory * fac);
+    ParamEntry (param_id pid, const std::string &name,
+                const std::string &desc_, VarFactory * fac);
     ~ParamEntry ();
     param_id pid () const;
     const std::string& name () const;
+    const std::string& desc () const;
     VarFactory * fac () const;
   };
 
@@ -246,8 +249,9 @@ namespace swarm {
 
     // ----------------------------------------------
     // for modules, not used for external program
-    ev_id assign_event (const std::string &name);
-    param_id assign_param (const std::string &name, VarFactory *fac = NULL);
+    ev_id assign_event (const std::string &name, const std::string &desc);
+    param_id assign_param (const std::string &name, const std::string &desc,
+                           VarFactory *fac = NULL);
     void decode (dec_id dec, Property *p);
     void build_param_vector (std::vector <Param *> * prm_vec_);
   };

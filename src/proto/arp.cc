@@ -62,15 +62,25 @@ namespace swarm {
     DEF_REPR_CLASS (VarOP, FacOP);
 
     explicit ArpDecoder (NetDec * nd) : Decoder (nd) {
-      this->EV_ARP_PKT_ = nd->assign_event ("arp.packet");
-      this->EV_REQ_ = nd->assign_event ("arp.request");
-      this->EV_REP_ = nd->assign_event ("arp.reply");
+      this->EV_ARP_PKT_ = nd->assign_event ("arp.packet", "ARP Packet");
+      this->EV_REQ_ = nd->assign_event ("arp.request", "ARP Request");
+      this->EV_REP_ = nd->assign_event ("arp.reply", "ARP Reply");
 
-      this->P_SRC_HW_   = nd->assign_param ("arp.src_hw", new FacHW ());
-      this->P_SRC_PR_   = nd->assign_param ("arp.src_pr", new FacPR ());
-      this->P_DST_HW_   = nd->assign_param ("arp.dst_hw", new FacHW ());
-      this->P_DST_PR_   = nd->assign_param ("arp.dst_pr", new FacPR ());
-      this->P_OP_       = nd->assign_param ("arp.op", new FacOP ());
+
+      this->P_SRC_HW_ =
+        nd->assign_param ("arp.src_hw", "Hardware Source Address",
+                          new FacHW());
+      this->P_SRC_PR_ =
+        nd->assign_param ("arp.src_pr", "Protocol Source Address",
+                          new FacPR());
+      this->P_DST_HW_ =
+        nd->assign_param ("arp.dst_hw", "Hardware Destination Address",
+                          new FacHW ());
+      this->P_DST_PR_ =
+        nd->assign_param ("arp.dst_pr", "Protocol Destination Address",
+                          new FacPR ());
+      this->P_OP_ =
+        nd->assign_param ("arp.op", "ARP Operation", new FacOP ());
     }
     void setup (NetDec * nd) {
       // nothing to do
