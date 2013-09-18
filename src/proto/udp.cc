@@ -41,7 +41,7 @@ namespace swarm {
 
     ev_id EV_UDP_PKT_;
     param_id P_SRC_PORT_, P_DST_PORT_, P_LEN_;
-    dec_id D_DNS_;
+    dec_id D_DNS_, D_LLMNR_, D_NETBIOS_NS_, D_MDNS_;
 
   public:
     DEF_REPR_CLASS (VarUdp, FacUdp);
@@ -60,6 +60,9 @@ namespace swarm {
     }
     void setup (NetDec * nd) {
       this->D_DNS_ = nd->lookup_dec_id ("dns");
+      this->D_LLMNR_ = nd->lookup_dec_id ("llmnr");
+      this->D_NETBIOS_NS_ = nd->lookup_dec_id ("netbios_ns");
+      this->D_MDNS_ = nd->lookup_dec_id ("mdns");
     };
 
     static Decoder * New (NetDec * nd) { return new UdpDecoder (nd); }
@@ -86,8 +89,18 @@ namespace swarm {
                    sizeof (hdr->src_port_));
 
       // call next decoder
-      if (ntohs (hdr->src_port_) == 53 || ntohs (hdr->dst_port_) == 53) {
+      if (ntohs (hdr->src_port_) == 53 ||
+          ntohs (hdr->dst_port_) == 53) {
         this->emit (this->D_DNS_, p);
+      } else if (ntohs (hdr->src_port_) == 5355 ||
+                 ntohs (hdr->dst_port_) == 5355) {
+        this->emit (this->D_LLMNR_, p);
+      } else if (ntohs (hdr->src_port_) == 137 ||
+                 ntohs (hdr->dst_port_) == 137) {
+        this->emit (this->D_NETBIOS_NS_, p);
+      } else if (ntohs (hdr->src_port_) == 5353 ||
+                 ntohs (hdr->dst_port_) == 5353) {
+        this->emit (this->D_MDNS_, p);
       }
 
       return true;

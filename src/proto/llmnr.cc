@@ -29,20 +29,21 @@
 #include "./decode_name_service.h"
 
 namespace swarm {
-
-  class DnsDecoder : public NameServiceDecoder {
+  // Link-local Multicast Name Resolution Protocol
+  class LlmnrDecoder : public NameServiceDecoder {
   public:
-    explicit DnsDecoder (NetDec * nd) : NameServiceDecoder (nd, "dns") {
+    explicit LlmnrDecoder (NetDec * nd) : NameServiceDecoder (nd, "llmnr") {
     }
 
-    // Factory function for DnsDecoder
-    static Decoder * New (NetDec * nd) { return new DnsDecoder (nd); }
+    // Factory function for LlmnrDecoder
+    static Decoder * New (NetDec * nd) { return new LlmnrDecoder (nd); }
 
     // Main decoding function.
     bool decode (Property *p) {
+      debug (1, "LLMNR");
       return this->ns_decode (p);
     }
   };
 
-  INIT_DECODER (dns, DnsDecoder::New);
+  INIT_DECODER (llmnr, LlmnrDecoder::New);
 }  // namespace swarm

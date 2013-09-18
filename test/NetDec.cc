@@ -83,7 +83,7 @@ class DnsHandler : public Counter {
 
  public:
   explicit DnsHandler (swarm::NetDec * nd) {
-    this->type_ = nd->lookup_param_id ("dns.id");
+    this->type_ = nd->lookup_param_id ("dns.tx_id");
     EXPECT_NE (swarm::PARAM_NULL, this->type_);
   }
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
