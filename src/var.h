@@ -28,8 +28,8 @@
 #ifndef SRC_VAR_H__
 #define SRC_VAR_H__
 
-#include <string>
 #include <arpa/inet.h>
+#include <string>
 
 #include "./swarm.h"
 
@@ -105,6 +105,8 @@ namespace swarm {
 
   // extended classes
   DEF_REPR_CLASS (VarIPv4, FacIPv4);
+  DEF_REPR_CLASS (VarIPv6, FacIPv6);
+  DEF_REPR_CLASS (VarMAC,  FacMAC);
   DEF_REPR_CLASS (VarNum,  FacNum);
 
 

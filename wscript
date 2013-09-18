@@ -53,7 +53,7 @@ def configure(conf):
 
     # ----------------------------------
     # c++ flags setting
-    cxxflags = ['-Wall', '-std=c++0x', '-Wunused-format']
+    cxxflags = ['-Wall', '-std=c++0x']
     linkflags = []
 
     if conf.options.debug:
@@ -95,7 +95,7 @@ def build(bld):
     global main_lib
     global lib_fname
     dir_list = [('src', '^[_A-Za-z0-9].*\.cc'),
-                (os.path.join ('src', 'proto'), '^[_A-Za-z0-9].*\.cc')]
+                (os.path.join ('src', 'proto'), '^[A-Za-z0-9].*\.cc')]
 
     for src_dir, cc_file in dir_list:
         src_list.extend (get_src_list (src_dir, cc_file))

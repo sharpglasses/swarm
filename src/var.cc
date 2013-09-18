@@ -149,6 +149,12 @@ namespace swarm {
   bool VarIPv4::repr (std::string *s) const {
     return this->ip4 (s);
   }
+  bool VarIPv6::repr (std::string *s) const {
+    return this->ip6 (s);
+  }
+  bool VarMAC::repr (std::string *s) const {
+    return this->mac (s);
+  }
   bool VarNum::repr (std::string *s) const {
     char buf[32];
     snprintf (buf, sizeof (buf), "%llu", this->num <u_int64_t> ());

@@ -18,7 +18,6 @@
 
 - ipv4
     - payload defragment
-- ipv6
 - icmp6
 - tcp
     - session/state management
