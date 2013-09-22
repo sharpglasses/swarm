@@ -481,6 +481,8 @@ namespace swarm {
 
     this->dec_ether_ = this->lookup_dec_id ("ether");
     assert (this->dec_ether_ != DEC_NULL);
+    this->dec_ipv4_ = this->lookup_dec_id ("ipv4");
+    assert (this->dec_ipv4_ != DEC_NULL);
 
     this->prop_ = new Property (this);
   }
@@ -503,28 +505,30 @@ namespace swarm {
     // main process of NetDec
     Property * prop = this->prop_;
 
-    if (dlt == DLT_EN10MB) {
-      prop->init (data, cap_len, data_len, tv);
-      this->decode (this->dec_ether_, prop);
-      prop->calc_hash ();
-
-      ev_id eid;
-      while (EV_NULL != (eid = prop->pop_event ())) {
-        assert (0 <= eid && eid < this->event_handler_.size ());
-        auto hdlr_list = this->event_handler_[eid];
-        if (hdlr_list) {
-          for (auto it = hdlr_list->begin (); it != hdlr_list->end (); it++) {
-            Handler * hdlr = (*it)->hdlr ();
-            assert (hdlr != NULL);
-            hdlr->recv (eid, *prop);
-          }
-        }
-      }
-
-      return true;
-    } else {
+    prop->init (data, cap_len, data_len, tv);
+    switch (dlt) {
+    case DLT_EN10MB: this->decode (this->dec_ether_, prop); break;
+    case DLT_RAW:    this->decode (this->dec_ipv4_, prop); break;
+    default:
       return false;
     }
+          
+    prop->calc_hash ();
+
+    ev_id eid;
+    while (EV_NULL != (eid = prop->pop_event ())) {
+      assert (0 <= eid && eid < this->event_handler_.size ());
+      auto hdlr_list = this->event_handler_[eid];
+      if (hdlr_list) {
+        for (auto it = hdlr_list->begin (); it != hdlr_list->end (); it++) {
+          Handler * hdlr = (*it)->hdlr ();
+          assert (hdlr != NULL);
+          hdlr->recv (eid, *prop);
+        }
+      }
+    }
+
+    return true;
   }
   ev_id NetDec::lookup_event_id (const std::string &name) {
     auto it = this->fwd_event_.find (name);

@@ -216,6 +216,7 @@ namespace swarm {
 
     std::vector <std::deque <HandlerEntry *> * > event_handler_;
     dec_id dec_ether_;
+    dec_id dec_ipv4_;
     Property * prop_;
 
     inline static size_t eid2idx (const ev_id eid) {
