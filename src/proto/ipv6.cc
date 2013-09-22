@@ -27,21 +27,25 @@
 
 #include "../decode.h"
 
-#define IP_RF 0x8000            /* reserved fragment flag */
-#define IP_DF 0x4000            /* dont fragment flag */
-#define IP_MF 0x2000            /* more fragments flag */
-#define IP_OFFMASK 0x1fff       /* mask for fragmenting bits */
-
-
 namespace swarm {
 
   class Ipv6Decoder : public Decoder {
   private:
+    static const size_t OCTET_UNIT = 8;
+
     static const u_int8_t PROTO_ICMP  = 1;
     static const u_int8_t PROTO_TCP   = 6;
     static const u_int8_t PROTO_UDP   = 17;
     static const u_int8_t PROTO_IPV6  = 41;
     static const u_int8_t PROTO_ICMP6 = 58;
+
+    static const u_int8_t EXT_HBH   =  0;  // Hop-by-Hop Options
+    static const u_int8_t EXT_DST   = 60;  // Destination Options
+    static const u_int8_t EXT_ROURT = 43;  // Routing
+    static const u_int8_t EXT_FRAG  = 44;  // Fragment
+    static const u_int8_t EXT_AH    = 51;  // Authentication Header
+    static const u_int8_t EXT_ESP   = 50;  // Encapsulating Security Payload
+    static const u_int8_t EXT_MBL  = 135;  // Mobility
 
     struct ipv6_header {
       u_int32_t flags_;      // version, traffic class, flow label
@@ -50,6 +54,11 @@ namespace swarm {
       u_int8_t  hop_limit_;  // hop limit
       u_int32_t src_[4];     // source address
       u_int32_t dst_[4];     // dest address
+    } __attribute__((packed));
+
+    struct ipv6_option {
+      u_int8_t next_hdr_;
+      u_int8_t hdr_len_;
     } __attribute__((packed));
 
     ev_id EV_IPV6_PKT_;
@@ -83,6 +92,48 @@ namespace swarm {
 
     static Decoder * New (NetDec * nd) { return new Ipv6Decoder (nd); }
 
+    bool next (u_int8_t next_hdr, Property *p) {
+      // call next decoder
+      switch (next_hdr) {
+        // next protocol decoder
+      case PROTO_ICMP:  this->emit (this->D_ICMP_,  p); break;
+      case PROTO_TCP:   this->emit (this->D_TCP_,   p); break;
+      case PROTO_UDP:   this->emit (this->D_UDP_,   p); break;
+      case PROTO_ICMP6: this->emit (this->D_ICMP6_, p); break;
+
+        // IPv6 extention header
+      case EXT_HBH:
+      case EXT_DST:
+      case EXT_ROURT:
+      case EXT_FRAG:
+      case EXT_AH:
+      case EXT_ESP:
+      case EXT_MBL:
+        {
+          auto opthdr = reinterpret_cast <struct ipv6_option*>
+            (p->payload (OCTET_UNIT));
+          if (opthdr == NULL) {
+            return false;
+          }
+
+          if (opthdr->hdr_len_ > 0) {
+            auto optdata = p->payload ((opthdr->hdr_len_) * OCTET_UNIT);
+            if (optdata == NULL) {
+              return false;
+            }
+          }
+
+          return this->next (opthdr->next_hdr_, p);
+        }
+        break;
+
+      default:
+        debug (1, "(%d) unknown", next_hdr);
+      }
+
+      return false;
+    }
+
     bool decode (Property *p) {
       const size_t hdr_len = sizeof (struct ipv6_header);
       auto hdr = reinterpret_cast <struct ipv6_header *>
@@ -112,15 +163,7 @@ namespace swarm {
       p->set_addr (&(hdr->src_), &(hdr->dst_), hdr->next_hdr_,
                    sizeof (hdr->src_));
 
-      // call next decoder
-      switch (hdr->next_hdr_) {
-      case PROTO_ICMP:  this->emit (this->D_ICMP_,  p); break;
-      case PROTO_TCP:   this->emit (this->D_TCP_,   p); break;
-      case PROTO_UDP:   this->emit (this->D_UDP_,   p); break;
-      case PROTO_ICMP6: this->emit (this->D_ICMP6_, p); break;
-      }
-
-      return true;
+      return this->next (hdr->next_hdr_, p);
     }
   };
 

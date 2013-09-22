@@ -40,7 +40,6 @@ namespace swarm {
 
     // Main decoding function.
     bool decode (Property *p) {
-      debug (1, "MDNS");
       return this->ns_decode (p);
     }
   };
