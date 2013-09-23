@@ -156,22 +156,32 @@ namespace swarm {
     void set_port (void *src_port, void *dst_port, size_t port_len);
     void calc_hash ();
 
+    ev_id pop_event ();
+    void push_event (const ev_id eid);
+
     Param * param (const std::string &key) const;
     Param * param (const param_id pid) const;
     u_int64_t get_5tuple_hash () const;
-    size_t org_len () const;  // original data length
+    size_t len () const;      // original data length
     size_t cap_len () const;  // captured data length
     void tv (struct timeval *tv) const;
+    double ts () const;
     byte_t * refer (size_t alloc_size);
     byte_t * payload (size_t alloc_size);
     size_t remain () const;
 
-    ev_id pop_event ();
-    void push_event (const ev_id eid);
+    std::string src_addr () const;
+    std::string dst_addr () const;
+    void *src_addr (size_t *len) const;
+    void *dst_addr (size_t *len) const;
+    int src_port () const;
+    int dst_port () const;
+    std::string proto () const;
 
     inline static size_t pid2idx (param_id pid) {
       return static_cast <size_t> (pid - PARAM_BASE);
     }
+    inline static void addr2str (void * addr, size_t len, std::string *s);
   };
 
   class Handler {

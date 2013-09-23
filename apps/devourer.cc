@@ -102,8 +102,8 @@ class FlowHandler : public swarm::Handler {
       f = it->second;
     }
 
-    f->recv_pkt(p.org_len(), &tv);
-    this->size_ += p.org_len ();
+    f->recv_pkt(p.len(), &tv);
+    this->size_ += p.len ();
     this->pkt_ += 1;
   }
   void dump() {

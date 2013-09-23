@@ -128,7 +128,7 @@ namespace swarm {
         break;
 
       default:
-        debug (1, "(%d) unknown", next_hdr);
+        debug (0, "(%d) unknown", next_hdr);
       }
 
       return false;

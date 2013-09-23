@@ -281,7 +281,7 @@ namespace swarm {
   u_int64_t Property::get_5tuple_hash () const {
     return this->hash_value_;
   }
-  size_t Property::org_len () const {
+  size_t Property::len () const {
     return this->data_len_;
   }
   size_t Property::cap_len () const {
@@ -290,6 +290,11 @@ namespace swarm {
   void Property::tv (struct timeval *tv) const {
     tv->tv_sec = this->tv_sec_;
     tv->tv_usec = this->tv_usec_;
+  }
+  double Property::ts () const {
+    double ts = static_cast <double> (this->tv_sec_) +
+      static_cast <double> (this->tv_usec_) / 1000000;
+    return ts;
   }
   byte_t * Property::refer (size_t alloc_size) {
     // Swarm supports maximum 16MB for one packet lengtsh
@@ -318,6 +323,75 @@ namespace swarm {
     } else {
       return 0;
     }
+  }
+
+  void Property::addr2str (void * addr, size_t len, std::string *s) {
+    char buf[32];
+    if (len == 4) {
+      ::inet_ntop (AF_INET, addr, buf, sizeof (buf));
+      s->assign (buf);
+    } else if (len == 16) {
+      ::inet_ntop (AF_INET6, addr, buf, sizeof (buf));
+      s->assign (buf);
+    } else {
+      s->assign ("unsupported address");
+    }
+  }
+  std::string Property::src_addr () const {
+    std::string buf;
+    addr2str (this->src_addr_, this->addr_len_, &buf);
+    return buf;
+  }
+  std::string Property::dst_addr () const {
+    std::string buf;
+    addr2str (this->dst_addr_, this->addr_len_, &buf);
+    return buf;
+  }
+  void *Property::src_addr (size_t *len) const {
+    *len = this->addr_len_;
+    return this->src_addr_;
+  }
+  void *Property::dst_addr (size_t *len) const {
+    *len = this->addr_len_;
+    return this->dst_addr_;
+  }
+
+  int Property::src_port () const {
+    if (this->port_len_ == 2) {
+      u_int16_t * p = static_cast<u_int16_t*> (this->src_port_);
+      return static_cast<int> (ntohs (*p));
+    } else {
+      // unsupported
+      return 0;
+    }
+  }
+  int Property::dst_port () const {
+    if (this->port_len_ == 2) {
+      u_int16_t * p = static_cast<u_int16_t*> (this->dst_port_);
+      return static_cast<int> (ntohs (*p));
+    } else {
+      // unsupported
+      return 0;
+    }
+  }
+  std::string Property::proto () const {
+    static const u_int8_t PROTO_ICMP  = 1;
+    static const u_int8_t PROTO_TCP   = 6;
+    static const u_int8_t PROTO_UDP   = 17;
+    static const u_int8_t PROTO_IPV6  = 41;
+    static const u_int8_t PROTO_ICMP6 = 58;
+
+    std::string s;
+    switch (this->proto_) {
+    case PROTO_ICMP:  s = "ICMP";    break;
+    case PROTO_TCP:   s = "TCP";     break;
+    case PROTO_UDP:   s = "UDP";     break;
+    case PROTO_IPV6:  s = "IPv6";    break;
+    case PROTO_ICMP6: s = "ICMPv6";  break;
+    default:          s = "unknown"; break;
+    }
+
+    return s;
   }
 
   Var * Property::retain (const std::string &param_name) {
@@ -512,7 +586,7 @@ namespace swarm {
     default:
       return false;
     }
-          
+
     prop->calc_hash ();
 
     ev_id eid;
@@ -781,7 +855,8 @@ namespace swarm {
                         this->dlt_);
     }
 
-    if (rc < 0) {
+    if (rc == -1) {
+      this->errmsg_ = pcap_geterr (this->pcap_);
       res = false;
     }
 
