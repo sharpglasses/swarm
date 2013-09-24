@@ -4,7 +4,7 @@
 
 - Detection of interface up/down
 - Multi-thread based traffic capture
-
+- Timer for a handler
 
 ## Sample Applications
 
@@ -23,4 +23,4 @@
     - session/state management
     - payload reassemble
 - http
-- netbios
+
