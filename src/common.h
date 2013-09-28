@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_SWARM_H__
-#define SRC_SWARM_H__
+#ifndef SRC_COMMON_H__
+#define SRC_COMMON_H__
 
 #include <assert.h>
 #include <sys/types.h>
@@ -35,9 +35,33 @@
 #include <vector>
 #include <deque>
 
-#include "./common.h"
-#include "./property.h"
 #include "./netcap.h"
-#include "./netdec.h"
 
-#endif  // SRC_SWARM_H__
+
+namespace swarm {
+  typedef u_int8_t  byte_t;  // 1 byte data type
+  typedef int64_t    ev_id;  // Event ID
+  typedef int64_t param_id;  // Parameter ID
+  typedef int64_t  hdlr_id;  // Handler Entry ID
+  typedef int       dec_id;  // Decoder ID
+
+  const ev_id    EV_NULL = -1;
+  const ev_id    EV_BASE =  0;
+  const hdlr_id  HDLR_BASE =  0;
+  const hdlr_id  HDLR_NULL = -1;
+  const param_id PARAM_NULL = -1;
+  const param_id PARAM_BASE =  0;
+  const dec_id   DEC_NULL = -1;
+
+  class NetDec;
+  class NetCap;
+  class Property;
+  class Param;
+  class ParamEntry;
+  class VarFactory;
+  class Var;
+  class Decoder;
+
+}  // namespace swarm
+
+#endif  // SRC_COMMON_H__

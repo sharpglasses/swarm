@@ -38,7 +38,8 @@ void read_pcapfile (const std::string &fpath) {
   // ----------------------------------------------
   // processing packets from pcap file
   swarm::NetCap *nc = new swarm::NetCap (nd);
-  if (!nc->read_pcapfile (fpath)) {
+  nc->add_pcapfile (fpath);
+  if (!nc->start ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 

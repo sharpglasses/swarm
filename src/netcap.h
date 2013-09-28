@@ -24,20 +24,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_SWARM_H__
-#define SRC_SWARM_H__
+#ifndef SRC_NETCAP_H__
+#define SRC_NETCAP_H__
 
-#include <assert.h>
-#include <sys/types.h>
-#include <pcap.h>
 #include <string>
-#include <map>
-#include <vector>
-#include <deque>
 
-#include "./common.h"
-#include "./property.h"
-#include "./netcap.h"
-#include "./netdec.h"
+namespace swarm {
+  class NetDec;
 
-#endif  // SRC_SWARM_H__
+  class Timer {
+    Timer ();
+    virtual ~Timer ();
+    virtual void exec (const struct timeval &tv) = 0;
+  };
+
+  class NetCap {
+  private:
+    NetDec *nd_;
+    pcap_t *pcap_;
+    int dlt_;
+    std::string errmsg_;
+
+    static const int PCAP_BUFSIZE_ = 0xffff;
+    static const int PCAP_TIMEOUT_ = 1;
+    static void pcap_callback (u_char * user, const struct pcap_pkthdr *pkthdr,
+                               const u_char *pkt);
+    static bool set_pcap_filter (pcap_t *pd, const std::string &filter,
+                                 std::string *errmsg);
+    static void timer (void *obj);
+
+  public:
+    explicit NetCap (NetDec *nd = NULL);
+    ~NetCap ();
+    void set_netdec (NetDec *nd);
+    bool add_device (const std::string &dev, const std::string &filter="");
+    bool add_pcapfile (const std::string &dev, const std::string &filter="");
+    bool start ();
+
+    bool capture (const std::string &dev, const std::string &filter="");
+    bool capture_alldev (const std::string &filter="");
+    bool read_pcapfile (const std::string &file, const std::string &filter="");
+    const std::string &errmsg () const;
+  };
+}  //  namespace swarm
+
+#endif  // SRC_NETCAP_H__

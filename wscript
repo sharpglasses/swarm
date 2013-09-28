@@ -5,7 +5,7 @@ APPNAME = 'CPP_PROJECT'
 VERSION = "0.1"
 
 target_name = 'swarm'
-lib_fname = 'swarm.h'
+lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h']
 test_cmd = 'my_test'
 main_lib = ['pthread', 'pcap']
 
@@ -106,7 +106,8 @@ def build(bld):
         lib = main_lib,
         target = target_name)
 
-    bld.install_files('${PREFIX}/include', lib_fname) 
+    bld.install_files('${PREFIX}/include/swarm/', 
+                      map (lambda x: os.path.join ('src', x), lib_fname))
 
 
     inc_dir = os.path.join (bld.path.abspath(), 'src')
