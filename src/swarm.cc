@@ -35,11 +35,3 @@
 #include "./var.h"
 #include "./debug.h"
 #include "./netdec.h"
-
-namespace swarm {
-
-
-
-
-}  // namespace swarm
-

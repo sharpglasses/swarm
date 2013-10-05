@@ -31,12 +31,7 @@
 
 namespace swarm {
   class NetDec;
-
-  class Timer {
-    Timer ();
-    virtual ~Timer ();
-    virtual void exec (const struct timeval &tv) = 0;
-  };
+  class RealtimeTimer;
 
   class NetCap {
   private:
@@ -44,14 +39,12 @@ namespace swarm {
     pcap_t *pcap_;
     int dlt_;
     std::string errmsg_;
+    RealtimeTimer *timer_;
 
     static const int PCAP_BUFSIZE_ = 0xffff;
     static const int PCAP_TIMEOUT_ = 1;
-    static void pcap_callback (u_char * user, const struct pcap_pkthdr *pkthdr,
-                               const u_char *pkt);
     static bool set_pcap_filter (pcap_t *pd, const std::string &filter,
                                  std::string *errmsg);
-    static void timer (void *obj);
 
   public:
     explicit NetCap (NetDec *nd = NULL);

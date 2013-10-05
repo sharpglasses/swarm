@@ -24,15 +24,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/time.h>
+#include <time.h>
 #include <pcap.h>
+#include <pthread.h>
 #include <assert.h>
 #include <string>
 
 #include "./netcap.h"
 #include "./netdec.h"
 #include "./debug.h"
+#include "./timer.h"
+
 
 namespace swarm {
+
   bool NetCap::set_pcap_filter (pcap_t *pd, const std::string &filter,
                                        std::string *errmsg) {
     if (!filter.empty ()) {
@@ -58,9 +64,11 @@ namespace swarm {
     return true;
   }
 
-  NetCap::NetCap (NetDec *nd) : nd_(nd), pcap_(NULL), dlt_(-1) {
+  NetCap::NetCap (NetDec *nd) : nd_(nd), pcap_(NULL), dlt_(-1),
+                                timer_(new RealtimeTimer ()) {
   }
   NetCap::~NetCap () {
+    delete this->timer_;
   }
   void NetCap::set_netdec (NetDec *nd) {
     this->nd_ = nd;
@@ -114,36 +122,13 @@ namespace swarm {
     return true;
   }
 
-  inline void timerinc (struct timeval *tv, struct timeval *delta) {
-    static const time_t ONESEC = 1000 * 1000;  // in micro-second
-    tv->tv_sec  += delta->tv_sec;
-    tv->tv_usec += delta->tv_usec;
-    if (tv->tv_usec > ONESEC) {
-      tv->tv_sec += 1;
-      tv->tv_usec -= ONESEC;
-    }
-  }
-
-  void NetCap::timer (void *obj) {
-  }
-
   bool NetCap::start () {
     // ----------------------------------------------
     // processing packets from pcap file
     struct pcap_pkthdr *pkthdr;
     const u_char *pkt_data;
-    struct timeval prev_rts, prev_pts, curr_rts, delta_pts, delta_rts;
-    struct timeval timeout_rts;
-    struct timeval timeout_pts;
     int rc;
 
-    timeout_rts.tv_sec = 0;
-    timeout_rts.tv_usec = 100 * 1000;
-    timeout_pts.tv_sec = 0;
-    timeout_pts.tv_usec = 100 * 1000;
-
-    ::memset (&prev_pts, 0, sizeof (prev_pts));
-    ::gettimeofday (&prev_rts, NULL);
     while (true) {
       rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
 
@@ -160,28 +145,13 @@ namespace swarm {
         }
       }
 
-#define TIMER_ENABLE
-#ifdef TIMER_ENABLE
-      // ::gettimeofday (&curr_rts, NULL);
-      timersub (&curr_rts, &prev_rts, &delta_rts);
-      timersub (&pkthdr->ts, &prev_pts, &delta_pts);
-
-      if (timercmp (&timeout_rts, &delta_rts, <)) {
-        // fire per 10ms
-        debug (0, "fire by real-timestamp");
-        timerinc (&prev_rts, &timeout_rts);
+      if (this->timer_->ready ()) {
+        this->timer_->fire ();
+        debug (1, "ossu!");
       }
-
-      if (timercmp (&timeout_pts, &delta_pts, <)) {
-        // fire per 100ms
-        debug (0, "fire by packet-timestamp");
-        timerinc (&prev_pts, &timeout_pts);
-        if (timercmp (&prev_pts, &pkthdr->ts, <)) {
-          ::memcpy (&prev_pts, &pkthdr->ts, sizeof (prev_pts));
-        }
-      }
-#endif  // TIMER_ENABLE
     }
+
+    this->timer_->stop ();
 
     pcap_close (this->pcap_);
     this->pcap_ = NULL;
@@ -213,7 +183,6 @@ namespace swarm {
     struct pcap_pkthdr *pkthdr;
     const u_char *pkt_data;
     int rc;
-    bool res = true;
 
     while (true) {
       rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
