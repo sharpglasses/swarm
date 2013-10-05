@@ -24,21 +24,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_SWARM_H__
-#define SRC_SWARM_H__
-
-#include <assert.h>
-#include <sys/types.h>
+#include <gtest/gtest.h>
 #include <pcap.h>
-#include <string>
-#include <map>
-#include <vector>
-#include <deque>
+#include <string.h>
 
-#include "./common.h"
-#include "./property.h"
-#include "./timer.h"
-#include "./netcap.h"
-#include "./netdec.h"
+#include "../src/debug.h"
+#include "../src/swarm.h"
 
-#endif  // SRC_SWARM_H__
+class TimeCounter : public swarm::Task {
+ private:
+  int count_;
+
+ public:
+  TimeCounter () : count_(0) {}
+  int count () const { return this->count_; }
+  void exec (const struct timespec &tv) {
+    this->count_++;
+  }
+};
+
+TEST (Timer, basic) {
+  swarm::Timer timer;
+  struct timespec ts = {10, 0};
+  TimeCounter *tc = new TimeCounter ();
+  swarm::task_id t_id = timer.install_task(tc, swarm::Timer::ONCE, 100);
+  ASSERT_NE (swarm::TASK_NULL, t_id);
+
+  timer.ticktock (ts);
+  EXPECT_EQ (0, tc->count ());
+
+  ts.tv_nsec = 50 * 1000 * 1000;
+  timer.ticktock (ts);
+  EXPECT_EQ (0, tc->count ());
+
+  ts.tv_nsec = 100 * 1000 * 1000;
+  timer.ticktock (ts);
+  EXPECT_EQ (1, tc->count ());
+
+  ts.tv_nsec = 200 * 1000 * 1000;
+  timer.ticktock (ts);
+  EXPECT_EQ (1, tc->count ());
+}

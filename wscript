@@ -5,7 +5,7 @@ APPNAME = 'CPP_PROJECT'
 VERSION = "0.2.0-alpha"
 
 target_name = 'swarm'
-lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h']
+lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h', 'timer.h']
 test_cmd = 'my_test'
 main_lib = ['pthread', 'pcap']
 
