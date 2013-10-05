@@ -27,22 +27,14 @@
 #ifndef SRC_COMMON_H__
 #define SRC_COMMON_H__
 
-#include <assert.h>
 #include <sys/types.h>
-#include <pcap.h>
-#include <string>
-#include <map>
-#include <vector>
-#include <deque>
-
-#include "./netcap.h"
-
 
 namespace swarm {
   typedef u_int8_t  byte_t;  // 1 byte data type
   typedef int64_t    ev_id;  // Event ID
   typedef int64_t param_id;  // Parameter ID
   typedef int64_t  hdlr_id;  // Handler Entry ID
+  typedef int64_t  task_id;  // Task ID
   typedef int       dec_id;  // Decoder ID
 
   const ev_id    EV_NULL = -1;
@@ -52,6 +44,7 @@ namespace swarm {
   const param_id PARAM_NULL = -1;
   const param_id PARAM_BASE =  0;
   const dec_id   DEC_NULL = -1;
+  const task_id  TASK_NULL = 0;
 
   class NetDec;
   class NetCap;
