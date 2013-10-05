@@ -36,9 +36,8 @@ namespace swarm {
   Task::~Task () {
   }
 
-
   TaskEntry::TaskEntry (task_id id, Task *task, tick_t interval, tick_t base,
-                        Timer::Mode mode) : 
+                        Timer::Mode mode) :
     id_(id), task_(task), interval_(interval), base_(base), next_tick_(0),
     mode_(mode) {
   }
@@ -63,14 +62,13 @@ namespace swarm {
   tick_t TaskEntry::next_tick () const {
     return this->next_tick_;
   }
-  Timer::Mode TaskEntry::mode () const { 
+  Timer::Mode TaskEntry::mode () const {
     return this->mode_;
   }
-  
 
 #ifdef __MACH__
   static const int CLOCK_PROCESS_CPUTIME_ID = 2;
-  //clock_gettime is not implemented on OSX
+  // clock_gettime is not implemented on OSX
   int clock_gettime (int clk_id, struct timespec *t) {
     struct timeval now;
     ::gettimeofday(&now, NULL);
@@ -182,7 +180,7 @@ namespace swarm {
       Task *task = (it->second)->task();
       assert (task);
       task->exec (now);
-      
+
       if (Timer::REPEAT == ent->mode ()) {
         this->push_task (ent);
       }
@@ -240,6 +238,5 @@ namespace swarm {
     return NULL;
   }
 
-  
 }  // namespace swarm
 

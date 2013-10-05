@@ -81,13 +81,12 @@ namespace swarm {
     void start ();
     void stop ();
     bool ready () const;
-    void fire (); 
+    void fire ();
   };
 
   class WindingTimer : public Timer {
   public:
     // Functions for MANUAL_CLOCK
-    
   };
 
   // ----------------------------------------------------------
@@ -115,8 +114,8 @@ namespace swarm {
                Timer::Mode mode);
     ~TaskEntry ();
     task_id id () const;
-    tick_t interval () const; 
-    Task *task () const;    
+    tick_t interval () const;
+    Task *task () const;
     Timer::Mode mode () const;
     tick_t calc_next_tick (tick_t curr);
     tick_t next_tick () const;

@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 APPNAME = 'CPP_PROJECT'
-VERSION = "0.1"
+VERSION = "0.2.0-alpha"
 
 target_name = 'swarm'
 lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h']
