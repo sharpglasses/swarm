@@ -51,9 +51,7 @@ namespace swarm {
     task_id task_id_seq_;
     tick_t curr_tick_;
     tick_t base_tick_;
-    inline static tick_t msec2tick (int msec) {
-      return static_cast<tick_t>(msec);
-    }
+    inline static tick_t msec2tick (int msec);
     inline static tick_t timespec2tick (const struct timespec &now);
     void push_task(TaskEntry *ent);
 

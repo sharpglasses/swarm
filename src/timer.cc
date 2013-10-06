@@ -53,9 +53,20 @@ namespace swarm {
     return this->task_;
   }
   tick_t TaskEntry::calc_next_tick (tick_t curr) {
+    /*
     while (this->next_tick_ <= curr) {
       assert (this->next_tick_ < this->next_tick_ + this->interval_);
       this->next_tick_ += this->interval_;
+    }
+    */
+
+    // If next_tick (in this context, previous tick), next_tick is
+    // depend on previous tick. However if previous tick + interval
+    // is over current tick, next_tick is calculated bsed on current tick
+    if (curr < this->next_tick_ + this->interval_) {
+      this->next_tick_ += this->interval_;
+    } else {
+      this->next_tick_ = curr + this->interval_;
     }
     return this->next_tick_;
   }
@@ -130,6 +141,7 @@ namespace swarm {
     tick_t next_tick = ent->calc_next_tick (this->curr_tick_);
     this->task_map_.insert (std::make_pair (ent->id (), ent));
     this->schedule_.insert (std::make_pair (next_tick, ent));
+    debug (0, "push task into %llu, %p", next_tick);
   }
 
   task_id Timer::install_task (Task *task, Mode mode, int msec) {
@@ -161,8 +173,13 @@ namespace swarm {
     }
   }
 
+  tick_t Timer::msec2tick (int msec) {
+    return static_cast<tick_t>(msec);
+  }
   tick_t Timer::timespec2tick (const struct timespec &now) {
-    return now.tv_sec * 1000 + now.tv_nsec / (1000 * 1000);
+    tick_t sec = now.tv_sec;
+    tick_t nsec = now.tv_nsec;
+    return (sec * 1000) + (nsec / (1000 * 1000));
   }
 
   void Timer::ticktock (const struct timespec &now) {
@@ -175,14 +192,17 @@ namespace swarm {
 
     auto begin = this->schedule_.begin ();
     auto end = this->schedule_.upper_bound (this->curr_tick_);
-    for (auto it = this->schedule_.begin (); it != end; it++) {
+    for (auto it = begin; it != end; it++) {
       TaskEntry *ent = (it->second);
       Task *task = (it->second)->task();
       assert (task);
       task->exec (now);
 
       if (Timer::REPEAT == ent->mode ()) {
+        // put TaskEntry into scheduler, and lookup end point of
+        // schedule_ again because of map is updated
         this->push_task (ent);
+        end = this->schedule_.upper_bound (this->curr_tick_);
       }
     }
 
@@ -219,7 +239,7 @@ namespace swarm {
     struct timespec curr_ts, next_ts, delta_ts;
 
     delta_ts.tv_sec = 0;
-    delta_ts.tv_nsec = 100 * 1000 * 1000;
+    delta_ts.tv_nsec = 1 * 1000 * 1000;
 
     clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &next_ts);
 
@@ -230,7 +250,12 @@ namespace swarm {
       } while (ts_gt (&curr_ts, &next_ts));
 
       ts_sub (&next_ts, &curr_ts, &req);
-      ::nanosleep (&req, &rem);
+      while (0 != ::nanosleep (&req, &rem)) {
+        req.tv_sec = rem.tv_sec;
+        req.tv_nsec = rem.tv_nsec;
+        debug (1, "reset");
+      }
+      debug (0, "ready!");
       t->ready_ = 1;
     }
 
