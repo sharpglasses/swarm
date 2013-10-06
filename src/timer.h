@@ -63,6 +63,7 @@ namespace swarm {
     task_id install_task (Task *task, Mode mode, int msec);
     bool remove_task (task_id t_id);
     void ticktock (const struct timespec &now);
+    void ticktock (const struct timeval &now);
   };
 
   // ----------------------------------------------------------
@@ -72,6 +73,7 @@ namespace swarm {
     u_int32_t ready_;
     u_int32_t enable_;
     pthread_t clock_th_;
+    static const bool DBG = false;
 
   public:
     // Functions for REALTIME_CLOCK

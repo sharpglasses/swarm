@@ -210,19 +210,23 @@ namespace swarm {
       this->schedule_.erase (begin, end);
     }
   }
+  void Timer::ticktock (const struct timeval &now) {
+    struct timespec ts = {now.tv_sec, now.tv_usec * 1000};
+    this->ticktock (ts);
+  }
 
   // Functions for realtime clock
   void RealtimeTimer::start () {
-    debug (1, "start timer");
+    debug (DBG, "start timer");
     this->ready_ = 0;
     this->enable_ = 1;
     ::pthread_create (&this->clock_th_, NULL, RealtimeTimer::clock, this);
   }
   void RealtimeTimer::stop () {
-    debug (1, "exiting..");
+    debug (DBG, "exiting..");
     this->enable_ = 0;
     pthread_join (this->clock_th_, NULL);
-    debug (1, "exit");
+    debug (DBG, "exit");
   }
   bool RealtimeTimer::ready () const {
     return this->ready_;
@@ -253,13 +257,13 @@ namespace swarm {
       while (0 != ::nanosleep (&req, &rem)) {
         req.tv_sec = rem.tv_sec;
         req.tv_nsec = rem.tv_nsec;
-        debug (1, "reset");
+        debug (DBG, "reset");
       }
-      debug (0, "ready!");
+      debug (DBG, "ready!");
       t->ready_ = 1;
     }
 
-    debug (1, "exit");
+    debug (DBG, "exit");
     return NULL;
   }
 

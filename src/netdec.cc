@@ -99,8 +99,9 @@ namespace swarm {
                       const int dlt) {
     // main process of NetDec
     Property * prop = this->prop_;
-
     prop->init (data, cap_len, data_len, tv);
+
+    // emit to decoder
     switch (dlt) {
     case DLT_EN10MB: this->decode (this->dec_ether_, prop); break;
     case DLT_RAW:    this->decode (this->dec_ipv4_, prop); break;
@@ -108,8 +109,10 @@ namespace swarm {
       return false;
     }
 
+    // calculate hash value of 5 tuple
     prop->calc_hash ();
 
+    // execute callback function of handler
     ev_id eid;
     while (EV_NULL != (eid = prop->pop_event ())) {
       assert (0 <= eid && eid < this->event_handler_.size ());
@@ -122,6 +125,9 @@ namespace swarm {
         }
       }
     }
+
+    // handle timer
+    this->timer_->ticktock (tv);
 
     return true;
   }
