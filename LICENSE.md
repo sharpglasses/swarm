@@ -1,6 +1,6 @@
 # License
 
-## data/SkypeIRC.pcap
+## data/SkypeIRC.cap
 
 - Original: [SkypeIRC.pcap](http://wiki.wireshark.org/SampleCaptures?action=AttachFile&do=get&target=SkypeIRC.cap) in Wireshark Wiki
 - License: GNU General Public License [http://wiki.wireshark.org/License](http://wiki.wireshark.org/License)
