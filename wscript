@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-APPNAME = 'CPP_PROJECT'
-VERSION = "0.2.0-alpha"
+APPNAME = 'swarm'
+VERSION = "0.2.0-beta"
 
 target_name = 'swarm'
 lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h', 'timer.h']
