@@ -54,7 +54,8 @@ namespace swarm {
   class VarFactory;
   class Var;
   class Decoder;
-
+  class Timer;
+  class Task;
 }  // namespace swarm
 
 #endif  // SRC_COMMON_H__

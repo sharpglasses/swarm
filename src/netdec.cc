@@ -27,6 +27,7 @@
 #include "./netdec.h"
 #include "./property.h"
 #include "./decode.h"
+#include "./timer.h"
 
 namespace swarm {
   // -------------------------------------------------------
@@ -58,7 +59,8 @@ namespace swarm {
     base_eid_(EV_BASE),
     base_pid_(PARAM_BASE),
     base_hid_(HDLR_BASE),
-    none_("") {
+    none_(""),
+    timer_(new Timer ()) {
     int mod_count =
       DecoderMap::build_decoder_vector (this, &(this->dec_mod_),
                                         &(this->dec_name_));
@@ -87,6 +89,7 @@ namespace swarm {
 
     this->fwd_dec_.clear ();
     this->rev_dec_.clear ();
+    delete this->timer_;
   }
 
 
@@ -208,6 +211,17 @@ namespace swarm {
       return hdlr;
     }
   }
+
+  task_id NetDec::set_onetime_timer (Task *task, int delay_msec) {
+    return this->timer_->install_task (task, Timer::ONCE, delay_msec);
+  }
+  task_id NetDec::set_repeat_timer (Task *task, int interval_msec) {
+    return this->timer_->install_task (task, Timer::REPEAT, interval_msec);
+  }
+  bool NetDec::unset_timer (task_id id) {
+    return this->timer_->remove_task (id);
+  }
+
 
   ev_id NetDec::assign_event (const std::string &name,
                               const std::string &desc) {

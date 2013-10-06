@@ -81,6 +81,8 @@ namespace swarm {
       return static_cast <size_t> (eid - EV_BASE);
     }
 
+    Timer *timer_;
+
   public:
     NetDec ();
     ~NetDec ();
@@ -105,6 +107,12 @@ namespace swarm {
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
     hdlr_id set_handler (const std::string ev_name, Handler * hdlr);
     Handler * unset_handler (hdlr_id hid);
+
+    // Timer
+    task_id set_onetime_timer (Task *task, int delay_msec);
+    task_id set_repeat_timer (Task *task, int interval_msec);
+    bool unset_timer (task_id id);
+
 
     // ----------------------------------------------
     // for modules, not used for external program

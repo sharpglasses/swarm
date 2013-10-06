@@ -28,10 +28,12 @@
 #define SRC_NETCAP_H__
 
 #include <string>
+#include "./common.h"
 
 namespace swarm {
   class NetDec;
   class RealtimeTimer;
+  class Task;
 
   class NetCap {
   private:
@@ -57,6 +59,11 @@ namespace swarm {
     bool capture (const std::string &dev, const std::string &filter="");
     bool capture_alldev (const std::string &filter="");
     bool read_pcapfile (const std::string &file, const std::string &filter="");
+
+    task_id set_onetime_timer (Task *task, int delay_msec);
+    task_id set_repeat_timer (Task *task, int interval_msec);
+    bool unset_timer (task_id id);
+
     const std::string &errmsg () const;
   };
 }  //  namespace swarm

@@ -252,6 +252,17 @@ namespace swarm {
     this->pcap_ = NULL;
     return res;
   }
+
+  task_id NetCap::set_onetime_timer (Task *task, int delay_msec) {
+    return this->timer_->install_task (task, Timer::ONCE, delay_msec);
+  }
+  task_id NetCap::set_repeat_timer (Task *task, int interval_msec) {
+    return this->timer_->install_task (task, Timer::REPEAT, interval_msec);
+  }
+  bool NetCap::unset_timer (task_id id) {
+    return this->timer_->remove_task (id);
+  }
+
   const std::string &NetCap::errmsg () const {
     return this->errmsg_;
   }
