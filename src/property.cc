@@ -26,6 +26,7 @@
 
 
 #include <arpa/inet.h>
+#include <string.h>
 #include "./property.h"
 #include "./var.h"
 

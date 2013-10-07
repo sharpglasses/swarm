@@ -24,6 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include "./netdec.h"
 #include "./property.h"
 #include "./decode.h"

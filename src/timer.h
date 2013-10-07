@@ -28,6 +28,7 @@
 #define SRC_TIMER_H__
 
 #include <pthread.h>
+#include <stdint.h>
 #include <map>
 #include "./common.h"
 
