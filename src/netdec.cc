@@ -60,7 +60,15 @@ namespace swarm {
     base_pid_(PARAM_BASE),
     base_hid_(HDLR_BASE),
     none_(""),
+    recv_len_(0),
+    cap_len_(0),
+    recv_pkt_(0),
     timer_(new Timer ()) {
+    this->init_ts_.tv_sec = 0;;
+    this->init_ts_.tv_nsec = 0;;
+    this->last_ts_.tv_sec = 0;;
+    this->last_ts_.tv_nsec = 0;;
+
     int mod_count =
       DecoderMap::build_decoder_vector (this, &(this->dec_mod_),
                                         &(this->dec_name_));
@@ -106,6 +114,18 @@ namespace swarm {
     Property * prop = this->prop_;
     // If cap_len == 0, actual captured length is same with real packet length
     size_t c_len = (cap_len == 0) ? len : cap_len;
+
+    // update stat information
+    if (this->init_ts_.tv_sec == 0) {
+      this->init_ts_.tv_sec = tv.tv_sec;
+      this->init_ts_.tv_nsec = tv.tv_usec * 1000;
+    }
+
+    this->recv_pkt_ += 1;
+    this->recv_len_ += len;
+    this->cap_len_ += c_len;
+    this->last_ts_.tv_sec = tv.tv_sec;
+    this->last_ts_.tv_nsec = tv.tv_usec * 1000;
 
     // Initialize property with packet data
     // NOTE: memory of data must be secured in this function because of
@@ -232,6 +252,30 @@ namespace swarm {
   }
   bool NetDec::unset_timer (task_id id) {
     return this->timer_->remove_task (id);
+  }
+
+  uint64_t NetDec::recv_len () const {
+    return this->recv_len_;
+  }
+  uint64_t NetDec::cap_len () const {
+    return this->cap_len_;
+  }
+  uint64_t NetDec::recv_pkt () const {
+    return this->recv_pkt_;
+  }
+  void NetDec::init_ts (struct timespec *ts) const {
+    memcpy (ts, &(this->init_ts_), sizeof (struct timespec));
+  }
+  void NetDec::last_ts (struct timespec *ts) const {
+    memcpy (ts, &(this->init_ts_), sizeof (struct timespec));
+  }
+  double NetDec::init_ts () const {
+    return static_cast<double> (this->init_ts_.tv_sec) +
+      static_cast<double> (this->init_ts_.tv_nsec) / (1000 * 1000 * 1000);
+  }
+  double NetDec::last_ts () const {
+    return static_cast<double> (this->last_ts_.tv_sec) +
+      static_cast<double> (this->last_ts_.tv_nsec) / (1000 * 1000 * 1000);
   }
 
 

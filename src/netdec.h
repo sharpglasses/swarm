@@ -76,6 +76,13 @@ namespace swarm {
     dec_id dec_default_;
     Property * prop_;
 
+    // now can count by 16 Exa byte/packet
+    uint64_t recv_len_;
+    uint64_t cap_len_;
+    uint64_t recv_pkt_;
+    struct timespec init_ts_;
+    struct timespec last_ts_;
+
     inline static size_t eid2idx (const ev_id eid) {
       return static_cast <size_t> (eid - EV_BASE);
     }
@@ -113,6 +120,14 @@ namespace swarm {
     task_id set_repeat_timer (Task *task, int interval_msec);
     bool unset_timer (task_id id);
 
+    // Stat
+    uint64_t recv_len () const;
+    uint64_t cap_len () const;
+    uint64_t recv_pkt () const;
+    void init_ts (struct timespec *ts) const;
+    void last_ts (struct timespec *ts) const;
+    double init_ts () const;
+    double last_ts () const;
 
     // ----------------------------------------------
     // for modules, not used for external program

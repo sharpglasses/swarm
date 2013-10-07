@@ -370,4 +370,16 @@ namespace SkypeIRC {
     EXPECT_EQ (  5, tc3->count ());
   }
 
+  TEST_F (SkypeIRCFix, Stat) {
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
+    }
+
+    EXPECT_EQ (384637, nd->recv_len ());
+    EXPECT_EQ (384637, nd->cap_len ());
+    EXPECT_EQ (2263,   nd->recv_pkt ());
+    EXPECT_DOUBLE_EQ (322.74977612495422, nd->last_ts () - nd->init_ts ());
+  }
+
 }  // namespace SkypeIRC
