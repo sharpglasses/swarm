@@ -44,24 +44,29 @@ class NetDecBench : public swarm::Task {
   void exec (const struct timespec &ts) {
     this->stat ();
   }
+  static inline double now () {
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return static_cast<double>(tv.tv_sec) +
+      static_cast<double>(tv.tv_usec) / 1000000;
+  }
+  void start () {
+    this->prev_ts_ = NetDecBench::now ();
+  }
   void stat () {
-    if (this->prev_ts_ == 0) {
-      // this->prev_ts_ = this->nd_->init_ts ();
-    }
-
-    /*
-    double now_ts = nd->now_ts ();
+    double now_ts = NetDecBench::now ();
     double delta = now_ts - this->prev_ts_;
 
     uint64_t curr_len = this->nd_->recv_len ();
     uint64_t curr_pkt = this->nd_->recv_pkt ();
 
-    printf ("%16.6f %7.3 Mbps, %7.3 Kpps\n", delta,
-            static_cast<double>(curr_len) / delta / 1000000,
-            static_cast<double>(curr_pkt) / delta / 1000);
+    double delta_len = static_cast<double>(curr_len - this->prev_len_);
+    double delta_pkt = static_cast<double>(curr_pkt - this->prev_pkt_);
+    printf ("%16.6f %7.3f Mbps, %7.3f Kpps\n", delta,
+            (delta_len * 8) / (delta * 1000 * 1000),
+            delta_pkt / (delta * 1000));
 
     this->prev_ts_ = now_ts;
-    */
   }
 };
 
@@ -95,6 +100,7 @@ bool do_benchmark (const optparse::Values& opt) {
     }
   }
 
+  nd_bench->start ();
   if (!nc->start ()) {
     fprintf (stderr, "error: %s\n", nc->errmsg ().c_str ());
   }
