@@ -203,21 +203,26 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Property
-  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), buf_len_(0) {
+  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL) {
     this->nd_->build_param_vector (&(this->param_));
   }
   Property::~Property () {
+    /*
     if (this->buf_) {
       free (this->buf_);
     }
+    */
   }
   void Property::init  (const byte_t *data, const size_t cap_len,
                         const size_t data_len, const struct timeval &tv) {
+    // In this version, init is now zero-copy implementation
+    /*
     if (this->buf_len_ < cap_len) {
       this->buf_len_ = cap_len;
       this->buf_ = static_cast <byte_t *>
         (::realloc (static_cast <void*> (this->buf_), this->buf_len_));
     }
+    */
 
     this->tv_sec_   = tv.tv_sec;
     this->tv_usec_  = tv.tv_usec;
@@ -225,8 +230,10 @@ namespace swarm {
     this->cap_len_  = cap_len;
     this->ptr_      = 0;
 
-    assert (this->buf_len_ >= cap_len);
-    ::memcpy (this->buf_, data, cap_len);
+    // In this version, init is now zero-copy implementation
+    // assert (this->buf_len_ >= cap_len);
+    // ::memcpy (this->buf_, data, cap_len);
+    this->buf_ = data;
 
     for (size_t i = 0; i < this->param_.size (); i++) {
       this->param_[i]->init ();
@@ -273,7 +280,7 @@ namespace swarm {
 
     if (this->ptr_ + alloc_size <= this->cap_len_) {
       size_t p = this->ptr_;
-      return &(this->buf_[p]);
+      return const_cast<byte_t*>(&(this->buf_[p]));
     } else {
       return NULL;
     }

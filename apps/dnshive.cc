@@ -96,11 +96,6 @@ class IPFlow : public swarm::Handler {
   }
 };
 
-void pcap_callback (u_char * user, const struct pcap_pkthdr *pkthdr,
-                    const u_char *pkt) {
-  swarm::NetDec * nd = reinterpret_cast<swarm::NetDec *> (user);
-  nd->input (pkt, pkthdr->len, pkthdr->caplen, pkthdr->ts, DLT_EN10MB);
-}
 
 static const int PCAP_BUFSIZE_ = 0xffff;
 static const int PCAP_TIMEOUT_ = 1;
@@ -117,7 +112,11 @@ void capture (const std::string &dev, const std::string &filter = "") {
   nd->set_handler ("ipv4.packet", ip4_flow);
 
   swarm::NetCap *nc = new swarm::NetCap (nd);
-  if (!nc->capture (dev, filter)) {
+  if (!nc->add_device (dev, filter)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
+  }
+
+  if (!nc->start ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 }
@@ -139,10 +138,13 @@ void read_pcapfile (const std::string &fpath) {
   // ----------------------------------------------
   // processing packets from pcap file
   swarm::NetCap *nc = new swarm::NetCap (nd);
-  if (!nc->read_pcapfile (fpath)) {
+  if (!nc->add_pcapfile (fpath)) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 
+  if (!nc->start ()) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
+  }
   return;
 }
 

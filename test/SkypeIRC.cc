@@ -192,8 +192,7 @@ namespace SkypeIRC {
 
     for (auto it = test_data.begin (); it != test_data.end (); it++) {
       PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
-                 p->dlt ());
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
     }
 
     EXPECT_EQ (10, h1->count ());
@@ -211,8 +210,7 @@ namespace SkypeIRC {
 
     for (auto it = test_data.begin (); it != test_data.end (); it++) {
       PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
-                 p->dlt ());
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
     }
 
     EXPECT_EQ (2263, h1->count ());
@@ -274,8 +272,7 @@ namespace SkypeIRC {
 
     for (auto it = test_data.begin (); it != test_data.end (); it++) {
       PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
-                 p->dlt ());
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
     }
 
     for (auto it = tests_.begin (); it != tests_.end (); it++) {
@@ -333,8 +330,7 @@ namespace SkypeIRC {
 
     for (auto it = test_data.begin (); it != test_data.end (); it++) {
       PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
-                 p->dlt ());
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
     }
 
     for (auto it = tests_.begin (); it != tests_.end (); it++) {
@@ -366,8 +362,7 @@ namespace SkypeIRC {
     for (auto it = test_data.begin (); it != test_data.end () && i < 32;
          it++, i++) {
       PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), p->caplen (), *(p->ts ()),
-                 p->dlt ());
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
     }
 
     EXPECT_EQ (  1, tc1->count ());

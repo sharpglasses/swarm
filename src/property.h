@@ -100,8 +100,8 @@ namespace swarm {
     time_t tv_usec_;
 
     // buffer for payload management
-    byte_t *buf_;
-    size_t buf_len_;
+    const byte_t *buf_;
+    // size_t buf_len_;
     size_t data_len_;
     size_t cap_len_;
     size_t ptr_;
@@ -151,7 +151,10 @@ namespace swarm {
     size_t cap_len () const;  // captured data length
     void tv (struct timeval *tv) const;
     double ts () const;
+
+    // ToDo(masa): byte_t * refer() should be const byte_t * refer()
     byte_t * refer (size_t alloc_size);
+    // ToDo(masa): byte_t * payload() should be const byte_t * payload()
     byte_t * payload (size_t alloc_size);
     size_t remain () const;
 

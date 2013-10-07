@@ -36,10 +36,9 @@ namespace swarm {
   Task::~Task () {
   }
 
-  TaskEntry::TaskEntry (task_id id, Task *task, tick_t interval, tick_t base,
+  TaskEntry::TaskEntry (task_id id, Task *task, tick_t interval,
                         Timer::Mode mode) :
-    id_(id), task_(task), interval_(interval), base_(base), next_tick_(0),
-    mode_(mode) {
+    id_(id), task_(task), interval_(interval), next_tick_(0), mode_(mode) {
   }
   TaskEntry::~TaskEntry () {
   }
@@ -141,13 +140,12 @@ namespace swarm {
     tick_t next_tick = ent->calc_next_tick (this->curr_tick_);
     this->task_map_.insert (std::make_pair (ent->id (), ent));
     this->schedule_.insert (std::make_pair (next_tick, ent));
-    debug (0, "push task into %llu, %p", next_tick);
+    debug (0, "push task into %llu, %p", next_tick, ent);
   }
 
   task_id Timer::install_task (Task *task, Mode mode, int msec) {
     task_id t_id = ++(this->task_id_seq_);
-    TaskEntry * ent = new TaskEntry (t_id, task, msec2tick (msec),
-                                     this->curr_tick_,  mode);
+    TaskEntry * ent = new TaskEntry (t_id, task, msec2tick (msec), mode);
     this->push_task (ent);
     return ent->id ();
   }

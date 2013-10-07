@@ -191,9 +191,9 @@ TEST (NetDec, basic_scenario) {
   pd = pcap_open_offline(sample_file.c_str (), errbuf);
   ASSERT_TRUE (pd != NULL);
 
-  int dlt = pcap_datalink (pd);
+  ASSERT_TRUE (DLT_EN10MB == pcap_datalink (pd));
   while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
-    nd->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts, dlt);
+    nd->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
   }
 
   EXPECT_EQ ( 707, dns_h->count ());

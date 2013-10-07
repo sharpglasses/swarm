@@ -73,8 +73,7 @@ namespace swarm {
     std::vector <std::string> dec_name_;
 
     std::vector <std::deque <HandlerEntry *> * > event_handler_;
-    dec_id dec_ether_;
-    dec_id dec_ipv4_;
+    dec_id dec_default_;
     Property * prop_;
 
     inline static size_t eid2idx (const ev_id eid) {
@@ -87,8 +86,9 @@ namespace swarm {
     NetDec ();
     ~NetDec ();
 
-    bool input (const byte_t *data, const size_t cap_len,
-                const size_t data_len, const struct timeval &tv, int dlt);
+    bool set_default_decoder (const std::string &dec);
+    bool input (const byte_t *data, const size_t len,
+                const struct timeval &tv, const size_t cap_len = 0);
 
     // Event
     ev_id lookup_event_id (const std::string &name);

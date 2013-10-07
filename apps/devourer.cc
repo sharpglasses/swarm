@@ -110,7 +110,7 @@ class FlowHandler : public swarm::Handler {
     for (auto it = this->flow_map_.begin();
          it != this->flow_map_.end(); it++) {
       Flow * f = it->second;
-      printf("%016lX, %s, %ld, %ld\n",
+      printf("%016lX, %s, %lu, %lu\n",
               it->first, f->proto().c_str(), f->len(), f->pkt());
     }
   }
@@ -124,7 +124,7 @@ class FlowHandler : public swarm::Handler {
       count++;
     }
 
-    printf("%lu, %lu, %lu\n", count, size, pkt);
+    printf("%llu, %llu, %llu\n", count, size, pkt);
   }
 };
 
@@ -138,7 +138,11 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   // ----------------------------------------------
   // processing packets from pcap file
   swarm::NetCap *nc = new swarm::NetCap (nd);
-  if (!nc->read_pcapfile (fpath)) {
+  if (!nc->add_pcapfile (fpath)) {
+    printf ("error: %s\n", nc->errmsg ().c_str ());
+  }
+
+  if (!nc->start ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }
 

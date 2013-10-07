@@ -64,8 +64,12 @@ namespace swarm {
     return true;
   }
 
-  NetCap::NetCap (NetDec *nd) : nd_(nd), pcap_(NULL), dlt_(-1),
-                                timer_(new RealtimeTimer ()) {
+  NetCap::NetCap (NetDec *nd) :
+    nd_(nd),
+    pcap_(NULL),
+    dlt_set_(false),
+    dlt_(-1),
+    timer_(new RealtimeTimer ()) {
   }
   NetCap::~NetCap () {
     delete this->timer_;
@@ -93,7 +97,16 @@ namespace swarm {
 
     // delegate pcap descriptor
     this->pcap_ = pd;
-    this->dlt_ = pcap_datalink (pd);
+
+    int dlt = pcap_datalink (pd);
+    if (!this->dlt_set_ || this->dlt_ == dlt) {
+      this->dlt_ = dlt;
+      this->dlt_set_ = true;
+    } else {
+      this->errmsg_ = "DLT should be same among multiple interface";
+      return false;
+    }
+
     return true;
   }
 
@@ -117,7 +130,16 @@ namespace swarm {
 
     // delegate pcap descriptor
     this->pcap_ = pd;
-    this->dlt_ = pcap_datalink (pd);
+
+    int dlt = pcap_datalink (pd);
+    if (!this->dlt_set_ || this->dlt_ == dlt) {
+      this->dlt_ = dlt;
+      this->dlt_set_ = true;
+    } else {
+      this->errmsg_ = "DLT should be same among multiple pcap";
+      return false;
+    }
+
     assert (this->nd_);
     return true;
   }
@@ -129,12 +151,21 @@ namespace swarm {
     const u_char *pkt_data;
     int rc;
 
+    std::string dec = "";
+    switch (this->dlt_) {
+    case DLT_EN10MB: dec = "ether"; break;
+    case DLT_RAW:    dec = "ipv4";  break;
+    default:
+      this->errmsg_ =
+        "Only DLT_EN10MB and DLT_RAW are supported in this version";
+      return false;
+    }
+
     while (true) {
       rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
 
       if (rc == 1) {
-        this->nd_->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts,
-                          this->dlt_);
+        this->nd_->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
       } else {
         if (rc == -2) {
           break;
@@ -147,7 +178,6 @@ namespace swarm {
 
       if (this->timer_->ready ()) {
         this->timer_->fire ();
-        debug (1, "ossu!");
       }
     }
 
@@ -158,100 +188,6 @@ namespace swarm {
     return rc;
   }
 
-  bool NetCap::capture (const std::string &dev, const std::string &filter) {
-    pcap_t * pd = NULL;
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    // open interface
-    if (NULL == (pd = pcap_open_live (dev.c_str (), PCAP_BUFSIZE_,
-                                      1, PCAP_TIMEOUT_, errbuf))) {
-      this->errmsg_.assign (errbuf);
-      return false;
-    }
-
-    // set filter
-    if (!NetCap::set_pcap_filter (pd, filter, &(this->errmsg_))) {
-      return false;
-    }
-
-    // delegate pcap descriptor
-    this->pcap_ = pd;
-    this->dlt_ = pcap_datalink (pd);
-
-    // ----------------------------------------------
-    // processing packets from pcap file
-    struct pcap_pkthdr *pkthdr;
-    const u_char *pkt_data;
-    int rc;
-
-    while (true) {
-      rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
-
-      if (rc == 1) {
-        this->nd_->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts,
-                          this->dlt_);
-      } else {
-        if (rc == -2) {
-          break;
-        } else if (rc < 0) {
-          rc = false;
-          this->errmsg_ = pcap_geterr (this->pcap_);
-          break;
-        }
-      }
-    }
-
-    pcap_close (this->pcap_);
-    this->pcap_ = NULL;
-    return rc;
-  }
-  bool NetCap::capture_alldev (const std::string &filter) {
-    assert (0);  // this function is not supported still this version
-    return false;
-  }
-  bool NetCap::read_pcapfile (const std::string &fpath,
-                               const std::string &filter) {
-    // ----------------------------------------------
-    // setup pcap file
-    pcap_t *pd;
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    pd = ::pcap_open_offline(fpath.c_str (), errbuf);
-    if (pd == NULL) {
-      this->errmsg_.assign (errbuf);
-      return false;
-    }
-
-    // set filter
-    if (!NetCap::set_pcap_filter (pd, filter, &(this->errmsg_))) {
-      return false;
-    }
-
-    // delegate pcap descriptor
-    this->pcap_ = pd;
-    this->dlt_ = pcap_datalink (pd);
-    assert (this->nd_);
-
-    // ----------------------------------------------
-    // processing packets from pcap file
-    struct pcap_pkthdr *pkthdr;
-    const u_char *pkt_data;
-    int rc;
-    bool res = true;
-    while (0 < (rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data))) {
-      this->nd_->input (pkt_data, pkthdr->len, pkthdr->caplen, pkthdr->ts,
-                        this->dlt_);
-    }
-
-    if (rc == -1) {
-      this->errmsg_ = pcap_geterr (this->pcap_);
-      res = false;
-    }
-
-    ::pcap_close (this->pcap_);
-    this->pcap_ = NULL;
-    return res;
-  }
 
   task_id NetCap::set_onetime_timer (Task *task, int delay_msec) {
     return this->timer_->install_task (task, Timer::ONCE, delay_msec);

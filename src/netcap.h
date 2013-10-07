@@ -39,6 +39,7 @@ namespace swarm {
   private:
     NetDec *nd_;
     pcap_t *pcap_;
+    bool dlt_set_;
     int dlt_;
     std::string errmsg_;
     RealtimeTimer *timer_;
@@ -55,10 +56,6 @@ namespace swarm {
     bool add_device (const std::string &dev, const std::string &filter="");
     bool add_pcapfile (const std::string &dev, const std::string &filter="");
     bool start ();
-
-    bool capture (const std::string &dev, const std::string &filter="");
-    bool capture_alldev (const std::string &filter="");
-    bool read_pcapfile (const std::string &file, const std::string &filter="");
 
     task_id set_onetime_timer (Task *task, int delay_msec);
     task_id set_repeat_timer (Task *task, int interval_msec);

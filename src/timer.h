@@ -105,13 +105,11 @@ namespace swarm {
     task_id id_;
     Task *task_;
     tick_t interval_;
-    tick_t base_;
     tick_t next_tick_;
     Timer::Mode mode_;
 
   public:
-    TaskEntry (task_id id, Task *task, tick_t interval, tick_t base,
-               Timer::Mode mode);
+    TaskEntry (task_id id, Task *task, tick_t interval, Timer::Mode mode);
     ~TaskEntry ();
     task_id id () const;
     tick_t interval () const;

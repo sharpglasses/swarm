@@ -73,11 +73,8 @@ namespace swarm {
       this->dec_mod_[n]->setup (this);
     }
 
-    this->dec_ether_ = this->lookup_dec_id ("ether");
-    assert (this->dec_ether_ != DEC_NULL);
-    this->dec_ipv4_ = this->lookup_dec_id ("ipv4");
-    assert (this->dec_ipv4_ != DEC_NULL);
-
+    this->dec_default_ = this->lookup_dec_id ("ether");
+    assert (this->dec_default_ != DEC_NULL);
     this->prop_ = new Property (this);
   }
   NetDec::~NetDec () {
@@ -94,20 +91,29 @@ namespace swarm {
 
 
 
-  bool NetDec::input (const byte_t *data, const size_t cap_len,
-                      const size_t data_len, const struct timeval &tv,
-                      const int dlt) {
-    // main process of NetDec
-    Property * prop = this->prop_;
-    prop->init (data, cap_len, data_len, tv);
-
-    // emit to decoder
-    switch (dlt) {
-    case DLT_EN10MB: this->decode (this->dec_ether_, prop); break;
-    case DLT_RAW:    this->decode (this->dec_ipv4_, prop); break;
-    default:
+  bool NetDec::set_default_decoder (const std::string &dec_name) {
+    dec_id d_id = this->lookup_dec_id (dec_name);
+    if (d_id != DEC_NULL) {
+      this->dec_default_ = d_id;
+      return true;
+    } else {
       return false;
     }
+  }
+  bool NetDec::input (const byte_t *data, const size_t len,
+                      const struct timeval &tv, const size_t cap_len) {
+    // main process of NetDec
+    Property * prop = this->prop_;
+    // If cap_len == 0, actual captured length is same with real packet length
+    size_t c_len = (cap_len == 0) ? len : cap_len;
+
+    // Initialize property with packet data
+    // NOTE: memory of data must be secured in this function because of
+    //       zero-copy impolementation.
+    prop->init (data, c_len, len, tv);
+
+    // emit to decoder
+    this->decode (this->dec_default_, prop);
 
     // calculate hash value of 5 tuple
     prop->calc_hash ();
