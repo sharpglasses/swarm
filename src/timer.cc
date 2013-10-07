@@ -230,6 +230,7 @@ namespace swarm {
     return this->ready_;
   }
   void RealtimeTimer::fire () {
+    debug (DBG, "fire");
     this->ready_ = 0;
     struct timespec now;
     clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &now);
@@ -244,13 +245,16 @@ namespace swarm {
     delta_ts.tv_nsec = 1 * 1000 * 1000;
 
     clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &next_ts);
+    debug (1, "start timer thread");
 
     while (t->enable_) {
       do {
+        debug (DBG, "sleep");
         clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &curr_ts);
         ts_inc (&next_ts, &delta_ts);
       } while (ts_gt (&curr_ts, &next_ts));
 
+      debug (DBG, "awake");
       ts_sub (&next_ts, &curr_ts, &req);
       while (0 != ::nanosleep (&req, &rem)) {
         req.tv_sec = rem.tv_sec;

@@ -161,6 +161,9 @@ namespace swarm {
       return false;
     }
 
+    assert (this->nd_->set_default_decoder (dec));
+    
+    this->timer_->start ();
     while (true) {
       rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
 

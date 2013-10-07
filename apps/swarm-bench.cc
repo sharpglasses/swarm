@@ -67,6 +67,8 @@ class NetDecBench : public swarm::Task {
             delta_pkt / (delta * 1000));
 
     this->prev_ts_ = now_ts;
+    this->prev_len_ = curr_len;
+    this->prev_pkt_ = curr_pkt;
   }
 };
 
@@ -92,12 +94,12 @@ bool do_benchmark (const optparse::Values& opt) {
       return false;
     }
 
-    nc->set_repeat_timer (nd_bench, 1000);
   } else if (opt.is_set ("interface")) {
     if (!nc->add_device (opt["interface"])) {
       fprintf (stderr, "add_interface error: %s\n", nc->errmsg ().c_str ());
       return false;
     }
+    nc->set_repeat_timer (nd_bench, 1000);
   }
 
   nd_bench->start ();
