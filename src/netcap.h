@@ -29,32 +29,51 @@
 
 #include <string>
 #include "./common.h"
+#include "./timer.h"
 
 namespace swarm {
   class NetDec;
   class RealtimeTimer;
   class Task;
 
+  // ----------------------------------------------------------------
+  // class NetCap:
+  // Base class of traffic capture classes. In this version, swarm supports
+  // only pcap based capture. However it will support other capture method
+  // such as etherpipe (https://github.com/sora/ethpipe).
+  //
   class NetCap {
+  public:
+    enum Status {
+      READY = 0,
+      RUNNING,
+      STOP,
+      FAIL,
+    };
+
   private:
     NetDec *nd_;
-    pcap_t *pcap_;
-    bool dlt_set_;
-    int dlt_;
-    std::string errmsg_;
     RealtimeTimer *timer_;
+    std::string errmsg_;
+    Status status_;
 
-    static const int PCAP_BUFSIZE_ = 0xffff;
-    static const int PCAP_TIMEOUT_ = 1;
-    static bool set_pcap_filter (pcap_t *pd, const std::string &filter,
-                                 std::string *errmsg);
+  protected:
+    inline NetDec *netdec() { return this->nd_; }
+    inline void timer_proc () {
+      if (this->timer_->ready ()) {
+        this->timer_->fire ();
+      }
+    }
+    void set_errmsg(const std::string &errmsg);
+    void set_status(Status st);
+    virtual bool run () = 0;
 
   public:
-    explicit NetCap (NetDec *nd = NULL);
-    ~NetCap ();
-    void set_netdec (NetDec *nd);
-    bool add_device (const std::string &dev, const std::string &filter="");
-    bool add_pcapfile (const std::string &dev, const std::string &filter="");
+    explicit NetCap ();
+    virtual ~NetCap ();
+    void connect (NetDec *nd);
+    inline Status status () const { return this->status_; }
+    inline bool ready () const { return (this->status_ == READY); }
     bool start ();
 
     task_id set_onetime_timer (Task *task, int delay_msec);
@@ -63,6 +82,52 @@ namespace swarm {
 
     const std::string &errmsg () const;
   };
+
+  // ----------------------------------------------------------------
+  // class PcapBase:
+  // Implemented common pcap functions for CapPcapDev and CapPcapFile
+  //
+  class PcapBase : public NetCap {
+  protected:
+    pcap_t *pcap_;
+    std::string filter_;
+    static const size_t PCAP_BUFSIZE_ = 0xffff;
+    static const size_t PCAP_TIMEOUT_ = 1;
+
+    bool run ();
+
+  public:
+    PcapBase ();
+    virtual ~PcapBase ();
+    bool set_filter (const std::string &filter);
+  };
+
+  // ----------------------------------------------------------------
+  // class CapPcapDev:
+  // Capture live traffic via pcap library from network device
+  //
+  class CapPcapDev : public PcapBase {
+  private:
+    std::string dev_name_;
+
+  public:
+    explicit CapPcapDev (const std::string &dev_name);
+    ~CapPcapDev ();
+  };
+
+  // ----------------------------------------------------------------
+  // class CapPcapDev:
+  // Capture stored traffic via pcap library from file
+  //
+  class CapPcapFile : public PcapBase {
+  private:
+    std::string file_path_;
+
+  public:
+    explicit CapPcapFile (const std::string &file_path);
+    ~CapPcapFile ();
+  };
+
 }  //  namespace swarm
 
 #endif  // SRC_NETCAP_H__

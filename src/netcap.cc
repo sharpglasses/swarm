@@ -38,156 +38,25 @@
 
 
 namespace swarm {
-
-  bool NetCap::set_pcap_filter (pcap_t *pd, const std::string &filter,
-                                       std::string *errmsg) {
-    if (!filter.empty ()) {
-      struct bpf_program fp;
-      bpf_u_int32 net  = 0;
-      bpf_u_int32 mask = 0;
-
-      /*
-      if (pcap_lookupnet(dev.c_str (), &net, &mask, errbuf) == -1) {
-        net = 0;
-      }
-      */
-
-      if (pcap_compile (pd, &fp, filter.c_str (), net, mask) < 0 ||
-          pcap_setfilter (pd, &fp) == -1) {
-        *errmsg  = "filter compile/set error: ";
-        *errmsg += pcap_geterr (pd);
-        *errmsg += " \"" + filter + "\"";
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  NetCap::NetCap (NetDec *nd) :
-    nd_(nd),
-    pcap_(NULL),
-    dlt_set_(false),
-    dlt_(-1),
+  // -------------------------------------------------------------------
+  // class NetCap
+  //
+  NetCap::NetCap () :
+    nd_(NULL),
     timer_(new RealtimeTimer ()) {
   }
   NetCap::~NetCap () {
     delete this->timer_;
   }
-  void NetCap::set_netdec (NetDec *nd) {
+  void NetCap::connect (NetDec *nd) {
     this->nd_ = nd;
   }
 
-  bool NetCap::add_device (const std::string &dev,
-                           const std::string &filter) {
-    pcap_t * pd = NULL;
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    // open interface
-    if (NULL == (pd = pcap_open_live (dev.c_str (), PCAP_BUFSIZE_,
-                                      1, PCAP_TIMEOUT_, errbuf))) {
-      this->errmsg_.assign (errbuf);
-      return false;
-    }
-
-    // set filter
-    if (!NetCap::set_pcap_filter (pd, filter, &(this->errmsg_))) {
-      return false;
-    }
-
-    // delegate pcap descriptor
-    this->pcap_ = pd;
-
-    int dlt = pcap_datalink (pd);
-    if (!this->dlt_set_ || this->dlt_ == dlt) {
-      this->dlt_ = dlt;
-      this->dlt_set_ = true;
-    } else {
-      this->errmsg_ = "DLT should be same among multiple interface";
-      return false;
-    }
-
-    return true;
-  }
-
-  bool NetCap::add_pcapfile (const std::string &fpath,
-                             const std::string &filter) {
-    // ----------------------------------------------
-    // setup pcap file
-    pcap_t *pd;
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    pd = ::pcap_open_offline(fpath.c_str (), errbuf);
-    if (pd == NULL) {
-      this->errmsg_.assign (errbuf);
-      return false;
-    }
-
-    // set filter
-    if (!NetCap::set_pcap_filter (pd, filter, &(this->errmsg_))) {
-      return false;
-    }
-
-    // delegate pcap descriptor
-    this->pcap_ = pd;
-
-    int dlt = pcap_datalink (pd);
-    if (!this->dlt_set_ || this->dlt_ == dlt) {
-      this->dlt_ = dlt;
-      this->dlt_set_ = true;
-    } else {
-      this->errmsg_ = "DLT should be same among multiple pcap";
-      return false;
-    }
-
-    assert (this->nd_);
-    return true;
-  }
 
   bool NetCap::start () {
-    // ----------------------------------------------
-    // processing packets from pcap file
-    struct pcap_pkthdr *pkthdr;
-    const u_char *pkt_data;
-    int rc;
-
-    std::string dec = "";
-    switch (this->dlt_) {
-    case DLT_EN10MB: dec = "ether"; break;
-    case DLT_RAW:    dec = "ipv4";  break;
-    default:
-      this->errmsg_ =
-        "Only DLT_EN10MB and DLT_RAW are supported in this version";
-      return false;
-    }
-
-    assert (this->nd_->set_default_decoder (dec));
-    
     this->timer_->start ();
-    while (true) {
-      rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
-
-      if (rc == 1) {
-        this->nd_->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
-      } else {
-        if (rc == -2) {
-          break;
-        } else if (rc < 0) {
-          rc = false;
-          this->errmsg_ = pcap_geterr (this->pcap_);
-          break;
-        }
-      }
-
-      if (this->timer_->ready ()) {
-        this->timer_->fire ();
-      }
-    }
-
+    bool rc = this->run ();
     this->timer_->stop ();
-
-    pcap_close (this->pcap_);
-    this->pcap_ = NULL;
     return rc;
   }
 
@@ -202,7 +71,147 @@ namespace swarm {
     return this->timer_->remove_task (id);
   }
 
+  void NetCap::set_status(Status st) {
+    this->status_ = st;
+  }
+  void NetCap::set_errmsg (const std::string &errmsg) {
+    this->errmsg_ = errmsg;
+  }
   const std::string &NetCap::errmsg () const {
     return this->errmsg_;
+  }
+
+
+  // -------------------------------------------------------------------
+  // class PcapBase
+  //
+  PcapBase::PcapBase () : pcap_(NULL) {
+  }
+  PcapBase::~PcapBase () {
+  }
+  bool PcapBase::set_filter (const std::string &filter) {
+    if (this->pcap_ == NULL) {
+      this->set_errmsg("Can't apply filter to unavailable device/file");
+      return false;
+    }
+
+    if (!filter.empty ()) {
+      struct bpf_program fp;
+      bpf_u_int32 net  = 0;
+      bpf_u_int32 mask = 0;
+
+      /*
+      if (pcap_lookupnet(dev.c_str (), &net, &mask, errbuf) == -1) {
+        net = 0;
+      }
+      */
+
+      if (pcap_compile (this->pcap_, &fp, filter.c_str (), net, mask) < 0 ||
+          pcap_setfilter (this->pcap_, &fp) == -1) {
+        std::string err;
+        err = "filter compile/set error: ";
+        err += pcap_geterr (this->pcap_);
+        err += " \"" + filter + "\"";
+        this->set_errmsg (err);
+        return false;
+      }
+
+      this->filter_ = filter;
+    }
+
+    return true;
+  }
+
+  bool PcapBase::run () {
+    // delegate pcap descriptor
+    int dlt = pcap_datalink (this->pcap_);
+    std::string dec = "";
+    switch (dlt) {
+    case DLT_EN10MB: dec = "ether"; break;
+    case DLT_RAW:    dec = "ipv4";  break;
+    default:
+      this->set_errmsg ("Only DLT_EN10MB and DLT_RAW are "
+                        "supported in this version");
+      this->set_status (NetCap::FAIL);
+      return false;
+    }
+
+    std::string err;
+    if (!this->netdec()->set_default_decoder(dec)) {
+      this->set_errmsg(this->netdec()->errmsg());
+      this->set_status(FAIL);
+      return false;
+    }
+
+    // ----------------------------------------------
+    // processing packets from pcap file
+    struct pcap_pkthdr *pkthdr;
+    const u_char *pkt_data;
+    int rc;
+
+    while (true) {
+      rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
+
+      if (rc == 1) {
+        this->netdec()->input (pkt_data, pkthdr->len, pkthdr->ts,
+                               pkthdr->caplen);
+      } else {
+        if (rc == -2) {
+          break;
+        } else if (rc < 0) {
+          rc = false;
+          this->set_errmsg (pcap_geterr (this->pcap_));
+          break;
+        }
+      }
+
+      this->timer_proc ();
+    }
+
+    pcap_close (this->pcap_);
+    this->pcap_ = NULL;
+    return rc;
+  }
+
+
+
+  // -------------------------------------------------------------------
+  // class CapPcapDev
+  //
+  CapPcapDev::CapPcapDev (const std::string &dev_name) :
+    dev_name_(dev_name) {
+    char errbuf[PCAP_ERRBUF_SIZE];
+
+    this->pcap_ = pcap_open_live (this->dev_name_.c_str (), PCAP_BUFSIZE_,
+                                  1, PCAP_TIMEOUT_, errbuf);
+    // open interface
+    if (NULL == this->pcap_) {
+      this->set_errmsg (errbuf);
+      this->set_status (NetCap::FAIL);
+    } else {
+      this->set_status (NetCap::READY);
+    }
+  }
+  CapPcapDev::~CapPcapDev () {
+  }
+
+
+
+  // -------------------------------------------------------------------
+  // class CapPcapFile
+  //
+  CapPcapFile::CapPcapFile (const std::string &file_path) :
+    file_path_(file_path) {
+    char errbuf[PCAP_ERRBUF_SIZE];
+
+    this->pcap_ = ::pcap_open_offline(this->file_path_.c_str (), errbuf);
+    if (this->pcap_ == NULL) {
+      this->set_errmsg (errbuf);
+      this->set_status (NetCap::FAIL);
+    } else {
+      this->set_status (NetCap::READY);
+    }
+  }
+  CapPcapFile::~CapPcapFile () {
   }
 }  // namespace swarm

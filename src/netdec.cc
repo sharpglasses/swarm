@@ -279,6 +279,10 @@ namespace swarm {
       static_cast<double> (this->last_ts_.tv_nsec) / (1000 * 1000 * 1000);
   }
 
+  const std::string &NetDec::errmsg () const {
+    return this->errmsg_;
+  }
+
 
   ev_id NetDec::assign_event (const std::string &name,
                               const std::string &desc) {

@@ -80,7 +80,7 @@ bool do_benchmark (const optparse::Values& opt) {
 
   // ----------------------------------------------
   // processing packets from pcap file
-  swarm::NetCap *nc = new swarm::NetCap (nd);
+  swarm::NetCap *nc = NULL;
 
   if (!(opt.is_set ("read_file") ^ opt.is_set ("interface"))) {
     fprintf (stderr, "error: can't specify read_file option "
@@ -89,19 +89,18 @@ bool do_benchmark (const optparse::Values& opt) {
   }
 
   if (opt.is_set ("read_file")) {
-    if (!nc->add_pcapfile (opt["read_file"])) {
-      fprintf (stderr, "add_pcapfile error: %s\n", nc->errmsg ().c_str ());
-      return false;
-    }
-
+    nc = new swarm::CapPcapFile (opt["read_file"]);
   } else if (opt.is_set ("interface")) {
-    if (!nc->add_device (opt["interface"])) {
-      fprintf (stderr, "add_interface error: %s\n", nc->errmsg ().c_str ());
-      return false;
-    }
+    nc = new swarm::CapPcapDev (opt["interface"]);
     nc->set_repeat_timer (nd_bench, 1000);
   }
 
+  if (nc->status () != swarm::NetCap::READY) {
+    fprintf (stderr, "add device/file error: %s\n", nc->errmsg ().c_str ());
+    return false;
+  }
+
+  nc->connect (nd);
   nd_bench->start ();
   if (!nc->start ()) {
     fprintf (stderr, "error: %s\n", nc->errmsg ().c_str ());

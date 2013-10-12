@@ -88,6 +88,7 @@ namespace swarm {
     }
 
     Timer *timer_;
+    std::string errmsg_;
 
   public:
     NetDec ();
@@ -128,6 +129,9 @@ namespace swarm {
     void last_ts (struct timespec *ts) const;
     double init_ts () const;
     double last_ts () const;
+
+    // Error
+    const std::string &errmsg () const;
 
     // ----------------------------------------------
     // for modules, not used for external program
