@@ -28,7 +28,8 @@ C++ based lightweight and high-speed network traffic decoding library.
     int main () {
       swarm::NetDec * nd = new swarm::NetDec ();
       nd->set_handler ("dns.packet", new DnsHandler ());
-      swarm::NetCap * nc = new swarm::NetCap (nd);
-      nc->capture ("eth0");
+      swarm::NetCap * nc = new swarm::CapPcapDev ("eth0");
+      nc->bind_netdec (nd);
+      nc->start ();
     }
 

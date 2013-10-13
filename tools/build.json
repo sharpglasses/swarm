@@ -4,6 +4,7 @@
    "file_list": {"src":  ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "src/proto": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "test": ["^[A-Za-z0-9].*\\.(cc|h)"],
+                 "example": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "apps": ["^[A-Za-z0-9].*\\.(cc|h)"]
                 },
    "enable": 1

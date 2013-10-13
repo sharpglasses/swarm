@@ -122,12 +122,22 @@ def build(bld):
                     source = [src],
                     target = src.split ('.')[0],
                     use = [target_name, 'optparse'],
-                    lib = ['pthread'],
                     includes = [inc_dir],
                     LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
                     rpath = [os.path.join (bld.env.PREFIX, 'lib'),
                              os.path.join (bld.path.abspath(), 'build')])
 
+    src_list = get_src_list ('example', cc_file)
+    for src in src_list:
+        if src in obj_list: continue
+        bld.program(features = 'cxxprogram',
+                    source = [src],
+                    target = src.split ('.')[0],
+                    includes = [inc_dir],
+                    use = [target_name],
+                    LIBDIR = [os.path.join (bld.env.PREFIX, 'lib')],
+                    rpath = [os.path.join (bld.env.PREFIX, 'lib'),
+                             os.path.join (bld.path.abspath(), 'build')])
 
 
     # test code
