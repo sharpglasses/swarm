@@ -6,7 +6,7 @@ VERSION = "0.3.0-alpha"
 
 target_name = 'swarm'
 lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h', 'timer.h']
-test_cmd = 'my_test'
+test_cmd = 'swarm_test'
 main_lib = ['pthread', 'pcap']
 
 

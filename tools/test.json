@@ -1,7 +1,7 @@
 [
-  {"build_command": "./build/my_test",
+  {"build_command": "./build/swarm_test",
    "build_args":  [],
-   "file_list": {"build": ["my_test"]},
+   "file_list": {"build": ["swarm_test"]},
    "enable": 1
   }
 ]
