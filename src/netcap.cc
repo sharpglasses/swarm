@@ -48,7 +48,7 @@ namespace swarm {
   NetCap::~NetCap () {
     delete this->timer_;
   }
-  void NetCap::connect (NetDec *nd) {
+  void NetCap::bind_netdec (NetDec *nd) {
     this->nd_ = nd;
   }
 

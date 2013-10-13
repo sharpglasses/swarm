@@ -71,7 +71,7 @@ namespace swarm {
   public:
     explicit NetCap ();
     virtual ~NetCap ();
-    void connect (NetDec *nd);
+    void bind_netdec (NetDec *nd);
     inline Status status () const { return this->status_; }
     inline bool ready () const { return (this->status_ == READY); }
     bool start ();

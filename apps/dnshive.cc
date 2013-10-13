@@ -112,7 +112,7 @@ void capture (const std::string &dev, const std::string &filter = "") {
   nd->set_handler ("ipv4.packet", ip4_flow);
 
   swarm::NetCap *nc = new swarm::CapPcapDev (dev);
-  nc->connect (nd);
+  nc->bind_netdec (nd);
   if (!nc->ready ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }
@@ -139,7 +139,7 @@ void read_pcapfile (const std::string &fpath) {
   // ----------------------------------------------
   // processing packets from pcap file
   swarm::NetCap *nc = new swarm::CapPcapFile (fpath);
-  nc->connect (nd);
+  nc->bind_netdec (nd);
   if (!nc->ready ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());
   }

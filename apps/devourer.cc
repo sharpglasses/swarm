@@ -138,7 +138,7 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   // ----------------------------------------------
   // processing packets from pcap file
   swarm::NetCap *nc = new swarm::CapPcapFile (fpath);
-  nc->connect (nd);
+  nc->bind_netdec (nd);
 
   if (nc->ready ()) {
     printf ("error: %s\n", nc->errmsg ().c_str ());

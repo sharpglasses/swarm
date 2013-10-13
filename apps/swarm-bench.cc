@@ -100,7 +100,7 @@ bool do_benchmark (const optparse::Values& opt) {
     return false;
   }
 
-  nc->connect (nd);
+  nc->bind_netdec (nd);
   nd_bench->start ();
   if (!nc->start ()) {
     fprintf (stderr, "error: %s\n", nc->errmsg ().c_str ());
