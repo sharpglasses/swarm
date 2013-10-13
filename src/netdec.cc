@@ -70,7 +70,7 @@ namespace swarm {
     this->last_ts_.tv_sec = 0;;
     this->last_ts_.tv_nsec = 0;;
 
-    int mod_count =
+    size_t mod_count =
       DecoderMap::build_decoder_vector (this, &(this->dec_mod_),
                                         &(this->dec_name_));
     for (size_t i = 0; i < mod_count; i++) {
@@ -142,7 +142,9 @@ namespace swarm {
     // execute callback function of handler
     ev_id eid;
     while (EV_NULL != (eid = prop->pop_event ())) {
-      assert (0 <= eid && eid < this->event_handler_.size ());
+      assert (0 <= eid);
+      assert (eid < static_cast<ev_id>(this->event_handler_.size ()));
+
       auto hdlr_list = this->event_handler_[eid];
       if (hdlr_list) {
         for (auto it = hdlr_list->begin (); it != hdlr_list->end (); it++) {
@@ -169,7 +171,7 @@ namespace swarm {
   }
   size_t NetDec::event_size () const {
     assert (this->base_eid_ >= 0);
-    assert (this->base_eid_ == this->fwd_event_.size ());
+    assert (this->base_eid_ == static_cast<ev_id>(this->fwd_event_.size ()));
     return this->fwd_event_.size ();
   }
 
@@ -187,7 +189,7 @@ namespace swarm {
   }
   size_t NetDec::param_size () const {
     assert (this->base_pid_ >= 0);
-    assert (this->base_pid_ == this->fwd_param_.size ());
+    assert (this->base_pid_ == static_cast<ev_id>(this->fwd_param_.size ()));
     return this->fwd_param_.size ();
   }
 
@@ -319,7 +321,7 @@ namespace swarm {
   }
 
   void NetDec::decode (dec_id dec, Property *p) {
-    assert (0 <= dec && dec < this->dec_mod_.size ());
+    assert (0 <= dec && dec < static_cast<dec_id>(this->dec_mod_.size ()));
     this->dec_mod_[dec]->decode (p);
   }
 

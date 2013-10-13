@@ -195,7 +195,7 @@ namespace swarm {
         return false;
       }
 
-      if (ep - ptr < sizeof (struct ns_rr_header)) {
+      if (ep - ptr < static_cast<int>(sizeof (struct ns_rr_header))) {
         debug (DEBUG, "not enough length: %ld", ep - ptr);
         break;
       }
@@ -209,7 +209,7 @@ namespace swarm {
 
       // has resource data field
       if (c >= rr_count[RR_QD]) {
-        if (ep - ptr < sizeof (struct ns_ans_header)) {
+        if (ep - ptr < static_cast<int>(sizeof (struct ns_ans_header))) {
           debug (DEBUG, "not enough length: %ld", ep - ptr);
           break;
         }
@@ -218,7 +218,7 @@ namespace swarm {
         ptr += sizeof (struct ns_ans_header);
         const size_t rd_len = ntohs (ans_hdr->rd_len_);
 
-        if (ep - ptr < rd_len) {
+        if (ep - ptr < static_cast<int>(rd_len)) {
           debug (DEBUG, "not match resource record len(%zd) and remain (%zd)",
                  rd_len, ep - ptr);
           break;
@@ -281,7 +281,7 @@ namespace swarm {
         u_int16_t jmp = (ntohs (*h) & 0x3FFF);
 
         if (jmp >= total_len) {
-          debug (DEBUG, "invalid jump point: %zd", jmp);
+          debug (DEBUG, "invalid jump point: %d", jmp);
           return NULL;
         }
         if (rp == NULL) {
@@ -297,7 +297,7 @@ namespace swarm {
         return (rp == NULL ? p + 1 : rp);
       }
       if (data_len + min_len >= remain) {
-        debug (DEBUG, "invalid data length: %zd (remain:%zd)",
+        debug (DEBUG, "invalid data length: %d (remain:%zd)",
                data_len, remain);
         return NULL;
       }
