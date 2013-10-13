@@ -64,13 +64,18 @@ namespace swarm {
     std::map <std::string, dec_id> fwd_dec_;
     std::map <dec_id, std::string> rev_dec_;
     std::map <hdlr_id, HandlerEntry *> rev_hdlr_;
+    dec_id base_did_;
     ev_id base_eid_;
     param_id base_pid_;
     hdlr_id base_hid_;
+    dec_id new_dec_id ();
+      
 
     const std::string none_;
     std::vector <Decoder *> dec_mod_;
-    std::vector <std::string> dec_name_;
+    std::vector <std::map<dec_id, dec_id> > dec_bind_;
+    dec_id install_dec_mod (const std::string &name, Decoder *dec);
+    Decoder* uninstall_dec_mod (dec_id d_id);
 
     std::vector <std::deque <HandlerEntry *> * > event_handler_;
     dec_id dec_default_;
@@ -111,6 +116,12 @@ namespace swarm {
     // Decoder
     dec_id lookup_dec_id (const std::string &name);
 
+    // External module
+    dec_id load_decoder (const std::string &dec_name, Decoder *dec);
+    bool unload_decoder (dec_id d_id);
+    bool bind_decoder (dec_id d_id, const std::string &tgt_dec_name);
+    bool unbind_decoder (dec_id d_id, const std::string &tgt_dec_name);
+
     // Handler
     hdlr_id set_handler (ev_id eid, Handler * hdlr);
     hdlr_id set_handler (const std::string ev_name, Handler * hdlr);
@@ -129,6 +140,7 @@ namespace swarm {
     void last_ts (struct timespec *ts) const;
     double init_ts () const;
     double last_ts () const;
+
 
     // Error
     const std::string &errmsg () const;

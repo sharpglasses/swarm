@@ -57,6 +57,7 @@ namespace swarm {
   // -------------------------------------------------------
   // NetDec
   NetDec::NetDec () :
+    base_did_(DEC_BASE),
     base_eid_(EV_BASE),
     base_pid_(PARAM_BASE),
     base_hid_(HDLR_BASE),
@@ -70,12 +71,14 @@ namespace swarm {
     this->last_ts_.tv_sec = 0;;
     this->last_ts_.tv_nsec = 0;;
 
+    std::vector <Decoder *> mod_array;
+    std::vector <std::string> name_array;
+
     size_t mod_count =
-      DecoderMap::build_decoder_vector (this, &(this->dec_mod_),
-                                        &(this->dec_name_));
+      DecoderMap::build_decoder_vector (this, &mod_array, &name_array);
     for (size_t i = 0; i < mod_count; i++) {
-      this->fwd_dec_.insert (std::make_pair (this->dec_name_[i], i));
-      this->rev_dec_.insert (std::make_pair (i, this->dec_name_[i]));
+      dec_id d_id = this->install_dec_mod (name_array[i], mod_array[i]);
+      assert (d_id != DEC_NULL);
     }
 
     for (size_t n = 0; n < mod_count; n++) {
@@ -98,6 +101,45 @@ namespace swarm {
     delete this->timer_;
   }
 
+  dec_id NetDec::install_dec_mod (const std::string &name, Decoder *dec) {
+    dec_id d_id = this->base_did_;
+    this->base_did_++;
+    if (this->dec_mod_.size() < d_id + 1) {
+      this->dec_mod_.resize (d_id + 1);
+      this->dec_mod_[d_id] = NULL;
+      this->dec_bind_.resize (d_id + 1);
+    }
+
+    if (this->fwd_dec_.find (name) != this->fwd_dec_.end ()) {
+      this->errmsg_ = "duplicated decoder name: " + name;
+      return DEC_NULL;
+    }
+
+    this->fwd_dec_.insert (std::make_pair (name, d_id));
+    this->rev_dec_.insert (std::make_pair (d_id, name));
+    this->dec_mod_[d_id] = dec;
+    return d_id;
+  }
+
+  Decoder *NetDec::uninstall_dec_mod (dec_id d_id) {
+    auto rit = this->rev_dec_.find (d_id);
+    if (rit == this->rev_dec_.end ()) {
+      this->errmsg_ = "no avaialable decoder id";
+      return NULL;
+    }
+    std::string name = rit->second;
+    this->rev_dec_.erase (rit);
+
+    auto fit = this->fwd_dec_.find (name);
+    assert (fit != this->fwd_dec_.end ());
+    this->fwd_dec_.erase (fit);
+    
+    assert (d_id < this->dec_mod_.size ());
+    Decoder * dec = this->dec_mod_[d_id];
+    assert (NULL != dec);
+    this->dec_mod_[d_id] = NULL;
+    return dec;
+  }
 
 
   bool NetDec::set_default_decoder (const std::string &dec_name) {
@@ -160,6 +202,10 @@ namespace swarm {
 
     return true;
   }
+
+  // -------------------------------------------------------------------------------
+  // NetDec Event
+  //
   ev_id NetDec::lookup_event_id (const std::string &name) {
     auto it = this->fwd_event_.find (name);
     return (it != this->fwd_event_.end ()) ? it->second : EV_NULL;
@@ -175,6 +221,9 @@ namespace swarm {
     return this->fwd_event_.size ();
   }
 
+  // -------------------------------------------------------------------------------
+  // NetDec Parameter
+  //
   std::string NetDec::lookup_param_name (param_id pid) {
     auto it = this->rev_param_.find (pid);
     if (it != this->rev_param_.end ()) {
@@ -193,6 +242,9 @@ namespace swarm {
     return this->fwd_param_.size ();
   }
 
+  // -------------------------------------------------------------------------------
+  // NetDec Decoder
+  //
   dec_id NetDec::lookup_dec_id (const std::string &name) {
     auto it = this->fwd_dec_.find (name);
     if (it != this->fwd_dec_.end ()) {
@@ -202,6 +254,57 @@ namespace swarm {
     }
   }
 
+  dec_id NetDec::load_decoder (const std::string &dec_name, Decoder *dec) {
+    dec_id d_id = this->install_dec_mod (dec_name, dec);
+    if (d_id != DEC_NULL) {
+      dec->setup (this);
+    }
+    return d_id;
+  }
+  bool NetDec::unload_decoder (dec_id d_id) {    
+    return (NULL != this->uninstall_dec_mod (d_id));
+  }
+  bool NetDec::bind_decoder (dec_id d_id, const std::string &tgt_dec_name) {
+    auto it = this->fwd_dec_.find (tgt_dec_name);
+    if (it == this->fwd_dec_.end ()) {
+      this->errmsg_ = "no such decoder name: " + tgt_dec_name;
+      return false;
+    }
+
+    dec_id tgt_id = it->second;
+    assert (tgt_id < this->dec_bind_.size ());
+    auto t_it = this->dec_bind_[tgt_id].find (d_id);
+    if (t_it != this->dec_bind_[tgt_id].end ()) {
+      this->errmsg_ = "already bound decoder";
+      return false;
+    }
+
+    this->dec_bind_[tgt_id].insert (std::make_pair (d_id, d_id));
+    return true;
+  }
+  bool NetDec::unbind_decoder (dec_id d_id, const std::string &tgt_dec_name) {
+    auto it = this->fwd_dec_.find (tgt_dec_name);
+    if (it == this->fwd_dec_.end ()) {
+      this->errmsg_ = "no such decoder name: " + tgt_dec_name;
+      return false;
+    }
+
+    dec_id tgt_id = it->second;
+    assert (tgt_id < this->dec_bind_.size ());
+    auto t_it = this->dec_bind_[tgt_id].find (d_id);
+    if (t_it == this->dec_bind_[tgt_id].end ()) {
+      this->errmsg_ = "no available bind";
+      return false;
+    }
+
+    this->dec_bind_[tgt_id].erase (t_it);
+    return true;
+  }
+
+
+  // -------------------------------------------------------------------------------
+  // NetDec Handler
+  //
 
   hdlr_id NetDec::set_handler (ev_id eid, Handler * hdlr) {
     const size_t idx = NetDec::eid2idx (eid);
@@ -281,6 +384,8 @@ namespace swarm {
       static_cast<double> (this->last_ts_.tv_nsec) / (1000 * 1000 * 1000);
   }
 
+
+
   const std::string &NetDec::errmsg () const {
     return this->errmsg_;
   }
@@ -322,7 +427,19 @@ namespace swarm {
 
   void NetDec::decode (dec_id dec, Property *p) {
     assert (0 <= dec && dec < static_cast<dec_id>(this->dec_mod_.size ()));
-    this->dec_mod_[dec]->decode (p);
+    if (this->dec_mod_[dec]) {
+      bool rc = this->dec_mod_[dec]->decode (p);
+
+      if (rc && this->dec_bind_[dec].size () > 0) {
+        for (auto it = this->dec_bind_[dec].begin ();
+             it != this->dec_bind_[dec].end (); it++) {
+          Decoder * dec = this->dec_mod_[it->first];
+          if (dec && dec->accept (*p)) {
+            dec->decode (p);
+          }
+        }
+      }
+    }
   }
 
   void NetDec::build_param_vector (std::vector <Param *> * prm_vec_) {

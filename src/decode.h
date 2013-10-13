@@ -49,6 +49,7 @@ namespace swarm {
     virtual ~Decoder ();
     virtual void setup (NetDec *nd) = 0;
     virtual bool decode (Property *p) = 0;
+    virtual bool accept (const Property &p);
   };
 
 

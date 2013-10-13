@@ -63,6 +63,9 @@ namespace swarm {
       this->nd_->decode (dec, p);
     }
   }
+  bool Decoder::accept (const Property &p) {
+    return false;
+  }
 
   Decoder::Decoder (NetDec *nd) : nd_(nd) {
   }

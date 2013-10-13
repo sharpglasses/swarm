@@ -40,5 +40,6 @@
 #include "./timer.h"
 #include "./netcap.h"
 #include "./netdec.h"
+#include "./decode.h"
 
 #endif  // SRC_SWARM_H__

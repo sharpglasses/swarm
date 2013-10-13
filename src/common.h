@@ -44,6 +44,7 @@ namespace swarm {
   const param_id PARAM_NULL = -1;
   const param_id PARAM_BASE =  0;
   const dec_id   DEC_NULL = -1;
+  const dec_id   DEC_BASE =  0;
   const task_id  TASK_NULL = 0;
 
   class NetDec;

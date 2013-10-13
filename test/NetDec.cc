@@ -42,6 +42,7 @@ class Counter  : public swarm::Handler {
 class TestHandler : public Counter {
  public:
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
+    this->count_++;
   }
 };
 
@@ -204,4 +205,136 @@ TEST (NetDec, basic_scenario) {
   delete eth_h;
   delete ip4_h;
   delete dns_h;
+}
+
+
+class IcmpDecoder : public swarm::Decoder {
+private:
+  struct icmp_header {
+    u_int8_t type_;
+    u_int8_t code_;
+    u_int16_t checksum_;
+  } __attribute__((packed));
+
+  swarm::ev_id EV_ICMP_PKT_;
+  swarm::param_id P_TYPE_, P_CODE_, P_PROTO_;
+  swarm::dec_id D_IPV4_;
+
+public:
+  explicit IcmpDecoder (swarm::NetDec * nd) : swarm::Decoder (nd) {
+    this->EV_ICMP_PKT_ = nd->assign_event ("icmp.packet", "ICMP Packet");
+    this->P_TYPE_ =
+      nd->assign_param ("icmp.type", "ICMP Type");
+    this->P_CODE_ =
+      nd->assign_param ("icmp.code", "ICMP Code");
+  }
+  void setup (swarm::NetDec * nd) {
+    this->D_IPV4_  = nd->lookup_dec_id ("ipv4");
+    this->P_PROTO_ = nd->lookup_param_id ("ipv4.proto");
+    assert (this->P_PROTO_ != swarm::PARAM_NULL);
+  };
+
+  bool accept (const swarm::Property &p) {
+    size_t s = p.param (this->P_PROTO_)->size ();
+    // check protocol number of most recent IP header
+    if (s > 0 && p.param (this->P_PROTO_)->int32 (s - 1) == 1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // Main decoding function.
+  bool decode (swarm::Property *p) {
+    auto hdr = reinterpret_cast <struct icmp_header *>
+      (p->payload (sizeof (struct icmp_header)));
+    if (hdr == NULL) {
+      return false;
+    }
+
+    p->set (this->P_TYPE_, &(hdr->type_), sizeof (hdr->type_));
+    p->set (this->P_CODE_, &(hdr->code_), sizeof (hdr->code_));
+    p->push_event (this->EV_ICMP_PKT_);
+
+    if (hdr->type_ == 3) {
+      p->payload (4);  // adjust 4 byte
+      this->emit (this->D_IPV4_, p);
+    }
+
+    return true;
+  }
+};
+
+pcap_t* get_skypeirc_pcap() {
+  pcap_t *pd;
+  char errbuf[PCAP_ERRBUF_SIZE];
+  std::string sample_file = "./data/SkypeIRC.cap";
+  pd = pcap_open_offline(sample_file.c_str (), errbuf);
+  assert (pd != NULL);
+  assert (DLT_EN10MB == pcap_datalink (pd));
+  return pd;
+}
+
+TEST (NetDec, external_decoder_load) {
+  swarm::NetDec *nd = new swarm::NetDec ();
+  struct pcap_pkthdr *pkthdr;
+  const u_char *pkt_data;
+  pcap_t *pd = get_skypeirc_pcap ();
+
+  swarm::dec_id d_id = nd->load_decoder ("my-icmp", new IcmpDecoder (nd));
+  ASSERT_TRUE (d_id != swarm::DEC_NULL);
+  ASSERT_TRUE (nd->bind_decoder (d_id, "ipv4"));
+
+  TestHandler *th = new TestHandler ();
+  nd->set_handler ("icmp.packet", th);
+
+  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
+    nd->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
+  }
+
+  EXPECT_EQ (23, th->count ());
+}
+
+TEST (NetDec, external_decoder_unbind) {
+  swarm::NetDec *nd = new swarm::NetDec ();
+  struct pcap_pkthdr *pkthdr;
+  const u_char *pkt_data;
+  pcap_t *pd = get_skypeirc_pcap ();
+
+  swarm::dec_id d_id = nd->load_decoder ("my-icmp", new IcmpDecoder (nd));
+  ASSERT_TRUE (d_id != swarm::DEC_NULL);
+  ASSERT_TRUE (nd->bind_decoder (d_id, "ipv4"));
+
+  TestHandler *th = new TestHandler ();
+  nd->set_handler ("icmp.packet", th);
+
+  ASSERT_TRUE (nd->unbind_decoder (d_id, "ipv4"));
+
+  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
+    nd->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
+  }
+
+  EXPECT_EQ (0, th->count ());
+}
+
+TEST (NetDec, external_decoder_unload) {
+  swarm::NetDec *nd = new swarm::NetDec ();
+  struct pcap_pkthdr *pkthdr;
+  const u_char *pkt_data;
+  pcap_t *pd = get_skypeirc_pcap ();
+
+  swarm::dec_id d_id = nd->load_decoder ("my-icmp", new IcmpDecoder (nd));
+  ASSERT_TRUE (d_id != swarm::DEC_NULL);
+  ASSERT_TRUE (nd->bind_decoder (d_id, "ipv4"));
+
+  TestHandler *th = new TestHandler ();
+  nd->set_handler ("icmp.packet", th);
+
+  ASSERT_TRUE (nd->unload_decoder (d_id));
+
+  while (0 < pcap_next_ex (pd, &pkthdr, &pkt_data)) {
+    nd->input (pkt_data, pkthdr->len, pkthdr->ts, pkthdr->caplen);
+  }
+
+  EXPECT_EQ (0, th->count ());
 }
