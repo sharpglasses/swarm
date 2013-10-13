@@ -245,7 +245,7 @@ namespace swarm {
     delta_ts.tv_nsec = 1 * 1000 * 1000;
 
     clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &next_ts);
-    debug (1, "start timer thread");
+    debug (0, "start timer thread");
 
     while (t->enable_) {
       do {
