@@ -24,11 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <pcap.h>
 #include <swarm.h>
-#include <map>
-
 
 class IPFlow : public swarm::Handler {
  public:

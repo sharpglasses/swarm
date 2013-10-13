@@ -87,7 +87,7 @@ namespace swarm {
 
     this->dec_default_ = this->lookup_dec_id ("ether");
     assert (this->dec_default_ != DEC_NULL);
-    this->prop_ = new Property (this);
+    // this->prop_ = new Property (this);
   }
   NetDec::~NetDec () {
     for (auto it = this->rev_event_.begin ();
@@ -153,8 +153,6 @@ namespace swarm {
   }
   bool NetDec::input (const byte_t *data, const size_t len,
                       const struct timeval &tv, const size_t cap_len) {
-    // main process of NetDec
-    Property * prop = this->prop_;
     // If cap_len == 0, actual captured length is same with real packet length
     size_t c_len = (cap_len == 0) ? len : cap_len;
 
@@ -162,7 +160,11 @@ namespace swarm {
     if (this->init_ts_.tv_sec == 0) {
       this->init_ts_.tv_sec = tv.tv_sec;
       this->init_ts_.tv_nsec = tv.tv_usec * 1000;
+      this->prop_ = new Property (this);
     }
+
+    // main process of NetDec
+    Property * prop = this->prop_;
 
     this->recv_pkt_ += 1;
     this->recv_len_ += len;
@@ -448,6 +450,7 @@ namespace swarm {
     for (auto it = this->fwd_param_.begin ();
          it != this->fwd_param_.end (); it++) {
       ParamEntry * ent = it->second;
+      debug (0, "name: %s, %s", ent->name().c_str (), ent->desc().c_str ());
       size_t idx = Property::pid2idx (ent->pid ());
       assert (idx < prm_vec_->size ());
       (*prm_vec_)[idx] = new Param (ent->fac ());
