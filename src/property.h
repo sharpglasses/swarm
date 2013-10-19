@@ -122,7 +122,7 @@ namespace swarm {
     size_t port_len_;
     void *src_port_, *dst_port_;
 
-    u_int64_t hash_value_;
+    uint64_t hash_value_;
 
   public:
     explicit Property (NetDec * nd);
@@ -165,7 +165,7 @@ namespace swarm {
     int src_port () const;
     int dst_port () const;
     std::string proto () const;
-
+    uint64_t hash_value () const;
     inline static size_t pid2idx (param_id pid) {
       return static_cast <size_t> (pid - PARAM_BASE);
     }

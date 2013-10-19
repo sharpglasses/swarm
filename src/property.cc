@@ -372,6 +372,10 @@ namespace swarm {
     return s;
   }
 
+  uint64_t Property::hash_value () const {
+    return this->hash_value_ ;
+  }
+
   Var * Property::retain (const std::string &param_name) {
     const param_id pid = this->nd_->lookup_param_id (param_name);
     if (pid == PARAM_NULL) {
