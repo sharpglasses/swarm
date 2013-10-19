@@ -52,17 +52,15 @@ namespace swarm {
     ~Param ();
     void init ();
 
-    size_t size () const;
     void push (byte_t *data, size_t len, bool copy = false);
     Var * retain ();
-    byte_t * get (size_t *len = NULL, size_t idx = 0) const;
 
+    size_t size () const;
+    byte_t * get (size_t *len = NULL, size_t idx = 0) const;
     std::string repr (size_t idx = 0) const;
     bool repr (std::string *s, size_t idx) const;
-
     int32_t int32 (size_t idx = 0) const;
     u_int32_t uint32 (size_t idx = 0) const;
-
     std::string str (size_t idx = 0) const;
     std::string hex (size_t idx = 0) const;
     std::string ip4 (size_t idx = 0) const;
