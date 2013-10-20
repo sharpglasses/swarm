@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 APPNAME = 'swarm'
-VERSION = "0.3.0-alpha"
+VERSION = "0.3.0"
 
 target_name = 'swarm'
 lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h', 'timer.h']
