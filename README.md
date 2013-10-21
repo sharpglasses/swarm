@@ -1,18 +1,30 @@
-# Swarm
-C++ based lightweight and high-speed network traffic decoding library.
+Swarm
+===========================
+Swarm is the **C++ based lightweight and high-speed network traffic decoding library**.
 
-## Required
+Features
+---------------------------
+
+- Extracting parameters of network protocol ([example](./example/extract_data.cc))
+- Zero-copy based high-speed decoding of packet
+- Extendable protocol decoding module ([example](./example/original_decoder.cc))
+
+Required libraries
+---------------------------
+
 - libpcap
 - pthread
 
-## Install
+Install
+---------------------------
 
     % cd swarm
     % ./waf configure
     % ./waf
     % sudo ./waf install
 
-## Sample
+Sample
+---------------------------
 
     #include <swarm.h>
     #include <iostream>
@@ -33,3 +45,4 @@ C++ based lightweight and high-speed network traffic decoding library.
       nc->start ();
     }
 
+More examples are available in [exaple directory](https://github.com/m-mizutani/swarm/tree/master/example).
