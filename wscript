@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 APPNAME = 'swarm'
-VERSION = "0.3.0"
+VERSION = "0.3.1-dev"
 
 target_name = 'swarm'
 lib_fname = ['swarm.h', 'netcap.h', 'netdec.h', 'property.h', 'common.h', 'timer.h']
@@ -71,12 +71,12 @@ def configure(conf):
     conf.load('compiler_cxx')
     for libname in lib_list: conf.check_cxx(lib = libname)
 
-    if conf.options.test:
-        p = subprocess.Popen('gtest-config --libdir', shell=True, stdout=subprocess.PIPE)
-        gtest_libpath = p.stdout.readline().strip ()
-        p.wait ()
-        conf.env.append_value('LIBDIR', gtest_libpath)
-        conf.check_cxx(lib = 'gtest', args = ['-lpthread'])
+    # if conf.options.test:
+        # p = subprocess.Popen('gtest-config --libdir', shell=True, stdout=subprocess.PIPE)
+        # gtest_libpath = p.stdout.readline().strip ()
+        # p.wait ()
+        # conf.env.append_value('LIBDIR', gtest_libpath)
+        # conf.check_cxx(lib = 'gtest', args = ['-lpthread'])
 
     conf.env.store('config.log')    
     conf.env.test = True if conf.options.test else False
