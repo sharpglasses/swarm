@@ -25,7 +25,7 @@
  */
 
 
-#include <gtest/gtest.h>
+#include "./gtest.h"
 #include <string.h>
 
 #include "../src/swarm.h"

@@ -24,10 +24,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
 #include <pcap.h>
 #include <string.h>
 
+#include "./gtest.h"
 #include "../src/debug.h"
 #include "../src/swarm.h"
 

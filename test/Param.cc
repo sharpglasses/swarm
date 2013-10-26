@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#include "./gtest.h"
 #include "../src/swarm.h"
 #include "../src/var.h"
 
