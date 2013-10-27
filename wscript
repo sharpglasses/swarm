@@ -71,13 +71,6 @@ def configure(conf):
     conf.load('compiler_cxx')
     for libname in lib_list: conf.check_cxx(lib = libname)
 
-    # if conf.options.test:
-        # p = subprocess.Popen('gtest-config --libdir', shell=True, stdout=subprocess.PIPE)
-        # gtest_libpath = p.stdout.readline().strip ()
-        # p.wait ()
-        # conf.env.append_value('LIBDIR', gtest_libpath)
-        # conf.check_cxx(lib = 'gtest', args = ['-lpthread'])
-
     conf.env.store('config.log')    
     conf.env.test = True if conf.options.test else False
 
@@ -95,7 +88,8 @@ def build(bld):
     global main_lib
     global lib_fname
     dir_list = [('src', '^[_A-Za-z0-9].*\.cc'),
-                (os.path.join ('src', 'proto'), '^[A-Za-z0-9].*\.cc')]
+                (os.path.join ('src', 'proto'), '^[A-Za-z0-9].*\.cc'),
+                (os.path.join ('src', 'utils'), '^[A-Za-z0-9].*\.cc')]
 
     for src_dir, cc_file in dir_list:
         src_list.extend (get_src_list (src_dir, cc_file))
@@ -145,7 +139,7 @@ def build(bld):
         src_list = []
         src_list.extend (get_src_list ('test', cc_file))
 
-        libs = ['gtest', 'pthread', 'pcap']
+        libs = ['pthread', 'pcap']
         bld.program(features = 'cxxprogram',
                     source = src_list,
                     target = test_cmd,

@@ -3,6 +3,7 @@
    "build_args":  [],
    "file_list": {"src":  ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "src/proto": ["^[A-Za-z0-9].*\\.(cc|h)"],
+                 "src/utils": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "test": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "example": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "apps": ["^[A-Za-z0-9].*\\.(cc|h)"]
