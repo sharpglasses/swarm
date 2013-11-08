@@ -32,36 +32,67 @@
 #include <deque>
 #include <string>
 
-
 namespace swarm {
-
   class LRUHash {
+    class Bucket;
+    static const size_t DEFAULT_BUCKET_SIZE = 1031;
+
   public:
     class Node {
     private:
-      Node *next_, *time_;
+      Node *next_, *prev_;  // double linked list for Bucket
+      Node *link_;          // single linked list for TimeSlot
       int update_;
+      
     public:
       Node();
-      ~Node();
+      virtual ~Node();
       virtual uint64_t hash() = 0;
+      void attach(Node *node);
+      void detach();
+      Node *pop_all();
+      void push_link(Node * prev);
+      Node *pop_link();
+      Node *search(uint64_t hv);
     };
 
+  private:    
+    class NodeRoot : public Node {
+    uint64_t hash() { return 0; }
+  };
+  class Bucket {
   private:
-    class Bucket {
-      
-    };
-    class TimeSlot {
-    };
+    NodeRoot root_;
+  public:
+    Bucket();
+    ~Bucket();
+    void attach(Node *node);
+    Node* search(uint64_t hv);
+  };
+
+  class TimeSlot {
+  private:
+    NodeRoot root_;
+  public:
+    TimeSlot();
+    ~TimeSlot();
+    void push(Node *node);
+    Node* pop();
+  };
+
+  std::vector<TimeSlot> timeslot_;
+  std::vector<Bucket> bucket_;
+  size_t curr_tick_;
+  NodeRoot exp_node_;
 
   public:
-    LRUHash(size_t slot_size);
-    ~LRUHash();
-    bool put(size_t tick, Node *node);
-    Node *get(uint64_t hv);
-    void prog(size_t tick=1);  // progress tick
-    Node *pop();  // pop expired node
+  LRUHash(size_t timeslot_size, size_t bucket_size=0);
+  ~LRUHash();
+  bool put(size_t tick, Node *node);
+  Node *get(uint64_t hv);
+  void prog(size_t tick=1);  // progress tick
+  Node *pop();  // pop expired node
   };
-}  //  namespace swarm
+}  // namespace swarm
 
 #endif  // SRC_UTILS_LRU_HASH_H__

@@ -28,52 +28,114 @@
 #include "./gtest.h"
 #include "../src/utils/lru-hash.h"
 
-namespace LRUHashTest {
-  class TestNode : public swarm::LRUHash::Node {
-  private:
-    uint64_t hv_;
-  public:
-    TestNode(uint64_t hv) : hv_(hv) {}
-    ~TestNode() {}
-    uint64_t hash() { return this->hv_; }
-  };
+class TestNode : public swarm::LRUHash::Node {
+private:
+  uint64_t hv_;
+public:
+  TestNode(uint64_t hv) : hv_(hv) {}
+  ~TestNode() {}
+  uint64_t hash() { return this->hv_; }
+};
 
-  TEST(LRUHash, basic) {
+TEST(LRUHash, basic_test) {
+  swarm::LRUHash *lru = new swarm::LRUHash(10);
+  TestNode *node = new TestNode(100);
+
+  // put node
+  EXPECT_TRUE(lru->put(1, node));
+  EXPECT_EQ(node, lru->get(node->hash()));
+
+  // still alive
+  lru->prog(1);
+  EXPECT_EQ(node, lru->get(node->hash()));
+
+  // expired
+  lru->prog(1);
+  EXPECT_EQ(NULL, lru->get(node->hash()));
+  EXPECT_EQ(node, lru->pop());
+}
+
+TEST(LRUHash, expire_test) {
+  swarm::LRUHash *lru = new swarm::LRUHash(10);
+  TestNode *node1 = new TestNode(100);
+  TestNode *node2 = new TestNode(200);
+  TestNode *node3 = new TestNode(300);
+  TestNode *node4 = new TestNode(400);
+
+  ASSERT_TRUE(lru->put(1, node1));
+  ASSERT_TRUE(lru->put(2, node2));
+  ASSERT_TRUE(lru->put(4, node3));
+  ASSERT_TRUE(lru->put(4, node4));
+
+#define __TEST(n1,n2,n3,n4)                                 \
+  {                                                         \
+    if (n1) { EXPECT_EQ(node1, lru->get(node1->hash())); }  \
+    else    { EXPECT_EQ(NULL,  lru->get(node1->hash())); }  \
+    if (n2) { EXPECT_EQ(node2, lru->get(node2->hash())); }  \
+    else    { EXPECT_EQ(NULL,  lru->get(node2->hash())); }  \
+    if (n3) { EXPECT_EQ(node3, lru->get(node3->hash())); }  \
+    else    { EXPECT_EQ(NULL,  lru->get(node3->hash())); }  \
+    if (n4) { EXPECT_EQ(node4, lru->get(node4->hash())); }  \
+    else    { EXPECT_EQ(NULL,  lru->get(node4->hash())); }  \
   }
 
-  TEST(LRUHash, expire_test) {
-    swarm::LRUHash *lru = new swarm::LRUHash(10);
-    TestNode *node1 = new TestNode(100);
-    TestNode *node2 = new TestNode(200);
-    TestNode *node3 = new TestNode(300);
-    TestNode *node4 = new TestNode(400);
+  __TEST(true, true, true, true);
+  EXPECT_EQ(NULL,  lru->pop());  // no expired node
 
-    lru->put(1, node1);
-    lru->put(2, node2);
-    lru->put(4, node2);
+  lru->prog(1);
 
-#define __TEST(n1,n2,n3,n4)                                   \
-    {                                                         \
-      if (n1) { EXPECT_EQ(node1, lru->get(node1->hash())); }  \
-      else    { EXPECT_EQ(NULL,  lru->get(node1->hash())); }  \
-      if (n2) { EXPECT_EQ(node2, lru->get(node2->hash())); }  \
-      else    { EXPECT_EQ(NULL,  lru->get(node2->hash())); }  \
-      if (n3) { EXPECT_EQ(node3, lru->get(node3->hash())); }  \
-      else    { EXPECT_EQ(NULL,  lru->get(node3->hash())); }  \
-      if (n4) { EXPECT_EQ(node4, lru->get(node4->hash())); }  \
-      else    { EXPECT_EQ(NULL,  lru->get(node4->hash())); }  \
-    }
+  __TEST(true, true, true, true);
+  EXPECT_EQ(NULL, lru->pop());  // no expired node
 
-    __TEST(true, true, true, true);
-    EXPECT_EQ(NULL,  lru->pop());  // no expired node
+  lru->prog(1);
+  __TEST(false, true, true, true);
+  EXPECT_EQ(node1, lru->pop());  // no expired node
 
-    lru->prog(1);
+  lru->prog(1);
+  __TEST(false, false, true, true);
+  EXPECT_EQ(node2, lru->pop());  // no expired node
 
-    __TEST(true, true, true, true);
-    EXPECT_EQ(node1, lru->pop());  // no expired node  
+  lru->prog(3);
+  __TEST(false, false, false, false);
+  EXPECT_EQ(node3, lru->pop());  // no expired node
+  EXPECT_EQ(node4, lru->pop());  // no expired node
 
 #undef __TEST
 
-  }
+}
 
-}  // namespace LRUHashTest
+TEST(LRUHash, tick_test) {
+  swarm::LRUHash *lru = new swarm::LRUHash(10);
+  TestNode *node1 = new TestNode(100);
+  TestNode *node2 = new TestNode(200);
+  
+  ASSERT_TRUE(lru->put(1, node1));
+  lru->prog(1);
+  EXPECT_EQ(node1, lru->get(node1->hash()));
+
+  ASSERT_TRUE(lru->put(2, node2));
+  lru->prog(1);
+  EXPECT_EQ(NULL,  lru->get(node1->hash()));
+  EXPECT_EQ(node2, lru->get(node2->hash()));
+  lru->prog(1);
+  EXPECT_EQ(NULL,  lru->get(node1->hash()));
+  EXPECT_EQ(node2, lru->get(node2->hash()));
+  lru->prog(1);
+  EXPECT_EQ(NULL,  lru->get(node1->hash()));
+  EXPECT_EQ(NULL, lru->get(node2->hash()));  
+}
+
+TEST(LRUHash, error_handle) {
+  swarm::LRUHash *lru = new swarm::LRUHash(10);
+  TestNode *node1 = new TestNode(100);
+  TestNode *node2 = new TestNode(200);
+  
+  ASSERT_TRUE (lru->put( 9, node1));
+  ASSERT_FALSE(lru->put(10, node2));
+  EXPECT_EQ(node1, lru->get(node1->hash()));
+  EXPECT_EQ(NULL,  lru->get(node2->hash()));
+  lru->prog(15);
+  EXPECT_EQ(node1, lru->pop());
+  EXPECT_EQ(NULL,  lru->pop());
+}
+
