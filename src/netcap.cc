@@ -129,6 +129,7 @@ namespace swarm {
     switch (dlt) {
     case DLT_EN10MB: dec = "ether"; break;
     case DLT_RAW:    dec = "ipv4";  break;
+    case DLT_LINUX_SLL: dec = "lcc"; break;
     default:
       this->set_errmsg ("Only DLT_EN10MB and DLT_RAW are "
                         "supported in this version");
