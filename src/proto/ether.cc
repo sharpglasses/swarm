@@ -45,6 +45,12 @@
 #ifndef ETHERTYPE_WLCCP /* Cisco Wireless LAN Context Control Protocol */
 #define ETHERTYPE_WLCCP 0x872d
 #endif
+#ifndef ETHERTYPE_PPPOE_DISC
+#define ETHERTYPE_PPPOE_DISC 0x8863
+#endif
+#ifndef ETHERTYPE_PPPOE_SSN
+#define ETHERTYPE_PPPOE_SSN 0x8864
+#endif
 #ifndef ETHERTYPE_NETWARE /* Netware IPX/SPX */
 #define ETHERTYPE_NETWARE 0x8137
 #endif
@@ -62,7 +68,7 @@ namespace swarm {
 
     ev_id EV_ETH_PKT_;
     param_id P_SRC_, P_DST_, P_TYPE_, P_HDR_;
-    dec_id D_ARP_, D_VLAN_, D_IPV4_, D_IPV6_;
+    dec_id D_ARP_, D_VLAN_, D_IPV4_, D_IPV6_, D_PPPOE_;
 
   public:
     explicit EtherDecoder (NetDec * nd) : Decoder (nd) {
@@ -81,6 +87,7 @@ namespace swarm {
       this->D_VLAN_ = nd->lookup_dec_id ("vlan");
       this->D_IPV4_ = nd->lookup_dec_id ("ipv4");
       this->D_IPV6_ = nd->lookup_dec_id ("ipv6");
+      this->D_PPPOE_ = nd->lookup_dec_id ("pppoe");
     };
 
     static Decoder * New (NetDec * nd) { return new EtherDecoder (nd); }
@@ -104,6 +111,7 @@ namespace swarm {
       case ETHERTYPE_VLAN: this->emit (this->D_VLAN_, p); break;
       case ETHERTYPE_IP:   this->emit (this->D_IPV4_, p); break;
       case ETHERTYPE_IPV6: this->emit (this->D_IPV6_, p); break;
+      case ETHERTYPE_PPPOE_SSN: this->emit (this->D_PPPOE_, p); break;
         // case ETHERTYPE_LOOPBACK: this->emit (this->D_IPV4_, p); break;
       }
 
