@@ -1,2 +1,8 @@
+Nov 10 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
+	3.1.0
+	* src/proto/lcc.cc: Linux Cooked Capture Decoder
+	* src/proto/pppoe.cc: PPP over Ethernet Decoder
+	* src/utils/lru-hash.[cc,h]: LRU hash table for session management
+
 Oct 22 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
 	* Start to write ChangeLog from version 0.3.0
