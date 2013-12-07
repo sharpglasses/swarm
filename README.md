@@ -19,9 +19,8 @@ Install
 ---------------------------
 
     % cd swarm
-    % ./waf configure
-    % ./waf
-    % sudo ./waf install
+    % cmake . && make
+    % sudo make install
 
 Sample
 ---------------------------

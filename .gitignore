@@ -1,6 +1,12 @@
-.lock-waf*
-.waf*
-build/
-config.log
 .gitconfig
 .DS_Store
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+cmake_install.cmake
+lib/
+src/CMakeCache.txt
+src/CMakeFiles/
+src/Makefile
+src/cmake_install.cmake

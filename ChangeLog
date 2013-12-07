@@ -1,3 +1,8 @@
+Dec 7 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
+	3.1.1
+	* Chnage build framework from waf to cmake
+	* app/overseer.cc: Sample application of network observation
+
 Nov 10 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
 	3.1.0
 	* src/proto/lcc.cc: Linux Cooked Capture Decoder
