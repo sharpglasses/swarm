@@ -1,10 +1,10 @@
 Dec 7 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
-	3.1.1
+	0.3.2
 	* Chnage build framework from waf to cmake
 	* app/overseer.cc: Sample application of network observation
 
 Nov 10 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
-	3.1.0
+	0.3.1
 	* src/proto/lcc.cc: Linux Cooked Capture Decoder
 	* src/proto/pppoe.cc: PPP over Ethernet Decoder
 	* src/utils/lru-hash.[cc,h]: LRU hash table for session management
