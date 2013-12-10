@@ -18,18 +18,16 @@ FILE(GLOB BASESRCS "src/*.cc" "src/proto/*.cc" "src/utils/*.cc")
 FILE(GLOB TESTSRCS "test/*.cc")
 
 ADD_LIBRARY(swarm SHARED ${BASESRCS})
-TARGET_LINK_LIBRARIES(swarm pcap pthread)
+TARGET_LINK_LIBRARIES(swarm pcap pthread rt)
 
 ADD_EXECUTABLE(swarm-test ${TESTSRCS})
 TARGET_LINK_LIBRARIES(swarm-test swarm)
 
-ADD_LIBRARY(optparse OBJECT apps/optparse.cc)
-
-ADD_EXECUTABLE(devourer apps/devourer.cc $<TARGET_OBJECTS:optparse>)
+ADD_EXECUTABLE(devourer apps/devourer.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(devourer swarm)
-ADD_EXECUTABLE(dnshive apps/dnshive.cc $<TARGET_OBJECTS:optparse>)
+ADD_EXECUTABLE(dnshive apps/dnshive.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(dnshive swarm)
-ADD_EXECUTABLE(overseer apps/overseer.cc $<TARGET_OBJECTS:optparse>)
+ADD_EXECUTABLE(overseer apps/overseer.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(overseer swarm)
-ADD_EXECUTABLE(swarm-bench apps/swarm-bench.cc $<TARGET_OBJECTS:optparse>)
+ADD_EXECUTABLE(swarm-bench apps/swarm-bench.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(swarm-bench swarm)
