@@ -89,16 +89,16 @@ TEST(LRUHash, expire_test) {
 
   lru->prog(1);
   __TEST(false, true, true, true);
-  EXPECT_EQ(node1, lru->pop());  // no expired node
+  EXPECT_EQ(node1, lru->pop()); 
 
   lru->prog(1);
   __TEST(false, false, true, true);
-  EXPECT_EQ(node2, lru->pop());  // no expired node
+  EXPECT_EQ(node2, lru->pop()); 
 
   lru->prog(3);
   __TEST(false, false, false, false);
-  EXPECT_EQ(node3, lru->pop());  // no expired node
-  EXPECT_EQ(node4, lru->pop());  // no expired node
+  EXPECT_EQ(node3, lru->pop()); 
+  EXPECT_EQ(node4, lru->pop()); 
 
 #undef __TEST
 

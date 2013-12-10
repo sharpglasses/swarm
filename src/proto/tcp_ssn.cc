@@ -26,7 +26,7 @@
 
 
 #include "../decode.h"
-
+#include "../debug.h"
 
 namespace swarm {
   class TcpSession {
@@ -50,6 +50,7 @@ namespace swarm {
     static Decoder * New (NetDec * nd) { return new TcpSsnDecoder (nd); }
 
     bool decode (Property *p) {
+
       // set data to property
       // p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
 

@@ -382,4 +382,17 @@ namespace SkypeIRC {
     EXPECT_DOUBLE_EQ (322.74977612495422, nd->last_ts () - nd->init_ts ());
   }
 
+
+  TEST_F (SkypeIRCFix, tcp_ssn) {
+    class SrcCount : public Counter {
+    public:
+      explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param ("udp.src_port")->repr () == this->tgt_) {
+          this->countup ();
+        }
+      }
+    };
+  }
+
 }  // namespace SkypeIRC

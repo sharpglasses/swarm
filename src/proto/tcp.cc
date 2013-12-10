@@ -57,7 +57,7 @@ namespace swarm {
     static const u_int8_t CWR  = 0x80;
 
     ev_id EV_PKT_, EV_SYN_;
-    param_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_;
+    param_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_;
 
   public:
     DEF_REPR_CLASS (VarFlags, FacFlags);
@@ -74,6 +74,9 @@ namespace swarm {
                           new FacNum ());
       this->P_FLAGS_ =
         nd->assign_param ("tcp.flags", "TCP Flags", new FacFlags ());
+      this->P_SEQ_ = nd->assign_param ("tcp.seq", "TCP Sequence Number");
+      this->P_ACK_ = nd->assign_param ("tcp.ack", "TCP Acknowledge");
+
     }
     void setup (NetDec * nd) {
       // nothing to do
@@ -93,6 +96,8 @@ namespace swarm {
       p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
       p->set (this->P_DST_PORT_, &(hdr->dst_port_), sizeof (hdr->dst_port_));
       p->set (this->P_FLAGS_,    &(hdr->flags_),    sizeof (hdr->flags_));
+      p->set (this->P_SEQ_,      &(hdr->seq_),      sizeof (hdr->seq_));
+      p->set (this->P_ACK_,      &(hdr->ack_),      sizeof (hdr->ack_));
 
       // push event
       p->push_event (this->EV_PKT_);
@@ -101,6 +106,7 @@ namespace swarm {
       p->set_port (&(hdr->src_port_), &(hdr->dst_port_),
                    sizeof (hdr->src_port_));
 
+      debug(true, "tcp");
       if ((hdr->flags_ & (SYN | ACK)) == SYN) {
         p->push_event (this->EV_SYN_);
       }
