@@ -18,7 +18,11 @@ FILE(GLOB BASESRCS "src/*.cc" "src/proto/*.cc" "src/utils/*.cc")
 FILE(GLOB TESTSRCS "test/*.cc")
 
 ADD_LIBRARY(swarm SHARED ${BASESRCS})
-TARGET_LINK_LIBRARIES(swarm pcap pthread rt)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    TARGET_LINK_LIBRARIES(swarm pcap pthread rt)
+ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    TARGET_LINK_LIBRARIES(swarm pcap pthread)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 ADD_EXECUTABLE(swarm-test ${TESTSRCS})
 TARGET_LINK_LIBRARIES(swarm-test swarm)
