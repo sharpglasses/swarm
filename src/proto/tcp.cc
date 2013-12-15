@@ -106,7 +106,6 @@ namespace swarm {
       p->set_port (&(hdr->src_port_), &(hdr->dst_port_),
                    sizeof (hdr->src_port_));
 
-      debug(true, "tcp");
       if ((hdr->flags_ & (SYN | ACK)) == SYN) {
         p->push_event (this->EV_SYN_);
       }
