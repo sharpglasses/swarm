@@ -247,6 +247,7 @@ namespace swarm {
     this->port_len_ = 0;
     this->proto_ = 0;
     this->hash_value_ = 0;
+    this->hashed_ = false;
   }
   Param * Property::param (const std::string &key) const {
     const param_id pid = this->nd_->lookup_param_id (key);
@@ -433,6 +434,11 @@ namespace swarm {
   }
 
   void Property::calc_hash () {
+    if (this->hashed_) {
+      // don't allow override
+      return;
+    }
+    
     void *la, *ra;
     void *lp, *rp;
     if (::memcmp (this->src_addr_, this->dst_addr_, this->addr_len_) > 0) {
@@ -482,6 +488,7 @@ namespace swarm {
       assert (this->port_len_ == 0);
     }
 
+    this->hashed_ = true;
     this->hash_value_ = h;
   }
   void Property::set_addr (void *src_addr, void *dst_addr, u_int8_t proto,

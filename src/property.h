@@ -120,6 +120,7 @@ namespace swarm {
     size_t port_len_;
     void *src_port_, *dst_port_;
 
+    bool hashed_;
     uint64_t hash_value_;
 
   public:

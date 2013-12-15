@@ -26,37 +26,46 @@
 
 
 #include "../decode.h"
+#include "../utils/lru-hash.h"
 #include "../debug.h"
 
 namespace swarm {
-  class TcpSession {
+  class TcpSession : public LRUHash::Node {
   };
 
   class TcpSsnDecoder : public Decoder {
   private:
     ev_id EV_EST_;
-    param_id P_SEG_;
+    param_id P_SEG_, P_TCP_HDR_;
+    LRUHash *ssn_table_;
 
   public:
     explicit TcpSsnDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_EST_ = nd->assign_event ("tcp_ssn.established",
                                         "TCP session established");
       this->P_SEG_ = nd->assign_param ("tcp_ssn.segment", "TCP segment data");
+
+      this->ssn_table_ = new LRUHash(3600, 1024);
     }
     void setup (NetDec * nd) {
       // nothing to do
+      this->P_TCP_HDR_ = nd->lookup_param_id("tcp.header");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpSsnDecoder (nd); }
 
     bool decode (Property *p) {
+      const struct tcp_header *hdr = reinterpret_cast<const struct tcp_header*>
+        (p->param(this->P_TCP_HDR_)->get());
 
+      // TcpSession *ssn = this->ssn_table_->get(p->hash_value());
       // set data to property
       // p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
 
       // push event
       // p->push_event (this->EV_PKT_);
 
+      
       return true;
     }
   };

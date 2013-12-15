@@ -87,6 +87,7 @@ namespace swarm {
       assert (sizeof (hdr->src_port_) == sizeof (hdr->dst_port_));
       p->set_port (&(hdr->src_port_), &(hdr->dst_port_),
                    sizeof (hdr->src_port_));
+      p->calc_hash();
 
       // call next decoder
       if (ntohs (hdr->src_port_) == 53 ||
