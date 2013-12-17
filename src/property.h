@@ -123,6 +123,10 @@ namespace swarm {
     bool hashed_;
     uint64_t hash_value_;
 
+    static const size_t SSN_LABEL_MAX = 128;
+    uint32_t ssn_label_[SSN_LABEL_MAX];
+    size_t ssn_label_len_;
+
   public:
     explicit Property (NetDec * nd);
     ~Property ();
@@ -165,6 +169,7 @@ namespace swarm {
     int dst_port () const;
     std::string proto () const;
     uint64_t hash_value () const;
+    const void *ssn_label(size_t *len) const;
     inline static size_t pid2idx (param_id pid) {
       return static_cast <size_t> (pid - PARAM_BASE);
     }

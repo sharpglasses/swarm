@@ -1,6 +1,6 @@
 [
   {"build_command": "make",
-   "build_args":  [],
+   "build_args":  ["-j", "8"],
    "file_list": {"src":  ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "src/proto": ["^[A-Za-z0-9].*\\.(cc|h)"],
                  "src/utils": ["^[A-Za-z0-9].*\\.(cc|h)"],

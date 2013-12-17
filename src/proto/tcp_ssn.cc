@@ -58,6 +58,8 @@ namespace swarm {
       const struct tcp_header *hdr = reinterpret_cast<const struct tcp_header*>
         (p->param(this->P_TCP_HDR_)->get());
 
+      uint64_t hv = p->hash_value();
+
       // TcpSession *ssn = this->ssn_table_->get(p->hash_value());
       // set data to property
       // p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));

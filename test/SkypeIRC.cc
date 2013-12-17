@@ -382,6 +382,64 @@ namespace SkypeIRC {
     EXPECT_DOUBLE_EQ (322.74977612495422, nd->last_ts () - nd->init_ts ());
   }
 
+  TEST_F (SkypeIRCFix, tcp) {
+    class HashCount : public Counter {
+    public:
+      std::set<uint64_t> hash_set_;
+      std::set<std::string> label_set_;
+
+      void recv (swarm::ev_id eid, const swarm::Property &p) {        
+        this->hash_set_.insert(p.hash_value());
+        size_t len;
+        const void *ptr = p.ssn_label(&len);
+        std::string buf(reinterpret_cast<const char*>(ptr), len * sizeof(char));
+        this->label_set_.insert(buf);
+      }
+    };
+
+    class KeyCount : public Counter {
+    private:
+      const std::string key_;
+    public:
+      explicit KeyCount (const std::string &key, const std::string &value) : 
+        key_(key) { this->tgt_ = value; } 
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        if (p.param (this->key_)->repr () == this->tgt_) { this->countup (); }
+      }
+    };
+    
+    std::deque <CountTest *> tests_;
+#define __REG_TC(HDLR, EV_NAME, COUNT) \
+    tests_.push_back (new CountTest ((HDLR), EV_NAME, COUNT));
+
+    __REG_TC (new Counter (), "udp.packet", 1072);
+    __REG_TC (new KeyCount ("tcp.src_port", "2057"), "tcp.packet", 2);
+    __REG_TC (new KeyCount ("tcp.dst_port", "2057"), "tcp.packet", 3);
+    __REG_TC (new KeyCount ("tcp.src_port", "6667"), "tcp.packet", 141);
+    __REG_TC (new KeyCount ("tcp.dst_port", "6667"), "tcp.packet", 159);
+
+#undef  __REG_TC
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->install (nd);
+    }
+
+    HashCount *hc = new HashCount();
+    nd->set_handler("tcp.packet", hc);
+
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
+    }
+
+    for (auto it = tests_.begin (); it != tests_.end (); it++) {
+      (*it)->check ();
+    }
+
+    EXPECT_EQ (98, hc->hash_set_.size());
+    EXPECT_EQ (98, hc->label_set_.size());
+    delete hc;
+  }
 
   TEST_F (SkypeIRCFix, tcp_ssn) {
     class SrcCount : public Counter {

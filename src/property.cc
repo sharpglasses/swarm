@@ -327,11 +327,15 @@ namespace swarm {
     return buf;
   }
   void *Property::src_addr (size_t *len) const {
-    *len = this->addr_len_;
+    if (len) {
+      *len = this->addr_len_;
+    }
     return this->src_addr_;
   }
   void *Property::dst_addr (size_t *len) const {
-    *len = this->addr_len_;
+    if (len) {
+      *len = this->addr_len_;
+    }
     return this->dst_addr_;
   }
 
@@ -375,6 +379,11 @@ namespace swarm {
 
   uint64_t Property::hash_value () const {
     return this->hash_value_ ;
+  }
+  const void *Property::ssn_label(size_t *len) const {
+    assert(len != NULL);
+    *len = this->addr_len_ * sizeof(uint32_t);
+    return static_cast<const void *>(this->ssn_label_);
   }
 
   Var * Property::retain (const std::string &param_name) {
@@ -438,54 +447,47 @@ namespace swarm {
       // don't allow override
       return;
     }
-    
-    void *la, *ra;
-    void *lp, *rp;
+
+
+    uint32_t *la, *ra, *p = this->ssn_label_;
+    uint16_t *lp, *rp;
+
     if (::memcmp (this->src_addr_, this->dst_addr_, this->addr_len_) > 0) {
-      la = this->src_addr_;
-      ra = this->dst_addr_;
-      lp = this->src_port_;
-      rp = this->dst_port_;
+      la = static_cast <uint32_t *>(this->src_addr_);
+      ra = static_cast <uint32_t *>(this->dst_addr_);
+      lp = static_cast <uint16_t *>(this->src_port_);
+      rp = static_cast <uint16_t *>(this->dst_port_);
     } else {
-      ra = this->src_addr_;
-      la = this->dst_addr_;
-      rp = this->src_port_;
-      lp = this->dst_port_;
+      ra = static_cast <uint32_t *>(this->src_addr_);
+      la = static_cast <uint32_t *>(this->dst_addr_);
+      rp = static_cast <uint16_t *>(this->src_port_);
+      lp = static_cast <uint16_t *>(this->dst_port_);
     }
 
-    u_int64_t h = 1125899906842597;
-    u_int32_t * l32 = static_cast <u_int32_t *> (la);
-    u_int32_t * r32 = static_cast <u_int32_t *> (ra);
-
-#define __HASH(X)  (X + (h << 6) + (h << 16) - h)
-
-    if (this->addr_len_ == 4) {
-      // for IPv4
-      h = __HASH (*l32);
-      h = __HASH (*r32);
-    } else if (this->addr_len_ == 16) {
-      // for IPv6 + TCP/UDP
-      for (size_t i = 0; i < 4; i++) {
-        // expected to expaned by optimization
-        h = __HASH (l32[i]);
-        h = __HASH (r32[i]);
-      }
-    } else {
-      // in this moment, not support other IP version
-      assert (this->addr_len_ == 0);
-    }
-
-    h = __HASH (this->proto_);
+    
+    
+    memcpy(p, la, this->addr_len_);
+    p += this->addr_len_ / 4;
+    memcpy(p, ra, this->addr_len_);
+    p += this->addr_len_ / 4;
 
     if (this->port_len_ == 2) {
-      // for TCP or UDP
-      u_int16_t * l16 = static_cast <u_int16_t *> (lp);
-      u_int16_t * r16 = static_cast <u_int16_t *> (rp);
-      h = __HASH (*l16);
-      h = __HASH (*r16);
+      uint32_t t = static_cast<uint32_t>(*lp);
+      *p =  (t << 16) + static_cast<uint32_t>(*rp);
     } else {
-      // in this moment, not support other protocol than TCP, UDP
-      assert (this->port_len_ == 0);
+      *p = 0;
+    }
+    p++;
+
+    *p = static_cast<uint32_t>(this->proto_);
+    p++;
+
+    this->ssn_label_len_ = p - this->ssn_label_;
+    assert(this->ssn_label_len_ < SSN_LABEL_MAX);
+
+    u_int64_t h = 1125899906842597;
+    for (size_t i = 0; i < this->ssn_label_len_; i++) {
+      h = (this->ssn_label_[i] + (h << 6) + (h << 16) - h);
     }
 
     this->hashed_ = true;
