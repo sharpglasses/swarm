@@ -48,17 +48,19 @@ namespace swarm {
       Node();
       virtual ~Node();
       virtual uint64_t hash() = 0;
+      virtual bool match(const void *key, size_t len) = 0;
       void attach(Node *node);
       void detach();
       Node *pop_all();
       void push_link(Node * prev);
       Node *pop_link();
-      Node *search(uint64_t hv);
+      Node *search(uint64_t hv, const void *key, size_t len);
     };
 
   private:    
     class NodeRoot : public Node {
     uint64_t hash() { return 0; }
+    bool match(const void *key, size_t len) { return false; }
   };
   class Bucket {
   private:
@@ -67,7 +69,7 @@ namespace swarm {
     Bucket();
     ~Bucket();
     void attach(Node *node);
-    Node* search(uint64_t hv);
+    Node* search(uint64_t hv, const void *key, size_t len);
   };
 
   class TimeSlot {
@@ -86,10 +88,10 @@ namespace swarm {
   NodeRoot exp_node_;
 
   public:
-  LRUHash(size_t timeslot_size, size_t bucket_size=0);
+  LRUHash(size_t timeslot_size, size_t bucket_size=DEFAULT_BUCKET_SIZE);
   ~LRUHash();
   bool put(size_t tick, Node *node);
-  Node *get(uint64_t hv);
+  Node *get(uint64_t hv, const void *key, size_t len);
   void prog(size_t tick=1);  // progress tick
   Node *pop();  // pop expired node
   };

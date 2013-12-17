@@ -48,9 +48,9 @@ namespace swarm {
 
     return true;
   }
-  LRUHash::Node *LRUHash::get(uint64_t hv) {
+  LRUHash::Node *LRUHash::get(uint64_t hv, const void *key, size_t len) {
     size_t ptr = hv % this->bucket_.size();
-    return this->bucket_[ptr].search(hv);
+    return this->bucket_[ptr].search(hv, key, len);
   }
   void LRUHash::prog(size_t tick) {
     for (size_t i = 0; i < tick; i++) {
@@ -94,8 +94,9 @@ namespace swarm {
     this->root_.attach(node);
   }
 
-  LRUHash::Node* LRUHash::Bucket::search(uint64_t hv) {
-    return this->root_.search(hv);
+  LRUHash::Node* LRUHash::Bucket::search(uint64_t hv, const void *key, 
+                                         size_t len) {
+    return this->root_.search(hv, key, len);
   }
 
   // class LRUHash::Node
@@ -145,9 +146,10 @@ namespace swarm {
     return all;  
   }
 
-  LRUHash::Node* LRUHash::Node::search (uint64_t hv) {
+  LRUHash::Node* LRUHash::Node::search (uint64_t hv, const void *key,
+                                        size_t len) {
     for (Node *node = this->next_; node != NULL; node = node->next_) {
-      if (node->hash() == hv) {
+      if (node->hash() == hv && node->match(key, len)) {
         return node;
       }
     }

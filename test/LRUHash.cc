@@ -24,59 +24,71 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include <string.h>
 #include "./gtest.h"
 #include "../src/utils/lru-hash.h"
 
 class TestNode : public swarm::LRUHash::Node {
 private:
   uint64_t hv_;
+  void *key_;
+  size_t len_;
+
 public:
-  TestNode(uint64_t hv) : hv_(hv) {}
+  TestNode(uint64_t hv, const std::string &key) : hv_(hv) {
+    this->len_ = key.length() * sizeof(char);
+    this->key_ = malloc(this->len_);
+    memcpy(this->key_, key.c_str(), this->len_);
+  }
   ~TestNode() {}
   uint64_t hash() { return this->hv_; }
+  bool match(const void *key, size_t len) {
+    return (len == this->len_ && memcmp(this->key_, key, len) == 0);
+  }
+  void *key() { return this->key_; }
+  size_t len() { return this->len_; }
 };
 
 TEST(LRUHash, basic_test) {
   swarm::LRUHash *lru = new swarm::LRUHash(10);
-  TestNode *node = new TestNode(100);
+  TestNode *node = new TestNode(100, "100");
 
   // put node
   EXPECT_TRUE(lru->put(1, node));
-  EXPECT_EQ(node, lru->get(node->hash()));
+  EXPECT_EQ(node, lru->get(node->hash(), node->key(), node->len()));
 
   // still alive
   lru->prog(1);
-  EXPECT_EQ(node, lru->get(node->hash()));
+  EXPECT_EQ(node, lru->get(node->hash(), node->key(), node->len()));
 
   // expired
   lru->prog(1);
-  EXPECT_EQ(NULL, lru->get(node->hash()));
+  EXPECT_EQ(NULL, lru->get(node->hash(), node->key(), node->len()));
   EXPECT_EQ(node, lru->pop());
 }
 
 TEST(LRUHash, expire_test) {
   swarm::LRUHash *lru = new swarm::LRUHash(10);
-  TestNode *node1 = new TestNode(100);
-  TestNode *node2 = new TestNode(200);
-  TestNode *node3 = new TestNode(300);
-  TestNode *node4 = new TestNode(400);
+  TestNode *n1 = new TestNode(100, "100");
+  TestNode *n2 = new TestNode(200, "200");
+  TestNode *n3 = new TestNode(300, "300");
+  TestNode *n4 = new TestNode(400, "400");
 
-  ASSERT_TRUE(lru->put(1, node1));
-  ASSERT_TRUE(lru->put(2, node2));
-  ASSERT_TRUE(lru->put(4, node3));
-  ASSERT_TRUE(lru->put(4, node4));
+  ASSERT_TRUE(lru->put(1, n1));
+  ASSERT_TRUE(lru->put(2, n2));
+  ASSERT_TRUE(lru->put(4, n3));
+  ASSERT_TRUE(lru->put(4, n4));
 
-#define __TEST(n1,n2,n3,n4)                                 \
-  {                                                         \
-    if (n1) { EXPECT_EQ(node1, lru->get(node1->hash())); }  \
-    else    { EXPECT_EQ(NULL,  lru->get(node1->hash())); }  \
-    if (n2) { EXPECT_EQ(node2, lru->get(node2->hash())); }  \
-    else    { EXPECT_EQ(NULL,  lru->get(node2->hash())); }  \
-    if (n3) { EXPECT_EQ(node3, lru->get(node3->hash())); }  \
-    else    { EXPECT_EQ(NULL,  lru->get(node3->hash())); }  \
-    if (n4) { EXPECT_EQ(node4, lru->get(node4->hash())); }  \
-    else    { EXPECT_EQ(NULL,  lru->get(node4->hash())); }  \
+#define __TEST(r1,r2,r3,r4)                                             \
+  {                                                                     \
+    if (r1) { EXPECT_EQ(n1,   lru->get(n1->hash(), n1->key(), n1->len())); } \
+    else    { EXPECT_EQ(NULL, lru->get(n1->hash(), n1->key(), n1->len())); } \
+    if (r2) { EXPECT_EQ(n2,   lru->get(n2->hash(), n2->key(), n2->len())); } \
+    else    { EXPECT_EQ(NULL, lru->get(n2->hash(), n2->key(), n2->len())); } \
+    if (r3) { EXPECT_EQ(n3,   lru->get(n3->hash(), n3->key(), n3->len())); } \
+    else    { EXPECT_EQ(NULL, lru->get(n3->hash(), n3->key(), n3->len())); } \
+    if (r4) { EXPECT_EQ(n4,   lru->get(n4->hash(), n4->key(), n4->len())); } \
+    else    { EXPECT_EQ(NULL, lru->get(n4->hash(), n4->key(), n4->len())); } \
   }
 
   __TEST(true, true, true, true);
@@ -89,16 +101,16 @@ TEST(LRUHash, expire_test) {
 
   lru->prog(1);
   __TEST(false, true, true, true);
-  EXPECT_EQ(node1, lru->pop()); 
+  EXPECT_EQ(n1, lru->pop()); 
 
   lru->prog(1);
   __TEST(false, false, true, true);
-  EXPECT_EQ(node2, lru->pop()); 
+  EXPECT_EQ(n2, lru->pop()); 
 
   lru->prog(3);
   __TEST(false, false, false, false);
-  EXPECT_EQ(node3, lru->pop()); 
-  EXPECT_EQ(node4, lru->pop()); 
+  EXPECT_EQ(n3, lru->pop()); 
+  EXPECT_EQ(n4, lru->pop()); 
 
 #undef __TEST
 
@@ -106,36 +118,36 @@ TEST(LRUHash, expire_test) {
 
 TEST(LRUHash, tick_test) {
   swarm::LRUHash *lru = new swarm::LRUHash(10);
-  TestNode *node1 = new TestNode(100);
-  TestNode *node2 = new TestNode(200);
+  TestNode *n1 = new TestNode(100, "100");
+  TestNode *n2 = new TestNode(200, "200");
   
-  ASSERT_TRUE(lru->put(1, node1));
+  ASSERT_TRUE(lru->put(1, n1));
   lru->prog(1);
-  EXPECT_EQ(node1, lru->get(node1->hash()));
+  EXPECT_EQ(n1, lru->get(n1->hash(), n1->key(), n1->len()));
 
-  ASSERT_TRUE(lru->put(2, node2));
+  ASSERT_TRUE(lru->put(2, n2));
   lru->prog(1);
-  EXPECT_EQ(NULL,  lru->get(node1->hash()));
-  EXPECT_EQ(node2, lru->get(node2->hash()));
+  EXPECT_EQ(NULL, lru->get(n1->hash(), n1->key(), n1->len()));
+  EXPECT_EQ(n2,   lru->get(n2->hash(), n2->key(), n2->len()));
   lru->prog(1);
-  EXPECT_EQ(NULL,  lru->get(node1->hash()));
-  EXPECT_EQ(node2, lru->get(node2->hash()));
+  EXPECT_EQ(NULL, lru->get(n1->hash(), n1->key(), n1->len()));
+  EXPECT_EQ(n2,   lru->get(n2->hash(), n2->key(), n2->len()));
   lru->prog(1);
-  EXPECT_EQ(NULL,  lru->get(node1->hash()));
-  EXPECT_EQ(NULL, lru->get(node2->hash()));  
+  EXPECT_EQ(NULL, lru->get(n1->hash(), n1->key(), n1->len()));
+  EXPECT_EQ(NULL, lru->get(n2->hash(), n2->key(), n2->len())); 
 }
 
 TEST(LRUHash, error_handle) {
   swarm::LRUHash *lru = new swarm::LRUHash(10);
-  TestNode *node1 = new TestNode(100);
-  TestNode *node2 = new TestNode(200);
+  TestNode *n1 = new TestNode(100, "100");
+  TestNode *n2 = new TestNode(200, "200");
   
-  ASSERT_TRUE (lru->put( 9, node1));
-  ASSERT_FALSE(lru->put(10, node2));
-  EXPECT_EQ(node1, lru->get(node1->hash()));
-  EXPECT_EQ(NULL,  lru->get(node2->hash()));
+  ASSERT_TRUE (lru->put( 9, n1));
+  ASSERT_FALSE(lru->put(10, n2));
+  EXPECT_EQ(n1, lru->get(n1->hash(), n1->key(), n1->len()));
+  EXPECT_EQ(NULL,  lru->get(n2->hash(), n2->key(), n2->len()));
   lru->prog(15);
-  EXPECT_EQ(node1, lru->pop());
+  EXPECT_EQ(n1, lru->pop());
   EXPECT_EQ(NULL,  lru->pop());
 }
 

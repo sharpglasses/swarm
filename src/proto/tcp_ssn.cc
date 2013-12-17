@@ -31,6 +31,30 @@
 
 namespace swarm {
   class TcpSession : public LRUHash::Node {
+  private:
+    void *key_;
+    size_t len_;
+    uint64_t hash_;
+
+  public:
+    TcpSession(Property *p) {
+      const void *ptr = p->ssn_label(&this->len_);
+      this->key_ = ::malloc(this->len_);
+      ::memcpy(this->key_, ptr, this->len_);
+      this->hash_ = p->hash_value();
+    }
+    ~TcpSession() {
+      if(this->key_) {
+        ::free(this->key_);
+      }
+    }
+
+    bool match(const void *key, size_t len) {
+      return (this->len_ == len && 0 == ::memcmp(this->key_, key, len));
+    }
+    uint64_t hash() {
+      return this->hash_; 
+    }
   };
 
   class TcpSsnDecoder : public Decoder {
@@ -45,22 +69,48 @@ namespace swarm {
                                         "TCP session established");
       this->P_SEG_ = nd->assign_param ("tcp_ssn.segment", "TCP segment data");
 
-      this->ssn_table_ = new LRUHash(3600, 1024);
+      this->ssn_table_ = new LRUHash(3600, 0xffff);
     }
+    ~TcpSsnDecoder() {
+      this->ssn_table_->prog(3600);
+      TcpSession *ssn;
+      while (NULL != (ssn = dynamic_cast<TcpSession*>(this->ssn_table_->pop()))) {
+        delete ssn;
+      }
+      
+      delete this->ssn_table_;
+    }
+
     void setup (NetDec * nd) {
       // nothing to do
       this->P_TCP_HDR_ = nd->lookup_param_id("tcp.header");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpSsnDecoder (nd); }
+    
+    TcpSession *fetch_session(Property *p) {
+      // Lookup TcpSession object from ssn_table_ LRU hash table.
+      // If not existing, create new TcpSession and return the one.
+      uint64_t hv = p->hash_value();
+      size_t key_len;
+      const void *ssn_key = p->ssn_label(&key_len);
+      TcpSession *ssn = dynamic_cast<TcpSession*>
+        (this->ssn_table_->get(p->hash_value(), ssn_key, key_len));
+
+      if (!ssn) {
+        ssn = new TcpSession(p);
+        this->ssn_table_->put(300, ssn);
+      }
+
+      return ssn;
+    }
 
     bool decode (Property *p) {
       const struct tcp_header *hdr = reinterpret_cast<const struct tcp_header*>
         (p->param(this->P_TCP_HDR_)->get());
 
-      uint64_t hv = p->hash_value();
-
-      // TcpSession *ssn = this->ssn_table_->get(p->hash_value());
+      TcpSession *ssn = this->fetch_session(p);
+      
       // set data to property
       // p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
 
