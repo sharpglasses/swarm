@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sstream>
+
 #include "../decode.h"
 
 
@@ -39,7 +39,7 @@ namespace swarm {
       u_int32_t ack_;       // tcp ack number
 
       // ToDo(Masa): 4 bit data field should be updated for little-endian
-      u_int8_t x2_:4, offset_:4;
+      u_int8_t offset_:4, x2_:4;
 
       u_int8_t flags_;      // flags
       u_int16_t window_;    // window
@@ -57,18 +57,15 @@ namespace swarm {
     static const u_int8_t CWR  = 0x80;
 
     ev_id EV_PKT_, EV_SYN_;
-    param_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_, P_DATA_, P_HDR_;
-    dec_id D_TCP_SSN_;
+    param_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_;
 
   public:
     DEF_REPR_CLASS (VarFlags, FacFlags);
 
     explicit TcpDecoder (NetDec * nd) : Decoder (nd) {
-      // Event name assign
       this->EV_PKT_ = nd->assign_event ("tcp.packet", "TCP Packet");
       this->EV_SYN_ = nd->assign_event ("tcp.syn", "TCP SYN Packet");
 
-      // Parameter name assign
       this->P_SRC_PORT_ =
         nd->assign_param ("tcp.src_port", "TCP Source Port",
                           new FacNum ());
@@ -79,12 +76,10 @@ namespace swarm {
         nd->assign_param ("tcp.flags", "TCP Flags", new FacFlags ());
       this->P_SEQ_ = nd->assign_param ("tcp.seq", "TCP Sequence Number");
       this->P_ACK_ = nd->assign_param ("tcp.ack", "TCP Acknowledge");
-      this->P_HDR_ = nd->assign_param ("tcp.header", "TCP Header without option");
-      this->P_DATA_ = nd->assign_param ("tcp.data", "TCP Data Segment");
+
     }
     void setup (NetDec * nd) {
       // nothing to do
-      this->D_TCP_SSN_ = nd->lookup_dec_id("tcp_ssn");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpDecoder (nd); }
@@ -103,7 +98,6 @@ namespace swarm {
       p->set (this->P_FLAGS_,    &(hdr->flags_),    sizeof (hdr->flags_));
       p->set (this->P_SEQ_,      &(hdr->seq_),      sizeof (hdr->seq_));
       p->set (this->P_ACK_,      &(hdr->ack_),      sizeof (hdr->ack_));
-      p->set (this->P_HDR_,      hdr,               sizeof (struct tcp_header));
 
       // push event
       p->push_event (this->EV_PKT_);
@@ -111,27 +105,10 @@ namespace swarm {
       assert (sizeof (hdr->src_port_) == sizeof (hdr->dst_port_));
       p->set_port (&(hdr->src_port_), &(hdr->dst_port_),
                    sizeof (hdr->src_port_));
-      p->calc_hash();
 
-      uint8_t fsra_flag = (hdr->flags_ & (SYN | ACK | RST | FIN));
-      if (fsra_flag == SYN) {
+      if ((hdr->flags_ & (SYN | ACK)) == SYN) {
         p->push_event (this->EV_SYN_);
       }
-
-      size_t opt_len = hdr->offset_ * 4 - sizeof(struct tcp_header);
-      byte_t *opt = p->payload(opt_len);
-      if (opt == NULL) {
-        debug(0, "invalid option length (%zu) or not enough payload", opt_len);
-        return false;
-      }
-
-      if (p->remain() > 0) {
-        size_t data_len = p->remain();
-        byte_t *data_seg = p->refer(data_len);
-        p->set(this->P_DATA_, data_seg, data_len);
-      }
-
-      this->emit(this->D_TCP_SSN_, p);
 
       return true;
     }
