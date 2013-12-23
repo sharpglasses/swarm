@@ -88,8 +88,8 @@ class FlowHandler : public swarm::Handler {
   uint64_t pkt () const { return this->pkt_; }
   size_t flow_count () const { return this->flow_map_.size (); }
   void recv(swarm::ev_id eid, const  swarm::Property &p) {
-    u_int64_t hv = p.get_5tuple_hash();
-    std::string proto = p.param("ipv4.proto")->repr();
+    u_int64_t hv = p.hash_value();
+    std::string proto = p.value("ipv4.proto").repr();
     struct timeval tv;
     p.tv(&tv);
 
@@ -110,7 +110,7 @@ class FlowHandler : public swarm::Handler {
     for (auto it = this->flow_map_.begin();
          it != this->flow_map_.end(); it++) {
       Flow * f = it->second;
-      printf("%016lX, %s, %lu, %lu\n",
+      printf("%016llX, %s, %llu, %llu\n",
               it->first, f->proto().c_str(), f->len(), f->pkt());
     }
   }
@@ -149,7 +149,7 @@ void read_pcapfile(const std::string &fpath, optparse::Values &opt) {
   }
 
   if (opt.get("summary")) {
-    printf ("%s, %lu, %lu, %lu\n", fpath.c_str (), fh->flow_count (),
+    printf ("%s, %zu, %llu, %llu\n", fpath.c_str (), fh->flow_count (),
             fh->size (), fh->pkt ());
   } else {
     fh->dump();

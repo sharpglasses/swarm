@@ -47,15 +47,15 @@ class DnsFwdDB : public swarm::Handler {
   }
 
   void recv (swarm::ev_id eid, const  swarm::Property &p) {
-    for (size_t i = 0; i < p.param ("dns.an_name")->size (); i++) {
-      std::string name = p.param ("dns.an_name")->repr (i);
-      std::string type = p.param ("dns.an_type")->repr (i);
+    for (size_t i = 0; i < p.value_size ("dns.an_name"); i++) {
+      std::string name = p.value ("dns.an_name", i).repr();
+      std::string type = p.value ("dns.an_type", i).repr();
       std::string addr;
 
-      addr = p.param ("dns.an_data")->repr (i);
+      addr = p.value ("dns.an_data", i).repr();
       printf ("%s (%s) %s\n", name.c_str (), type.c_str (), addr.c_str ());
 
-      void * ptr = p.param ("dns.an_data")->get (NULL, i);
+      void * ptr = p.value ("dns.an_data", i).ptr();
       if (ptr) {
         u_int32_t * a = static_cast<u_int32_t*> (ptr);
         this->rev_map_.insert (std::make_pair (*a, name));
@@ -77,18 +77,18 @@ class IPFlow : public swarm::Handler {
   void recv (swarm::ev_id eid, const  swarm::Property &p) {
     std::string s_tmp, d_tmp;
     const std::string *src, *dst;
-    void *s_addr = p.param ("ipv4.src")->get ();
-    void *d_addr = p.param ("ipv4.dst")->get ();
+    void *s_addr = p.value ("ipv4.src").ptr();
+    void *d_addr = p.value ("ipv4.dst").ptr();
     if (!s_addr || !d_addr) {
       return;
     }
 
     if (NULL == (src = this->db_->lookup (static_cast<u_int32_t*>(s_addr)))) {
-      s_tmp = p.param("ipv4.src")->repr ();
+      s_tmp = p.value("ipv4.src").repr ();
       src = &s_tmp;
     }
     if (NULL == (dst = this->db_->lookup (static_cast<u_int32_t*>(d_addr)))) {
-      d_tmp = p.param("ipv4.dst")->repr ();
+      d_tmp = p.value("ipv4.dst").repr ();
       dst = &d_tmp;
     }
 
