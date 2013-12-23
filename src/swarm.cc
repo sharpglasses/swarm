@@ -32,6 +32,6 @@
 
 #include "./swarm.h"
 #include "./decode.h"
-#include "./var.h"
+#include "./value.h"
 #include "./debug.h"
 #include "./netdec.h"

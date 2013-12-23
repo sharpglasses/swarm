@@ -134,11 +134,11 @@ namespace SkypeIRC {
     public:
       void recv (swarm::ev_id eid, const swarm::Property &prop) {
         const bool DEBUG = false;
-        std::string src_pr = prop.param ("arp.src_pr")->repr ();
-        std::string dst_pr = prop.param ("arp.dst_pr")->repr ();
-        std::string src_hw = prop.param ("arp.src_hw")->mac ();
-        std::string dst_hw = prop.param ("arp.dst_hw")->mac ();
-        std::string op = prop.param ("arp.op")->repr ();
+        std::string src_pr = prop.value ("arp.src_pr").repr ();
+        std::string dst_pr = prop.value ("arp.dst_pr").repr ();
+        std::string src_hw = prop.value ("arp.src_hw").mac ();
+        std::string dst_hw = prop.value ("arp.dst_hw").mac ();
+        std::string op = prop.value ("arp.op").repr ();
 
         if (DEBUG) {
           debug (1, "src_pr = %s", src_pr.c_str ());
@@ -157,11 +157,11 @@ namespace SkypeIRC {
     class ReqCount : public Counter {
       void recv (swarm::ev_id eid, const swarm::Property &prop) {
         const bool DEBUG = false;
-        std::string src_pr = prop.param ("arp.src_pr")->ip4 ();
-        std::string dst_pr = prop.param ("arp.dst_pr")->ip4 ();
-        std::string src_hw = prop.param ("arp.src_hw")->mac ();
-        std::string dst_hw = prop.param ("arp.dst_hw")->mac ();
-        std::string op = prop.param ("arp.op")->repr ();
+        std::string src_pr = prop.value ("arp.src_pr").ip4 ();
+        std::string dst_pr = prop.value ("arp.dst_pr").ip4 ();
+        std::string src_hw = prop.value ("arp.src_hw").mac ();
+        std::string dst_hw = prop.value ("arp.dst_hw").mac ();
+        std::string op = prop.value ("arp.op").repr ();
 
         if (DEBUG) {
           debug (1, "src_pr = %s", src_pr.c_str ());
@@ -223,7 +223,7 @@ namespace SkypeIRC {
     public:
       explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("ipv4.src")->repr () == this->tgt_) { this->countup (); }
+        if (p.value ("ipv4.src").repr () == this->tgt_) { this->countup (); }
       }
     };
 
@@ -231,7 +231,7 @@ namespace SkypeIRC {
     public:
       explicit DstCount (const std::string &addr) { this->tgt_ = addr; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("ipv4.dst")->repr () == this->tgt_) { this->countup (); }
+        if (p.value ("ipv4.dst").repr () == this->tgt_) { this->countup (); }
       }
     };
 
@@ -239,7 +239,7 @@ namespace SkypeIRC {
     public:
       explicit ProtoCount (const std::string &proto) { this->tgt_ = proto; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("ipv4.proto")->repr () == this->tgt_) { this->countup (); }
+        if (p.value ("ipv4.proto").repr () == this->tgt_) { this->countup (); }
       }
     };
 
@@ -247,7 +247,7 @@ namespace SkypeIRC {
     public:
       explicit LenCount (const std::string &tgt) { this->tgt_ = tgt; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        std::string data = p.param ("ipv4.total")->repr ();
+        std::string data = p.value ("ipv4.total").repr ();
         if (data == this->tgt_) { this->countup (); }
       }
     };
@@ -286,7 +286,7 @@ namespace SkypeIRC {
     public:
       explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("udp.src_port")->repr () == this->tgt_) {
+        if (p.value ("udp.src_port").repr () == this->tgt_) {
           this->countup ();
         }
       }
@@ -296,7 +296,7 @@ namespace SkypeIRC {
     public:
       explicit DstCount (const std::string &addr) { this->tgt_ = addr; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("udp.dst_port")->repr () == this->tgt_) {
+        if (p.value ("udp.dst_port").repr () == this->tgt_) {
           this->countup ();
         }
       }
@@ -306,7 +306,7 @@ namespace SkypeIRC {
     public:
       explicit LenCount (const std::string &proto) { this->tgt_ = proto; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("udp.len")->repr () == this->tgt_) {
+        if (p.value ("udp.len").repr () == this->tgt_) {
           this->countup ();
         }
       }
@@ -404,7 +404,7 @@ namespace SkypeIRC {
       explicit KeyCount (const std::string &key, const std::string &value) : 
         key_(key) { this->tgt_ = value; } 
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param (this->key_)->repr () == this->tgt_) { this->countup (); }
+        if (p.value (this->key_).repr () == this->tgt_) { this->countup (); }
       }
     };
     
@@ -446,7 +446,7 @@ namespace SkypeIRC {
     public:
       explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.param ("udp.src_port")->repr () == this->tgt_) {
+        if (p.value ("udp.src_port").repr () == this->tgt_) {
           this->countup ();
         }
       }

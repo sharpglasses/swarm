@@ -59,14 +59,14 @@ namespace swarm {
   private:
     std::map <std::string, ev_id> fwd_event_;
     std::map <ev_id, std::string> rev_event_;
-    std::map <std::string, ParamEntry *> fwd_param_;
-    std::map <param_id, ParamEntry *> rev_param_;
+    std::map <std::string, ValueEntry *> fwd_value_;
+    std::map <val_id, ValueEntry *> rev_value_;
     std::map <std::string, dec_id> fwd_dec_;
     std::map <dec_id, std::string> rev_dec_;
     std::map <hdlr_id, HandlerEntry *> rev_hdlr_;
     dec_id base_did_;
     ev_id base_eid_;
-    param_id base_pid_;
+    val_id base_vid_;
     hdlr_id base_hid_;
     dec_id new_dec_id ();
       
@@ -108,10 +108,10 @@ namespace swarm {
     std::string lookup_event_name (ev_id eid);
     size_t event_size () const;
 
-    // Parameter
-    param_id lookup_param_id (const std::string &name);
-    std::string lookup_param_name (param_id pid);
-    size_t param_size () const;
+    // Values
+    val_id lookup_value_id (const std::string &name);
+    std::string lookup_value_name (val_id pid);
+    size_t value_size () const;
 
     // Decoder
     dec_id lookup_dec_id (const std::string &name);
@@ -148,10 +148,10 @@ namespace swarm {
     // ----------------------------------------------
     // for modules, not used for external program
     ev_id assign_event (const std::string &name, const std::string &desc);
-    param_id assign_param (const std::string &name, const std::string &desc,
-                           VarFactory *fac = NULL);
+    val_id assign_value (const std::string &name, const std::string &desc,
+                           ValueFactory *fac = NULL);
     void decode (dec_id dec, Property *p);
-    void build_param_vector (std::vector <Param *> * prm_vec_);
+    void build_value_vector (std::vector <ValueSet *> * prm_vec_);
   };
 
 }  //  namespace swarm

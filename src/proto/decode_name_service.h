@@ -72,44 +72,44 @@ namespace swarm {
 
     const std::string base_name_;
     ev_id EV_NS_PKT_, EV_TYPE_[4];
-    param_id P_ID_;
-    param_id NS_NAME[4];
-    param_id NS_TYPE[4];
-    param_id NS_DATA[4];
+    val_id P_ID_;
+    val_id NS_NAME[4];
+    val_id NS_TYPE[4];
+    val_id NS_DATA[4];
 
   public:
     // VarNameServiceData for data part of record
-    class VarNameServiceData : public Var {
+    class VarNameServiceData : public Value {
     private:
       u_int16_t type_;
       byte_t * base_ptr_;
       size_t total_len_;
 
     public:
-      bool repr (std::string *s) const;
+      std::string repr() const;
       void set_data (byte_t * ptr, size_t len, u_int16_t type,
                      byte_t * base_ptr, size_t total_len);
     };
 
-    class FacNameServiceData : public VarFactory {
+    class FacNameServiceData : public ValueFactory {
     public:
-      Var * New () { return new VarNameServiceData (); }
+      Value * New () { return new VarNameServiceData (); }
     };
 
     // VarNameServiceName for data part of record
-    class VarNameServiceName : public Var {
+    class VarNameServiceName : public Value {
     private:
       byte_t * base_ptr_;
       size_t total_len_;
 
     public:
-      bool repr (std::string *s) const;
+      std::string repr () const;
       void set_data (byte_t * ptr, size_t len, byte_t * base_ptr,
                      size_t total_len);
     };
-    class FacNameServiceName : public VarFactory {
+    class FacNameServiceName : public ValueFactory {
     public:
-      Var * New () { return new VarNameServiceName (); }
+      Value * New () { return new VarNameServiceName (); }
     };
 
 

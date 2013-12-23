@@ -60,7 +60,7 @@ namespace swarm {
   NetDec::NetDec () :
     base_did_(DEC_BASE),
     base_eid_(EV_BASE),
-    base_pid_(PARAM_BASE),
+    base_vid_(VALUE_BASE),
     base_hid_(HDLR_BASE),
     none_(""),
     recv_len_(0),
@@ -225,24 +225,24 @@ namespace swarm {
   }
 
   // -------------------------------------------------------------------------------
-  // NetDec Parameter
+  // NetDec Value
   //
-  std::string NetDec::lookup_param_name (param_id pid) {
-    auto it = this->rev_param_.find (pid);
-    if (it != this->rev_param_.end ()) {
+  std::string NetDec::lookup_value_name (val_id vid) {
+    auto it = this->rev_value_.find (vid);
+    if (it != this->rev_value_.end ()) {
       return (it->second)->name ();
     } else {
       return this->none_;
     }
   }
-  param_id NetDec::lookup_param_id (const std::string &name) {
-    auto it = this->fwd_param_.find (name);
-    return (it != this->fwd_param_.end ()) ? (it->second)->pid () : PARAM_NULL;
+  val_id NetDec::lookup_value_id (const std::string &name) {
+    auto it = this->fwd_value_.find (name);
+    return (it != this->fwd_value_.end ()) ? (it->second)->vid () : VALUE_NULL;
   }
-  size_t NetDec::param_size () const {
-    assert (this->base_pid_ >= 0);
-    assert (this->base_pid_ == static_cast<ev_id>(this->fwd_param_.size ()));
-    return this->fwd_param_.size ();
+  size_t NetDec::value_size () const {
+    assert (this->base_vid_ >= 0);
+    assert (this->base_vid_ == static_cast<ev_id>(this->fwd_value_.size ()));
+    return this->fwd_value_.size ();
   }
 
   // -------------------------------------------------------------------------------
@@ -413,18 +413,18 @@ namespace swarm {
       return eid;
     }
   }
-  param_id NetDec::assign_param (const std::string &name,
-                                 const std::string &desc, VarFactory * fac) {
-    if (this->fwd_param_.end () != this->fwd_param_.find (name)) {
-      return PARAM_NULL;
+  val_id NetDec::assign_value (const std::string &name,
+                                 const std::string &desc, ValueFactory * fac) {
+    if (this->fwd_value_.end () != this->fwd_value_.find (name)) {
+      return VALUE_NULL;
     } else {
-      const ev_id pid = this->base_pid_;
+      const val_id vid = this->base_vid_;
 
-      ParamEntry * ent = new ParamEntry (pid, name, desc, fac);
-      this->fwd_param_.insert (std::make_pair (name, ent));
-      this->rev_param_.insert (std::make_pair (pid,  ent));
-      this->base_pid_++;
-      return pid;
+      ValueEntry * ent = new ValueEntry (vid, name, desc, fac);
+      this->fwd_value_.insert (std::make_pair (name, ent));
+      this->rev_value_.insert (std::make_pair (vid,  ent));
+      this->base_vid_++;
+      return vid;
     }
   }
 
@@ -445,16 +445,16 @@ namespace swarm {
     }
   }
 
-  void NetDec::build_param_vector (std::vector <Param *> * prm_vec_) {
-    prm_vec_->resize (this->param_size ());
+  void NetDec::build_value_vector (std::vector <ValueSet *> * val_vec_) {
+    val_vec_->resize (this->value_size ());
 
-    for (auto it = this->fwd_param_.begin ();
-         it != this->fwd_param_.end (); it++) {
-      ParamEntry * ent = it->second;
+    for (auto it = this->fwd_value_.begin ();
+         it != this->fwd_value_.end (); it++) {
+      ValueEntry * ent = it->second;
       debug (0, "name: %s, %s", ent->name().c_str (), ent->desc().c_str ());
-      size_t idx = Property::pid2idx (ent->pid ());
-      assert (idx < prm_vec_->size ());
-      (*prm_vec_)[idx] = new Param (ent->fac ());
+      size_t idx = Property::vid2idx (ent->vid ());
+      assert (idx < val_vec_->size ());
+      (*val_vec_)[idx] = new ValueSet (ent->fac ());
     }
   }
 }  // namespace swarm

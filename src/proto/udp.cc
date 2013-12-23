@@ -40,23 +40,21 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_UDP_PKT_;
-    param_id P_SRC_PORT_, P_DST_PORT_, P_LEN_;
+    val_id P_SRC_PORT_, P_DST_PORT_, P_LEN_;
     dec_id D_DNS_, D_LLMNR_, D_NETBIOS_NS_, D_MDNS_;
 
   public:
-    DEF_REPR_CLASS (VarUdp, FacUdp);
-
     explicit UdpDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_UDP_PKT_ = nd->assign_event ("udp.packet", "UDP Packet");
 
       this->P_SRC_PORT_ =
-        nd->assign_param ("udp.src_port", "UDP Source Port",
+        nd->assign_value ("udp.src_port", "UDP Source Port",
                           new FacNum ());
       this->P_DST_PORT_ =
-        nd->assign_param ("udp.dst_port", "UDP Destination Port",
+        nd->assign_value ("udp.dst_port", "UDP Destination Port",
                           new FacNum ());
       this->P_LEN_ =
-        nd->assign_param ("udp.len", "UDP Data Length", new FacNum ());
+        nd->assign_value ("udp.len", "UDP Data Length", new FacNum ());
     }
     void setup (NetDec * nd) {
       this->D_DNS_ = nd->lookup_dec_id ("dns");
@@ -107,10 +105,6 @@ namespace swarm {
       return true;
     }
   };
-
-  bool UdpDecoder::VarUdp::repr (std::string *s) const {
-    return this->ip4 (s);
-  }
 
   INIT_DECODER (udp, UdpDecoder::New);
 }  // namespace swarm

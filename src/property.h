@@ -35,62 +35,15 @@
 #include <deque>
 
 #include "./common.h"
+#include "./value.h"
 
 namespace swarm {
   class NetDec;
 
-  class Param {
-  private:
-    std::vector <Var *> var_set_;
-    size_t idx_;
-    VarFactory * fac_;
 
-  public:
-    static const std::string errmsg_;
-
-    explicit Param (VarFactory *fac = NULL);
-    ~Param ();
-    void init ();
-
-    void push (byte_t *data, size_t len, bool copy = false);
-    Var * retain ();
-
-    size_t size () const;
-    byte_t * get (size_t *len = NULL, size_t idx = 0) const;
-    std::string repr (size_t idx = 0) const;
-    bool repr (std::string *s, size_t idx) const;
-    int32_t int32 (size_t idx = 0) const;
-    u_int32_t uint32 (size_t idx = 0) const;
-    std::string str (size_t idx = 0) const;
-    std::string hex (size_t idx = 0) const;
-    std::string ip4 (size_t idx = 0) const;
-    std::string ip6 (size_t idx = 0) const;
-    std::string mac (size_t idx = 0) const;
-    bool str (std::string *s, size_t idx) const;
-    bool hex (std::string *s, size_t idx) const;
-    bool ip4 (std::string *s, size_t idx) const;
-    bool ip6 (std::string *s, size_t idx) const;
-    bool mac (std::string *s, size_t idx) const;
-  };
-
-  class ParamEntry {
-  private:
-    param_id pid_;
-    std::string name_;
-    std::string desc_;
-    VarFactory * fac_;
-
-  public:
-    ParamEntry (param_id pid, const std::string &name,
-                const std::string &desc_, VarFactory * fac);
-    ~ParamEntry ();
-    param_id pid () const;
-    const std::string& name () const;
-    const std::string& desc () const;
-    VarFactory * fac () const;
-  };
-
-
+  // -------------------------------------------------------
+  // Property
+  //
   class Property {
   private:
     NetDec * nd_;
@@ -105,7 +58,7 @@ namespace swarm {
     size_t ptr_;
 
     // Parameter management
-    std::vector <Param *> param_;
+    std::vector <ValueSet *> value_;
 
     // Event management
     std::vector <ev_id> ev_queue_;
@@ -127,17 +80,19 @@ namespace swarm {
     uint32_t ssn_label_[SSN_LABEL_MAX];
     size_t ssn_label_len_;
 
+    static const ValueNull val_null_;
+
   public:
     explicit Property (NetDec * nd);
     ~Property ();
     void init (const byte_t *data, const size_t cap_len,
                const size_t data_len, const struct timeval &tv);
-    Var * retain (const std::string &param_name);
-    Var * retain (const param_id pid);
-    bool set (const std::string &param_name, void * ptr, size_t len);
-    bool set (const param_id pid, void * ptr, size_t len);
-    bool copy (const std::string &param_name, void * ptr, size_t len);
-    bool copy (const param_id pid, void * ptr, size_t len);
+    Value * retain (const std::string &value_name);
+    Value * retain (const val_id vid);
+    bool set (const std::string &value_name, void * ptr, size_t len);
+    bool set (const val_id vid, void * ptr, size_t len);
+    bool copy (const std::string &value_name, void * ptr, size_t len);
+    bool copy (const val_id vid, void * ptr, size_t len);
 
     void set_addr (void *src_addr, void *dst_addr, u_int8_t proto,
                    size_t addr_len);
@@ -147,9 +102,11 @@ namespace swarm {
     ev_id pop_event ();
     void push_event (const ev_id eid);
 
-    Param * param (const std::string &key) const;
-    Param * param (const param_id pid) const;
-    u_int64_t get_5tuple_hash () const;
+    const Value &value(const std::string &key, size_t idx=0) const;
+    const Value &value(const val_id vid, size_t idx=0) const;
+    size_t value_size(const std::string &key) const;
+    size_t value_size(const val_id vid) const;
+    
     size_t len () const;      // original data length
     size_t cap_len () const;  // captured data length
     void tv (struct timeval *tv) const;
@@ -170,8 +127,8 @@ namespace swarm {
     std::string proto () const;
     uint64_t hash_value () const;
     const void *ssn_label(size_t *len) const;
-    inline static size_t pid2idx (param_id pid) {
-      return static_cast <size_t> (pid - PARAM_BASE);
+    inline static size_t vid2idx (val_id vid) {
+      return static_cast <size_t> (vid - VALUE_BASE);
     }
     inline static void addr2str (void * addr, size_t len, std::string *s);
   };

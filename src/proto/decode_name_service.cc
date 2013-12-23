@@ -24,14 +24,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sstream>
 #include "./decode_name_service.h"
 
 namespace swarm {
-  bool NameServiceDecoder::VarNameServiceData::repr (std::string *s) const {
+  std::string NameServiceDecoder::VarNameServiceData::repr() const {
+    std::string s;
     bool rc = false;
     switch (this->type_) {
-    case  1: rc = this->ip4 (s); break;  // A
-    case 28: rc = this->ip6 (s); break;  // AAAA
+    case  1: s = this->ip4(); break;  // A
+    case 28: s = this->ip6(); break;  // AAAA
     case  2:  // NS
     case  5:  // CNAME
     case  6:  // SOA
@@ -39,18 +41,20 @@ namespace swarm {
     case 15:  // MX
       {
         size_t len;
-        byte_t * ptr = this->get (&len);
+        byte_t * ptr = this->ptr(&len);
         byte_t * rp;
         rp = NameServiceDecoder::parse_label (ptr, len, this->base_ptr_,
-                                              this->total_len_, s);
-        rc = (rp != NULL);
+                                              this->total_len_, &s);
+        if (rp != NULL) {
+          s = Value::null_;
+        }
       }
       break;
 
     default:
       debug (1, "? %d", this->type_);
     }
-    return rc;
+    return s;
   }
 
   void NameServiceDecoder::VarNameServiceData::set_data (byte_t * ptr,
@@ -64,13 +68,14 @@ namespace swarm {
     this->total_len_ = total_len;
   }
 
-  bool NameServiceDecoder::VarNameServiceName::repr (std::string *s) const {
+  std::string NameServiceDecoder::VarNameServiceName::repr() const {
     size_t len;
-    byte_t * ptr = this->get (&len);
+    byte_t * ptr = this->ptr(&len);
     byte_t * rp;
+    std::string s;
     rp = NameServiceDecoder::parse_label (ptr, len, this->base_ptr_,
-                                          this->total_len_, s);
-    return (rp != NULL);
+                                          this->total_len_, &s);
+    return (rp != NULL) ? s : Value::null_;
   }
 
   void NameServiceDecoder::VarNameServiceName::set_data
@@ -89,8 +94,8 @@ namespace swarm {
     this->EV_NS_PKT_ = nd->assign_event (bn + ".packet", bn + " Packet");
 
     // Assign parameter name
-    this->P_ID_  = nd->assign_param (bn + ".tx_id", bn + " Transaction ID",
-                                     new FacNum ());
+    this->P_ID_  = nd->assign_value(bn + ".tx_id", bn + " Transaction ID",
+                                    new FacNum ());
 
     for (size_t i = 0; i < RR_CNT; i++) {
       std::string base, desc;
@@ -108,12 +113,12 @@ namespace swarm {
       std::string name_key = bn + "." + base + "_name";
       std::string type_key = bn + "." + base + "_type";
       std::string data_key = bn + "." + base + "_data";
-      this->NS_NAME[i] = nd->assign_param (name_key, desc + " Name",
-                                           new FacNameServiceName ());
-      this->NS_TYPE[i] = nd->assign_param (type_key, desc + " Type",
-                                           new FacType ());
-      this->NS_DATA[i] = nd->assign_param (data_key, desc + " Data",
-                                           new FacNameServiceData ());
+      this->NS_NAME[i] = nd->assign_value(name_key, desc + " Name",
+                                          new FacNameServiceName ());
+      this->NS_TYPE[i] = nd->assign_value(type_key, desc + " Type",
+                                          new FacType ());
+      this->NS_DATA[i] = nd->assign_value(data_key, desc + " Data",
+                                          new FacNameServiceData ());
     }
   }
 
@@ -316,25 +321,27 @@ namespace swarm {
     return NULL;
   }
 
-  bool NameServiceDecoder::VarType::repr (std::string *s) const {
-    u_int16_t type = this->num <u_int16_t> ();
+  std::string NameServiceDecoder::VarType::repr() const {
+    u_int16_t type = this->ntoh <u_int16_t>();
+    std::string s;
     switch (type) {
-    case  1: s->assign ("A"); break;
-    case  2: s->assign ("NS"); break;
-    case  5: s->assign ("CNAME"); break;
-    case  6: s->assign ("SOA"); break;
-    case 12: s->assign ("PTR"); break;
-    case 15: s->assign ("MX"); break;
-    case 28: s->assign ("AAAA"); break;
+    case  1: s.assign ("A"); break;
+    case  2: s.assign ("NS"); break;
+    case  5: s.assign ("CNAME"); break;
+    case  6: s.assign ("SOA"); break;
+    case 12: s.assign ("PTR"); break;
+    case 15: s.assign ("MX"); break;
+    case 28: s.assign ("AAAA"); break;
     default:
       {
-        char buf[32];
-        snprintf (buf, sizeof (buf), "%u", type);
-        s->assign (buf);
+        std::stringstream ss;
+        ss << type;
+        s = ss.str();
       }
       break;
     }
-    return true;
+
+    return s;
   }
 
 }  // namespace swarm

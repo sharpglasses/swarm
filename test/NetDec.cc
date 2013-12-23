@@ -48,72 +48,70 @@ class TestHandler : public Counter {
 
 class EtherHandler : public Counter {
  private:
-  swarm::param_id src_;
+  swarm::val_id src_;
 
  public:
   explicit EtherHandler (swarm::NetDec * nd) {
-    this->src_ = nd->lookup_param_id ("ether.src");
-    EXPECT_NE (swarm::PARAM_NULL, this->src_);
+    this->src_ = nd->lookup_value_id ("ether.src");
+    EXPECT_NE (swarm::VALUE_NULL, this->src_);
   }
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
     this->count_++;
-    const swarm::Param * p = prop.param (this->src_);
-    EXPECT_TRUE (p != NULL);
+    const swarm::Value &p = prop.value (this->src_);
+    EXPECT_TRUE(!p.is_null());
   }
 };
 
 class IPv4Handler : public Counter {
  private:
-  swarm::param_id src_;
+  swarm::val_id src_;
 
  public:
   explicit IPv4Handler (swarm::NetDec * nd) {
-    this->src_ = nd->lookup_param_id ("ipv4.src");
-    EXPECT_NE (swarm::PARAM_NULL, this->src_);
+    this->src_ = nd->lookup_value_id ("ipv4.src");
+    EXPECT_NE (swarm::VALUE_NULL, this->src_);
   }
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
     this->count_++;
-    const swarm::Param * p = prop.param (this->src_);
-    EXPECT_TRUE (p != NULL);
+    EXPECT_FALSE(prop.value (this->src_).is_null());
   }
 };
 
 class DnsHandler : public Counter {
  private:
-  swarm::param_id type_;
+  swarm::val_id type_;
 
  public:
   explicit DnsHandler (swarm::NetDec * nd) {
-    this->type_ = nd->lookup_param_id ("dns.tx_id");
-    EXPECT_NE (swarm::PARAM_NULL, this->type_);
+    this->type_ = nd->lookup_value_id ("dns.tx_id");
+    EXPECT_NE (swarm::VALUE_NULL, this->type_);
   }
   void recv (swarm::ev_id eid, const swarm::Property &prop) {
     this->count_++;
-    const swarm::Param * p = prop.param (this->type_);
-    EXPECT_TRUE (p != NULL);
+    EXPECT_FALSE(prop.value (this->type_).is_null());
   }
 };
 
 
 TEST (NetDec, param) {
   swarm::NetDec *nd = new swarm::NetDec ();
-  size_t base_size = nd->param_size ();
-  EXPECT_EQ (0 + base_size, nd->param_size ());
-  swarm::param_id p_blue   = nd->assign_param ("blue", "Blue");
-  EXPECT_EQ (1 + base_size, nd->param_size ());
-  swarm::param_id p_orange = nd->assign_param ("orange", "Orange");
-  EXPECT_EQ (2 + base_size, nd->param_size ());
+  size_t base_size = nd->value_size ();
+  EXPECT_EQ (0 + base_size, nd->value_size ());
+  swarm::val_id p_blue   = nd->assign_value ("blue", "Blue");
+  EXPECT_EQ (1 + base_size, nd->value_size ());
+  swarm::val_id p_orange = nd->assign_value ("orange", "Orange");
+  EXPECT_EQ (2 + base_size, nd->value_size ());
 
-  EXPECT_NE (swarm::PARAM_NULL, p_blue);
-  EXPECT_NE (swarm::PARAM_NULL, p_orange);
+  EXPECT_NE (swarm::VALUE_NULL, p_blue);
+  EXPECT_NE (swarm::VALUE_NULL, p_orange);
   EXPECT_NE (p_blue, p_orange);
 
-  EXPECT_EQ (p_blue,   nd->lookup_param_id ("blue"));
-  EXPECT_EQ (p_orange, nd->lookup_param_id ("orange"));
-  EXPECT_EQ (swarm::EV_NULL, nd->lookup_param_id ("red"));
+  EXPECT_EQ (p_blue,   nd->lookup_value_id ("blue"));
+  EXPECT_EQ (p_orange, nd->lookup_value_id ("orange"));
+  EXPECT_EQ (swarm::EV_NULL, nd->lookup_value_id ("red"));
 
-  EXPECT_EQ ("blue",   nd->lookup_param_name (p_blue));
-  EXPECT_EQ ("orange", nd->lookup_param_name (p_orange));
+  EXPECT_EQ ("blue",   nd->lookup_value_name (p_blue));
+  EXPECT_EQ ("orange", nd->lookup_value_name (p_orange));
   delete nd;
 }
 
@@ -217,27 +215,27 @@ private:
   } __attribute__((packed));
 
   swarm::ev_id EV_ICMP_PKT_;
-  swarm::param_id P_TYPE_, P_CODE_, P_PROTO_;
+  swarm::val_id P_TYPE_, P_CODE_, P_PROTO_;
   swarm::dec_id D_IPV4_;
 
 public:
   explicit IcmpDecoder (swarm::NetDec * nd) : swarm::Decoder (nd) {
     this->EV_ICMP_PKT_ = nd->assign_event ("icmp.packet", "ICMP Packet");
     this->P_TYPE_ =
-      nd->assign_param ("icmp.type", "ICMP Type");
+      nd->assign_value ("icmp.type", "ICMP Type");
     this->P_CODE_ =
-      nd->assign_param ("icmp.code", "ICMP Code");
+      nd->assign_value ("icmp.code", "ICMP Code");
   }
   void setup (swarm::NetDec * nd) {
     this->D_IPV4_  = nd->lookup_dec_id ("ipv4");
-    this->P_PROTO_ = nd->lookup_param_id ("ipv4.proto");
-    assert (this->P_PROTO_ != swarm::PARAM_NULL);
+    this->P_PROTO_ = nd->lookup_value_id ("ipv4.proto");
+    assert (this->P_PROTO_ != swarm::VALUE_NULL);
   };
 
   bool accept (const swarm::Property &p) {
-    size_t s = p.param (this->P_PROTO_)->size ();
+    size_t s = p.value_size (this->P_PROTO_);
     // check protocol number of most recent IP header
-    if (s > 0 && p.param (this->P_PROTO_)->int32 (s - 1) == 1) {
+    if (s > 0 && p.value (this->P_PROTO_, s - 1).ntoh<u_int32_t> () == 1) {
       return true;
     } else {
       return false;

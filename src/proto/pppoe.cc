@@ -40,8 +40,8 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_PPPOE_PKT_;
-    param_id P_VER_, P_TYPE_, P_CODE_, P_SSN_ID_;
-    param_id P_ETH_TYPE_;
+    val_id P_VER_, P_TYPE_, P_CODE_, P_SSN_ID_;
+    val_id P_ETH_TYPE_;
     dec_id D_IPV4_;
 
   public:
@@ -51,14 +51,14 @@ namespace swarm {
     explicit PppoeDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_PPPOE_PKT_ = nd->assign_event ("pppoe.packet",
                                               "PPP over Ether Packet");
-      this->P_VER_  = nd->assign_param ("pppoe.ver",  "PPPoE version");
-      this->P_TYPE_ = nd->assign_param ("pppoe.type", "PPPoE type");
-      this->P_CODE_ = nd->assign_param ("pppoe.code", "PPPoE code");
-      this->P_SSN_ID_ = nd->assign_param ("pppoe.ssn_id", "PPPoE session ID");
+      this->P_VER_  = nd->assign_value ("pppoe.ver",  "PPPoE version");
+      this->P_TYPE_ = nd->assign_value ("pppoe.type", "PPPoE type");
+      this->P_CODE_ = nd->assign_value ("pppoe.code", "PPPoE code");
+      this->P_SSN_ID_ = nd->assign_value ("pppoe.ssn_id", "PPPoE session ID");
     }
     void setup (NetDec * nd) {
       this->D_IPV4_ = nd->lookup_dec_id ("ipv4");
-      this->P_ETH_TYPE_ = nd->lookup_param_id ("ether.type");
+      this->P_ETH_TYPE_ = nd->lookup_value_id ("ether.type");
     };
 
     // Main decoding function.
@@ -80,7 +80,7 @@ namespace swarm {
 
       // call next decoder
       
-      if (p->param(this->P_ETH_TYPE_)->uint32() == 0x8864) {
+      if (p->value(this->P_ETH_TYPE_).ntoh <u_int16_t>() == 0x8864) {
         u_int16_t *proto = reinterpret_cast<u_int16_t*>(p->payload(sizeof(u_int16_t)));
         if (htons(*proto) == 0x0021) {
           this->emit (this->D_IPV4_, p);

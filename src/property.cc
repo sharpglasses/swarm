@@ -27,185 +27,25 @@
 
 #include <arpa/inet.h>
 #include <string.h>
+#include <assert.h>
+
 #include "./property.h"
-#include "./var.h"
+#include "./value.h"
+#include "./netdec.h"
+#include "./debug.h"
 
 namespace swarm {
   // -------------------------------------------------------
   // Param
-  const std::string Param::errmsg_ = "(error)";
-
-  Param::Param (VarFactory * fac) : idx_(0), fac_(fac) {
-  }
-  Param::~Param () {
-  }
-  void Param::init () {
-    this->idx_ = 0;
-  }
-  size_t Param::size () const {
-    return this->idx_;
-  }
-  void Param::push (byte_t *data, size_t len, bool copy) {
-    Var * v = this->retain ();
-
-    if (copy) {
-      v->copy (data, len);
-    } else {
-      v->set (data, len);
-    }
-  }
-  Var * Param::retain () {
-    Var * v;
-    if (this->idx_ >= this->var_set_.size ())  {
-      v = (this->fac_) ? this->fac_->New () : new Var ();
-      this->var_set_.push_back (v);
-      this->idx_++;
-      assert (this->idx_ == this->var_set_.size ());
-    } else {
-      v = this->var_set_[this->idx_];
-      this->idx_++;
-    }
-
-    return v;
-  }
-  byte_t * Param::get (size_t *len, size_t idx) const {
-    if (idx < this->idx_) {
-      return this->var_set_[idx]->get (len);
-    } else {
-      return NULL;
-    }
-  }
-
-  std::string Param::repr (size_t idx) const {
-    std::string buf;
-    return (this->repr (&buf, idx)) ? buf : Param::errmsg_;
-  }
-  bool Param::repr (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->repr (s);
-    } else {
-      return false;
-    }
-  }
-
-  int32_t Param::int32 (size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->num <int32_t> ();
-    } else {
-      return 0;
-    }
-  }
-  u_int32_t Param::uint32 (size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->num <u_int32_t> ();
-    } else {
-      return 0;
-    }
-  }
-
-
-  std::string Param::str (size_t idx) const {
-    std::string buf;
-    return (this->str (&buf, idx)) ? buf : Param::errmsg_;
-  }
-  std::string Param::hex (size_t idx) const {
-    std::string buf;
-    return (this->hex (&buf, idx)) ? buf : Param::errmsg_;
-  }
-  std::string Param::ip4 (size_t idx) const {
-    std::string buf;
-    return (this->ip4 (&buf, idx)) ? buf : Param::errmsg_;
-  }
-  std::string Param::ip6 (size_t idx) const {
-    std::string buf;
-    return (this->ip6 (&buf, idx)) ? buf : Param::errmsg_;
-  }
-  std::string Param::mac (size_t idx) const {
-    std::string buf;
-    return (this->mac (&buf, idx)) ? buf : Param::errmsg_;
-  }
-
-  bool Param::str (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->str (s);
-    } else {
-      return false;
-    }
-  }
-  bool Param::hex (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->hex (s);
-    } else {
-      return false;
-    }
-  }
-  bool Param::ip4 (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->ip4 (s);
-    } else {
-      return false;
-    }
-  }
-  bool Param::ip6 (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->ip6 (s);
-    } else {
-      return false;
-    }
-  }
-  bool Param::mac (std::string *s, size_t idx) const {
-    if (idx < this->idx_) {
-      assert (idx < this->var_set_.size ());
-      assert (this->var_set_[idx] != NULL);
-      return this->var_set_[idx]->mac (s);
-    } else {
-      return false;
-    }
-  }
-
-  // -------------------------------------------------------
-  // ParamEntry
-  ParamEntry::ParamEntry (param_id pid, const std::string &name,
-                          const std::string &desc, VarFactory * fac) :
-    pid_(pid), name_(name), desc_(desc), fac_(fac) {
-    // ParamEntry has responsibility to manage fac (VarFactory)
-  }
-  ParamEntry::~ParamEntry () {
-    delete this->fac_;
-  }
-  param_id ParamEntry::pid () const {
-    return this->pid_;
-  }
-  const std::string& ParamEntry::name () const {
-    return this->name_;
-  }
-  const std::string& ParamEntry::desc () const {
-    return this->desc_;
-  }
-  VarFactory * ParamEntry::fac () const {
-    return this->fac_;
-  }
+  const std::string ValueSet::errmsg_ = "(error)";
+  const ValueNull Property::val_null_;
 
 
 
   // -------------------------------------------------------
   // Property
   Property::Property (NetDec * nd) : nd_(nd), buf_(NULL) {
-    this->nd_->build_param_vector (&(this->param_));
+    this->nd_->build_value_vector (&(this->value_));
   }
   Property::~Property () {
     /*
@@ -236,8 +76,8 @@ namespace swarm {
     // ::memcpy (this->buf_, data, cap_len);
     this->buf_ = data;
 
-    for (size_t i = 0; i < this->param_.size (); i++) {
-      this->param_[i]->init ();
+    for (size_t i = 0; i < this->value_.size (); i++) {
+      this->value_[i]->init ();
     }
 
     this->ev_push_ptr_ = 0;
@@ -249,17 +89,38 @@ namespace swarm {
     this->hash_value_ = 0;
     this->hashed_ = false;
   }
-  Param * Property::param (const std::string &key) const {
-    const param_id pid = this->nd_->lookup_param_id (key);
-    return (pid != PARAM_NULL) ? this->param (pid) : NULL;
+  const Value& Property::value(const std::string &key, size_t idx) const {
+    const val_id vid = this->nd_->lookup_value_id (key);
+    return this->value(vid, idx);
   }
-  Param * Property::param (const param_id pid) const {
-    size_t idx = Property::pid2idx (pid);
-    return (idx < this->param_.size ()) ? this->param_[idx] : NULL;
+  const Value& Property::value(const val_id vid, size_t idx) const {
+    if (vid == VALUE_NULL) {
+      return Property::val_null_;
+    }
+
+    size_t p = Property::vid2idx (vid);
+    assert(this->value_[p] != NULL);
+    Value *v = this->value_[p]->get(idx);
+    if (v) {
+      return *v;
+    } else {
+      return Property::val_null_;
+    }
   }
-  u_int64_t Property::get_5tuple_hash () const {
-    return this->hash_value_;
+  size_t Property::value_size(const std::string &key) const {
+    const val_id vid = this->nd_->lookup_value_id (key);
+    return this->value_size(vid);
   }
+  size_t Property::value_size(const val_id vid) const {
+    if (vid == VALUE_NULL) {
+      return 0;
+    }
+
+    size_t p = Property::vid2idx (vid);
+    return this->value_[p]->size();
+  }
+
+
   size_t Property::len () const {
     return this->data_len_;
   }
@@ -386,56 +247,56 @@ namespace swarm {
     return static_cast<const void *>(this->ssn_label_);
   }
 
-  Var * Property::retain (const std::string &param_name) {
-    const param_id pid = this->nd_->lookup_param_id (param_name);
-    if (pid == PARAM_NULL) {
+  Value * Property::retain (const std::string &value_name) {
+    const val_id vid = this->nd_->lookup_value_id (value_name);
+    if (vid == VALUE_NULL) {
       return NULL;
     } else {
-      return this->retain (pid);
+      return this->retain (vid);
     }
   }
-  Var * Property::retain (const param_id pid) {
-    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
-    if (idx < this->param_.size ()) {
-      Var * v = this->param_[idx]->retain ();
+  Value * Property::retain (const val_id vid) {
+    size_t idx = static_cast <size_t> (vid - VALUE_BASE);
+    if (idx < this->value_.size ()) {
+      Value * v = this->value_[idx]->retain ();
       return v;
     } else {
       return NULL;
     }
   }
 
-  bool Property::set (const std::string &param_name, void * ptr, size_t len) {
-    const param_id pid = this->nd_->lookup_param_id (param_name);
-    if (pid == PARAM_NULL) {
+  bool Property::set (const std::string &value_name, void * ptr, size_t len) {
+    const val_id vid = this->nd_->lookup_value_id (value_name);
+    if (vid == VALUE_NULL) {
       return false;
     } else {
-      return this->set (pid, ptr, len);
+      return this->set (vid, ptr, len);
     }
   }
 
-  bool Property::set (const param_id pid, void * ptr, size_t len) {
-    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
-    if (idx < this->param_.size () && ptr) {
-      assert (idx < this->param_.size () && this->param_[idx] != NULL);
-      this->param_[idx]->push (static_cast <byte_t*> (ptr), len);
+  bool Property::set (const val_id vid, void * ptr, size_t len) {
+    size_t idx = static_cast <size_t> (vid - VALUE_BASE);
+    if (idx < this->value_.size () && ptr) {
+      assert (idx < this->value_.size () && this->value_[idx] != NULL);
+      this->value_[idx]->push (static_cast <byte_t*> (ptr), len);
       return true;
     } else {
       return false;
     }
   }
-  bool Property::copy (const std::string &param_name, void * ptr, size_t len) {
-    const param_id pid = this->nd_->lookup_param_id (param_name);
-    if (pid == PARAM_NULL) {
+  bool Property::copy (const std::string &value_name, void * ptr, size_t len) {
+    const val_id vid = this->nd_->lookup_value_id (value_name);
+    if (vid == VALUE_NULL) {
       return false;
     } else {
-      return this->copy (pid, ptr, len);
+      return this->copy (vid, ptr, len);
     }
   }
-  bool Property::copy (const param_id pid, void * ptr, size_t len) {
-    size_t idx = static_cast <size_t> (pid - PARAM_BASE);
-    if (idx < this->param_.size () && ptr) {
-      assert (idx < this->param_.size () && this->param_[idx] != NULL);
-      this->param_[idx]->push (static_cast <byte_t*> (ptr), len, true);
+  bool Property::copy (const val_id vid, void * ptr, size_t len) {
+    size_t idx = static_cast <size_t> (vid - VALUE_BASE);
+    if (idx < this->value_.size () && ptr) {
+      assert (idx < this->value_.size () && this->value_[idx] != NULL);
+      this->value_[idx]->push (static_cast <byte_t*> (ptr), len, true);
       return true;
     } else {
       return false;

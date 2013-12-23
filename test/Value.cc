@@ -26,67 +26,66 @@
 
 #include "./gtest.h"
 #include "../src/swarm.h"
-#include "../src/var.h"
+#include "../src/value.h"
 
-TEST (Param, retain) {
-  swarm::Param * param = new swarm::Param ();
+TEST (ValueSet, retain) {
+  swarm::ValueSet *vs = new swarm::ValueSet ();
   swarm::byte_t * a =
     const_cast <swarm::byte_t *>
     (reinterpret_cast <const swarm::byte_t *> ("0123456789"));
 
-  param->init ();
-  param->push (&a[0], 2);;
-  swarm::Var * v1 = param->retain ();
+  vs->init ();
+  vs->push (&a[0], 2);;
+  swarm::Value * v1 = vs->retain ();
   ASSERT_TRUE (v1);
   v1->set (&a[2], 2);
-  param->push (&a[4], 2);
-  swarm::Var * v2 = param->retain ();
+  vs->push (&a[4], 2);
+  swarm::Value * v2 = vs->retain ();
   ASSERT_TRUE (v2);
   v2->set (&a[6], 2);
 
-  for (size_t i = 0; i < param->size (); i++) {
+  for (size_t i = 0; i < vs->size (); i++) {
     size_t len;
-    swarm::byte_t * b = param->get (&len, i);
+    swarm::byte_t * b = vs->get(i)->ptr(&len);
     EXPECT_TRUE (b);
     EXPECT_EQ (2, len);
     EXPECT_EQ (a[i * 2], b[0]);
   }
 }
 
-TEST (Param, basic) {
-  swarm::Param * param = new swarm::Param ();
+TEST (ValueSet, basic) {
+  swarm::ValueSet * vset = new swarm::ValueSet ();
   swarm::byte_t * a =
     const_cast <swarm::byte_t *>
     (reinterpret_cast <const swarm::byte_t *> ("0123456789"));
-  std::string err = swarm::Param::errmsg_;
-  param->init ();
+  std::string err = swarm::Value::null_;
+  vset->init ();
 
 #define __TEST(IDX, PTR, LEN, S32, U32, STR, HEX, IP4, IP6, MAC)  \
   do {                                                            \
     size_t len;                                                   \
-    swarm::byte_t *p = param->get (&len, IDX);                    \
+    swarm::Value *v = vset->get(IDX);                             \
+    swarm::byte_t *p = v->ptr (&len);                             \
     EXPECT_EQ ((PTR), p);                                         \
     if (p) {                                                      \
       EXPECT_EQ ((LEN), len);                                     \
     }                                                             \
-    int32_t n1 = param->int32 (IDX);                              \
-    u_int32_t n2 = param->uint32 (IDX);                           \
-    EXPECT_EQ ((S32), n1);                                        \
+    u_int32_t n2 = v->uint32 ();                                  \
     EXPECT_EQ ((U32), n2);                                        \
-    EXPECT_EQ ((STR), param->str(IDX));                           \
-    EXPECT_EQ ((HEX), param->hex(IDX));                           \
-    EXPECT_EQ ((IP4), param->ip4(IDX));                           \
-    EXPECT_EQ ((IP6), param->ip6(IDX));                           \
-    EXPECT_EQ ((MAC), param->mac(IDX));                           \
+    EXPECT_EQ ((STR), v->str());                                  \
+    EXPECT_EQ ((HEX), v->hex());                                  \
+    EXPECT_EQ ((IP4), v->ip4());                                  \
+    EXPECT_EQ ((IP6), v->ip6());                                  \
+    EXPECT_EQ ((MAC), v->mac());                                  \
   } while (0);
 
-  EXPECT_EQ (0, param->size ());
-  __TEST (0, NULL, 0, 0, 0, err, err, err, err, err);
-  __TEST (1, NULL, 0, 0, 0, err, err, err, err, err);
-  __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
+  EXPECT_EQ (0, vset->size ());
+  EXPECT_EQ (NULL, vset->get(0));
 
-  param->push (a, 4);
-  EXPECT_EQ (1, param->size ());
+  vset->push (a, 4);
+  EXPECT_EQ (1, vset->size ());
+  EXPECT_TRUE (NULL != vset->get(0));
+  EXPECT_TRUE (NULL == vset->get(1));
 
   int32_t *s32[2], ts1, ts2;
   u_int32_t *u32[2], tu1, tu2;
@@ -100,20 +99,19 @@ TEST (Param, basic) {
   tu2 = ntohl (*u32[1]);
   __TEST (0, a, 4, ts1, tu1,
           "0123", "30 31 32 33", "48.49.50.51", err, err);
-  __TEST (1, NULL, 0, 0, 0, err, err, err, err, err);
-  __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
 
 
-  param->push (&a[3], 4, true);
-  swarm::byte_t *copied_ptr = param->get (NULL, 1);
-  EXPECT_EQ (2, param->size ());
+  vset->push (&a[3], 4, true);
+  swarm::byte_t *copied_ptr = vset->get (1)->ptr();
+  EXPECT_EQ (2, vset->size ());
+  EXPECT_TRUE (NULL != vset->get(1));
+  EXPECT_TRUE (NULL == vset->get(2));
   __TEST (0, a, 4, ts1, tu1,
           "0123", "30 31 32 33", "48.49.50.51", err, err);
   __TEST (1, copied_ptr, 4, ts2, tu2,
           "3456", "33 34 35 36", "51.52.53.54", err, err);
-  __TEST (2, NULL, 0, 0, 0, err, err, err, err, err);
 
 #undef __TEST
 
-  delete param;
+  delete vset;
 }

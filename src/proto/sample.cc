@@ -37,7 +37,7 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_SAMPLE_PKT_;
-    param_id P_OP_;
+    val_id P_OP_;
     dec_id D_NEXT_;
 
   public:
@@ -59,7 +59,7 @@ namespace swarm {
       // assign_param () can assign name of parameter for the decoder
       // and FactoryClass can be registered if you need.
       //
-      this->P_OP_  = nd->assign_param ("sample.op", "Just Sample",
+      this->P_OP_  = nd->assign_value ("sample.op", "Just Sample",
                                        new FacSample ());
     }
     void setup (NetDec * nd) {
@@ -95,8 +95,8 @@ namespace swarm {
     }
   };
 
-  bool SampleDecoder::VarSample::repr (std::string *s) const {
-    return this->ip4 (s);
+  std::string SampleDecoder::VarSample::repr() const {
+    return this->ip4();
   }
 
   INIT_DECODER (sample, SampleDecoder::New);

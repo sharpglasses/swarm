@@ -38,7 +38,7 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_VLAN_PKT_;
-    param_id P_PROTO_, P_ID_;
+    val_id P_PROTO_, P_ID_;
     dec_id D_ARP_, D_VLAN_, D_IPV4_, D_IPV6_;
 
     static const u_int16_t ETHERTYPE_ARP = 0x0806;
@@ -66,10 +66,10 @@ namespace swarm {
                                                "Vlan Packet");
 
       this->P_PROTO_  =
-        nd->assign_param ("vlan.proto", "VLAN Encaped Protocol",
+        nd->assign_value ("vlan.proto", "VLAN Encaped Protocol",
                           new FacVlanProto ());
       this->P_ID_  =
-        nd->assign_param ("vlan.id", "VLAN ID");
+        nd->assign_value ("vlan.id", "VLAN ID");
     }
     void setup (NetDec * nd) {
       this->D_ARP_  = nd->lookup_dec_id ("arp");
@@ -113,8 +113,8 @@ namespace swarm {
     }
   };
 
-  bool VlanDecoder::VarVlanProto::repr (std::string *s) const {
-    return this->ip4 (s);
+  std::string VlanDecoder::VarVlanProto::repr () const {
+    return this->ip4();
   }
 
   INIT_DECODER (vlan, VlanDecoder::New);

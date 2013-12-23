@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include <sstream>
 #include "../decode.h"
 
 
@@ -57,7 +57,7 @@ namespace swarm {
     static const u_int8_t CWR  = 0x80;
 
     ev_id EV_PKT_, EV_SYN_;
-    param_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_;
+    val_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_;
 
   public:
     DEF_REPR_CLASS (VarFlags, FacFlags);
@@ -67,15 +67,15 @@ namespace swarm {
       this->EV_SYN_ = nd->assign_event ("tcp.syn", "TCP SYN Packet");
 
       this->P_SRC_PORT_ =
-        nd->assign_param ("tcp.src_port", "TCP Source Port",
+        nd->assign_value ("tcp.src_port", "TCP Source Port",
                           new FacNum ());
       this->P_DST_PORT_ =
-        nd->assign_param ("tcp.dst_port", "TCP Destination Port",
+        nd->assign_value ("tcp.dst_port", "TCP Destination Port",
                           new FacNum ());
       this->P_FLAGS_ =
-        nd->assign_param ("tcp.flags", "TCP Flags", new FacFlags ());
-      this->P_SEQ_ = nd->assign_param ("tcp.seq", "TCP Sequence Number");
-      this->P_ACK_ = nd->assign_param ("tcp.ack", "TCP Acknowledge");
+        nd->assign_value ("tcp.flags", "TCP Flags", new FacFlags ());
+      this->P_SEQ_ = nd->assign_value ("tcp.seq", "TCP Sequence Number");
+      this->P_ACK_ = nd->assign_value ("tcp.ack", "TCP Acknowledge");
 
     }
     void setup (NetDec * nd) {
@@ -114,18 +114,18 @@ namespace swarm {
     }
   };
 
-  bool TcpDecoder::VarFlags::repr (std::string *s) const {
-    assert (s != NULL);
-    u_int8_t flags = this->num <u_int8_t> ();
-    s->append ((flags & FIN) > 0 ? "F" : "*");
-    s->append ((flags & SYN) > 0 ? "S" : "*");
-    s->append ((flags & RST) > 0 ? "R" : "*");
-    s->append ((flags & PUSH) > 0 ? "P" : "*");
-    s->append ((flags & ACK) > 0 ? "A" : "*");
-    s->append ((flags & URG) > 0 ? "U" : "*");
-    s->append ((flags & ECE) > 0 ? "E" : "*");
-    s->append ((flags & CWR) > 0 ? "C" : "*");
-    return true;
+  std::string TcpDecoder::VarFlags::repr () const {
+    std::stringstream ss;
+    u_int8_t *flags = this->ptr();
+    ss << ((*flags & FIN) > 0 ? "F" : "*");
+    ss << ((*flags & SYN) > 0 ? "S" : "*");
+    ss << ((*flags & RST) > 0 ? "R" : "*");
+    ss << ((*flags & PUSH) > 0 ? "P" : "*");
+    ss << ((*flags & ACK) > 0 ? "A" : "*");
+    ss << ((*flags & URG) > 0 ? "U" : "*");
+    ss << ((*flags & ECE) > 0 ? "E" : "*");
+    ss << ((*flags & CWR) > 0 ? "C" : "*");
+    return ss.str();
   }
 
   INIT_DECODER (tcp, TcpDecoder::New);

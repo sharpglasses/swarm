@@ -41,14 +41,14 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_LCC_PKT_;
-    param_id P_PROTO_;
+    val_id P_PROTO_;
     dec_id D_IPV4_;
 
   public:
     explicit LccDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_LCC_PKT_ = nd->assign_event ("lcc.packet",
                                             "Linux Cooked Capture Packet");
-      this->P_PROTO_ = nd->assign_param ("lcc.proto", "Linux Cooked Capture");
+      this->P_PROTO_ = nd->assign_value ("lcc.proto", "Linux Cooked Capture");
     }
     void setup (NetDec * nd) {
       this->D_IPV4_ = nd->lookup_dec_id ("ipv4");

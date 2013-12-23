@@ -60,14 +60,14 @@ namespace swarm {
   class TcpSsnDecoder : public Decoder {
   private:
     ev_id EV_EST_;
-    param_id P_SEG_, P_TCP_HDR_;
+    val_id P_SEG_, P_TCP_HDR_;
     LRUHash *ssn_table_;
 
   public:
     explicit TcpSsnDecoder (NetDec * nd) : Decoder (nd) {
       this->EV_EST_ = nd->assign_event ("tcp_ssn.established",
                                         "TCP session established");
-      this->P_SEG_ = nd->assign_param ("tcp_ssn.segment", "TCP segment data");
+      this->P_SEG_ = nd->assign_value ("tcp_ssn.segment", "TCP segment data");
 
       this->ssn_table_ = new LRUHash(3600, 0xffff);
     }
@@ -83,7 +83,7 @@ namespace swarm {
 
     void setup (NetDec * nd) {
       // nothing to do
-      this->P_TCP_HDR_ = nd->lookup_param_id("tcp.header");
+      this->P_TCP_HDR_ = nd->lookup_value_id("tcp.header");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpSsnDecoder (nd); }
@@ -107,7 +107,7 @@ namespace swarm {
 
     bool decode (Property *p) {
       const struct tcp_header *hdr = reinterpret_cast<const struct tcp_header*>
-        (p->param(this->P_TCP_HDR_)->get());
+        (p->value(this->P_TCP_HDR_).ptr());
 
       TcpSession *ssn = this->fetch_session(p);
       

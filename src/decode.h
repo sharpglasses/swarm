@@ -34,7 +34,7 @@
 
 #include "./swarm.h"
 #include "./debug.h"
-#include "./var.h"
+#include "./value.h"
 
 namespace swarm {
   class Decoder {

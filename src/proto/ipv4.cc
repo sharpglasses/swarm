@@ -59,7 +59,7 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_IPV4_PKT_;
-    param_id P_PROTO_, P_SRC_, P_DST_, P_TLEN_, P_PL_;
+    val_id P_PROTO_, P_SRC_, P_DST_, P_TLEN_, P_PL_;
     dec_id D_ICMP_;
     dec_id D_UDP_;
     dec_id D_TCP_;
@@ -70,15 +70,15 @@ namespace swarm {
 
     explicit IPv4Decoder (NetDec * nd) : Decoder (nd) {
       this->EV_IPV4_PKT_ = nd->assign_event ("ipv4.packet", "IPv4 Packet");
-      this->P_PROTO_ = nd->assign_param ("ipv4.proto", "IPv4 Protocol",
+      this->P_PROTO_ = nd->assign_value ("ipv4.proto", "IPv4 Protocol",
                                          new FacProto ());
-      this->P_SRC_   = nd->assign_param ("ipv4.src", "IPv4 Source Address",
+      this->P_SRC_   = nd->assign_value ("ipv4.src", "IPv4 Source Address",
                                          new FacIPv4 ());
-      this->P_DST_   = nd->assign_param ("ipv4.dst", "IPv4 Destination Address",
+      this->P_DST_   = nd->assign_value ("ipv4.dst", "IPv4 Destination Address",
                                          new FacIPv4 ());
-      this->P_TLEN_  = nd->assign_param ("ipv4.total", "IPv4 Total Length",
+      this->P_TLEN_  = nd->assign_value ("ipv4.total", "IPv4 Total Length",
                                          new FacNum());
-      this->P_PL_    = nd->assign_param ("ipv4.payload", "IPv4 Data Payload");
+      this->P_PL_    = nd->assign_value ("ipv4.payload", "IPv4 Data Payload");
     }
     void setup (NetDec * nd) {
       this->D_ICMP_  = nd->lookup_dec_id ("icmp");
@@ -138,17 +138,18 @@ namespace swarm {
     }
   };
 
-  bool IPv4Decoder::Proto::repr (std::string *s) const {
-    u_int8_t proto = this->num <u_int8_t> ();
+  std::string IPv4Decoder::Proto::repr() const {
+    u_int32_t proto = this->uint32 ();
+    std::string s;
     switch (proto) {
-    case PROTO_ICMP:  *s = "ICMP";    break;
-    case PROTO_TCP:   *s = "TCP";     break;
-    case PROTO_UDP:   *s = "UDP";     break;
-    case PROTO_IPV6:  *s = "IPv6";    break;
-    case PROTO_ICMP6: *s = "ICMPv6";  break;
-    default:            *s = "unknown"; break;
+    case PROTO_ICMP:  s = "ICMP";    break;
+    case PROTO_TCP:   s = "TCP";     break;
+    case PROTO_UDP:   s = "UDP";     break;
+    case PROTO_IPV6:  s = "IPv6";    break;
+    case PROTO_ICMP6: s = "ICMPv6";  break;
+    default:          s = "unknown"; break;
     }
-    return true;
+    return s;
   }
 
   INIT_DECODER (ipv4, IPv4Decoder::New);

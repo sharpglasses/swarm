@@ -54,7 +54,7 @@ namespace swarm {
     } __attribute__((packed));
 
     ev_id EV_ARP_PKT_, EV_REQ_, EV_REP_;
-    param_id P_SRC_HW_, P_DST_HW_, P_SRC_PR_, P_DST_PR_, P_OP_;
+    val_id P_SRC_HW_, P_DST_HW_, P_SRC_PR_, P_DST_PR_, P_OP_;
 
   public:
     DEF_REPR_CLASS (VarPR, FacPR);
@@ -68,19 +68,19 @@ namespace swarm {
 
 
       this->P_SRC_HW_ =
-        nd->assign_param ("arp.src_hw", "Hardware Source Address",
+        nd->assign_value ("arp.src_hw", "Hardware Source Address",
                           new FacHW());
       this->P_SRC_PR_ =
-        nd->assign_param ("arp.src_pr", "Protocol Source Address",
+        nd->assign_value ("arp.src_pr", "Protocol Source Address",
                           new FacPR());
       this->P_DST_HW_ =
-        nd->assign_param ("arp.dst_hw", "Hardware Destination Address",
+        nd->assign_value ("arp.dst_hw", "Hardware Destination Address",
                           new FacHW ());
       this->P_DST_PR_ =
-        nd->assign_param ("arp.dst_pr", "Protocol Destination Address",
+        nd->assign_value ("arp.dst_pr", "Protocol Destination Address",
                           new FacPR ());
       this->P_OP_ =
-        nd->assign_param ("arp.op", "ARP Operation", new FacOP ());
+        nd->assign_value ("arp.op", "ARP Operation", new FacOP ());
     }
     void setup (NetDec * nd) {
       // nothing to do
@@ -116,25 +116,26 @@ namespace swarm {
     }
   };
 
-  bool ArpDecoder::VarPR::repr (std::string *s) const {
-    return this->ip4 (s);
+  std::string ArpDecoder::VarPR::repr() const {
+    return this->ip4();
   }
-  bool ArpDecoder::VarHW::repr (std::string *s) const {
-    return this->mac (s);
+  std::string ArpDecoder::VarHW::repr() const {
+    return this->mac();
   }
-  bool ArpDecoder::VarOP::repr (std::string *s) const {
-    u_int16_t op = this->num <u_int16_t> ();
+  std::string ArpDecoder::VarOP::repr() const {
+    u_int32_t op = this->uint32();
+    std::string s;
     switch (op) {
-    case ARPOP_REQUEST:    *s = "REQUEST"; break;
-    case ARPOP_REPLY:      *s = "REPLY"; break;
-    case ARPOP_REVREQUEST: *s = "REVREQUEST"; break;
-    case ARPOP_REVREPLY:   *s = "REVREPLY"; break;
-    case ARPOP_INVREQUEST: *s = "INVREQUEST"; break;
-    case ARPOP_INVREPLY:   *s = "INVREPLY"; break;
-    default:               *s = "unknown"; break;
+    case ARPOP_REQUEST:    s = "REQUEST"; break;
+    case ARPOP_REPLY:      s = "REPLY"; break;
+    case ARPOP_REVREQUEST: s = "REVREQUEST"; break;
+    case ARPOP_REVREPLY:   s = "REVREPLY"; break;
+    case ARPOP_INVREQUEST: s = "INVREQUEST"; break;
+    case ARPOP_INVREPLY:   s = "INVREPLY"; break;
+    default:               s = "unknown"; break;
     }
 
-    return true;
+    return s;
   }
 
   INIT_DECODER (arp, ArpDecoder::New);

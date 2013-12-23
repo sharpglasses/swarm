@@ -83,8 +83,8 @@ TEST (Property, param) {
   const std::string p2_name = "orange";
   const std::string p3_name = "red";
   swarm::NetDec * nd = new swarm::NetDec ();
-  swarm::param_id p1_id = nd->assign_param (p1_name, "Test P1");
-  swarm::param_id p2_id = nd->assign_param (p2_name, "Test P2");
+  swarm::val_id p1_id = nd->assign_value (p1_name, "Test P1");
+  swarm::val_id p2_id = nd->assign_value (p2_name, "Test P2");
   swarm::Property * p = new swarm::Property (nd);
   size_t len;
 
@@ -96,71 +96,67 @@ TEST (Property, param) {
   // macro for check consistency of looking up by id and string name
 #define CHECK_CONS()                                      \
   do {                                                    \
-    EXPECT_TRUE (p->param (p1_id) == p->param (p1_name)); \
-    EXPECT_TRUE (p->param (p2_id) == p->param (p2_name)); \
+    EXPECT_TRUE (p->value (p1_id) == p->value (p1_name)); \
+    EXPECT_TRUE (p->value (p2_id) == p->value (p2_name)); \
   } while (0);
 
   CHECK_CONS ();
   EXPECT_NE (p1_id, p2_id);
-  ASSERT_TRUE (NULL != p->param (p1_id));
-  ASSERT_TRUE (NULL != p->param (p1_name));
-  ASSERT_TRUE (NULL != p->param (p2_id));
-  ASSERT_TRUE (NULL != p->param (p2_name));
-  ASSERT_TRUE (NULL == p->param (p3_name));
-
-  const swarm::Param *p1, *p2;
+  ASSERT_TRUE (p->value(p1_id).is_null());
+  ASSERT_TRUE (p->value(p1_name).is_null());
+  ASSERT_TRUE (p->value(p2_id).is_null());
+  ASSERT_TRUE (p->value(p2_name).is_null());
+  ASSERT_TRUE (p->value(p3_name).is_null());
 
   // add a value to p1
   EXPECT_EQ (true, p->set (p1_name, w1, strlen (w1)));
   CHECK_CONS ();
-  EXPECT_EQ (1, p->param (p1_id)->size ());
-  EXPECT_EQ (0, p->param (p2_id)->size ());
+  EXPECT_EQ (1, p->value_size(p1_id));
+  EXPECT_EQ (0, p->value_size(p2_id));
 
   // add a value to 2nd index of p1
   EXPECT_EQ (true, p->set (p1_name, w2, strlen (w2)));
   CHECK_CONS ();
-  EXPECT_EQ (2, p->param (p1_id)->size ());
-  EXPECT_EQ (0, p->param (p2_id)->size ());
+  EXPECT_EQ (2, p->value_size(p1_id));
+  EXPECT_EQ (0, p->value_size(p2_id));
 
   // add a value to 3rd index of p1
   EXPECT_EQ (true, p->set (p1_id, w3, strlen (w3)));
   CHECK_CONS ();
-  EXPECT_EQ (3, p->param (p1_id)->size ());
-  EXPECT_EQ (0, p->param (p2_id)->size ());
+  EXPECT_EQ (3, p->value_size(p1_id));
+  EXPECT_EQ (0, p->value_size(p2_id));
 
   // check values in p1
-  p1 = p->param (p1_id);
-  ASSERT_TRUE (NULL != p1);
-  EXPECT_EQ (w1, p1->str ());
-  EXPECT_EQ (w1, p1->str (0));
-  EXPECT_EQ (w2, p1->str (1));
-  EXPECT_EQ (w3, p1->str (2));
-  EXPECT_EQ (swarm::Param::errmsg_, p1->str (3));
-  EXPECT_TRUE (w1 == reinterpret_cast<char *> (p1->get (&len)));
+  ASSERT_FALSE (p->value(p1_id).is_null());
+  EXPECT_EQ (w1, p->value(p1_id).str());
+  EXPECT_EQ (w1, p->value(p1_id, 0).str());
+  EXPECT_EQ (w2, p->value(p1_id, 1).str());
+  EXPECT_EQ (w3, p->value(p1_id, 2).str());
+
+  EXPECT_EQ (swarm::Value::null_, p->value(p1_id, 3).str());
+  EXPECT_TRUE (w1 == reinterpret_cast<char *> (p->value(p1_id).ptr (&len)));
 
   // add a value to p2
   EXPECT_EQ (true, p->copy (p2_name, w1, strlen (w1)));
   CHECK_CONS ();
-  EXPECT_EQ (3, p->param (p1_id)->size ());
-  EXPECT_EQ (1, p->param (p2_id)->size ());
+  EXPECT_EQ (3, p->value_size(p1_id));
+  EXPECT_EQ (1, p->value_size(p2_id));
 
   // add a value to 2nd index of p2
   EXPECT_EQ (true, p->copy (p2_name, w2, strlen (w2)));
   CHECK_CONS ();
-  EXPECT_EQ (3, p->param (p1_id)->size ());
-  EXPECT_EQ (2, p->param (p2_id)->size ());
+  EXPECT_EQ (3, p->value_size(p1_id));
+  EXPECT_EQ (2, p->value_size(p2_id));
 
-  p1 = p->param (p1_id);
-  p2 = p->param (p2_id);
-  ASSERT_TRUE (NULL != p1);
-  EXPECT_EQ (w1, p1->str ());
-  EXPECT_EQ (w1, p1->str (0));
-  EXPECT_EQ (w2, p1->str (1));
-  EXPECT_EQ (w3, p1->str (2));
+  ASSERT_FALSE (p->value(p1_id).is_null());
+  EXPECT_EQ (w1, p->value(p1_id).str());
+  EXPECT_EQ (w1, p->value(p1_id, 0).str());
+  EXPECT_EQ (w2, p->value(p1_id, 1).str());
+  EXPECT_EQ (w3, p->value(p1_id, 2).str());
 
-  ASSERT_TRUE (NULL != p2);
-  EXPECT_EQ (w1, p2->str ());
-  EXPECT_EQ (w2, p2->str (1));
-  EXPECT_EQ (swarm::Param::errmsg_, p2->str (2));
-  EXPECT_TRUE (w1 != reinterpret_cast<char *> (p2->get (&len)));
+  ASSERT_FALSE (p->value(p2_id).is_null());
+  EXPECT_EQ (w1, p->value(p2_id).str());
+  EXPECT_EQ (w2, p->value(p2_id, 1).str());
+  EXPECT_EQ (swarm::Value::null_, p->value(p2_id, 2).str());
+  EXPECT_TRUE (w1 != reinterpret_cast<char *> (p->value(p2_id, 2).ptr (&len)));
 }
