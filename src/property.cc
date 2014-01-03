@@ -88,6 +88,7 @@ namespace swarm {
     this->proto_ = 0;
     this->hash_value_ = 0;
     this->hashed_ = false;
+    this->dir_ = DIR_NIL;
   }
   const Value& Property::value(const std::string &key, size_t idx) const {
     const val_id vid = this->nd_->lookup_value_id (key);
@@ -130,6 +131,12 @@ namespace swarm {
   void Property::tv (struct timeval *tv) const {
     tv->tv_sec = this->tv_sec_;
     tv->tv_usec = this->tv_usec_;
+  }
+  time_t Property::tv_sec() const {
+    return this->tv_sec_;
+  }
+  time_t Property::tv_usec() const {
+    return this->tv_usec_;
   }
   double Property::ts () const {
     double ts = static_cast <double> (this->tv_sec_) +
@@ -241,6 +248,13 @@ namespace swarm {
   uint64_t Property::hash_value () const {
     return this->hash_value_ ;
   }
+  FlowDir Property::dir() const {
+    if (this->hashed_) {
+      return this->dir_;
+    } else {
+      return DIR_NIL;
+    }
+  }
   const void *Property::ssn_label(size_t *len) const {
     assert(len != NULL);
     *len = this->addr_len_ * sizeof(uint32_t);
@@ -303,30 +317,60 @@ namespace swarm {
     }
   }
 
+  FlowDir Property::get_dir(void *src_addr, void *dst_addr, size_t addr_len,
+                            void *src_port, void *dst_port, size_t port_len) {
+    // Determine flow direction by IP addresses and port numbers
+    // Low address or low port number means LEFT, high one means RIGHT
+    FlowDir dir = DIR_NIL;
+
+    int rc_addr = ::memcmp (src_addr, dst_addr, addr_len);
+    if (rc_addr < 0) { // src is Left, dst is Right
+      dir = DIR_L2R;
+    } else if (rc_addr > 0) {
+      dir = DIR_R2L;
+    }
+
+    if (dir == DIR_NIL) {
+      int rc_port = ::memcmp (src_port, dst_port, port_len);
+      if (rc_port < 0) { // src is Left, dst is Right
+        dir = DIR_L2R;
+      } else if (rc_port > 0) {
+        dir = DIR_R2L;
+      } 
+    }
+
+    // If dir is DIR_NIL, it means that LEFT and RIGHT could not be determined
+    return dir;
+  }
+
   void Property::calc_hash () {
     if (this->hashed_) {
       // don't allow override
       return;
     }
 
-
-    uint32_t *la, *ra, *p = this->ssn_label_;
+    uint32_t *la, *ra;
     uint16_t *lp, *rp;
+    uint32_t *p = this->ssn_label_;
+    this->dir_ =
+      Property::get_dir(this->src_addr_, this->dst_addr_, this->addr_len_,
+                        this->src_port_, this->dst_port_, this->port_len_);
 
-    if (::memcmp (this->src_addr_, this->dst_addr_, this->addr_len_) > 0) {
+    // Set IP addresses and TCP/UDP port.
+    if (this->dir_ == DIR_L2R) {
       la = static_cast <uint32_t *>(this->src_addr_);
       ra = static_cast <uint32_t *>(this->dst_addr_);
       lp = static_cast <uint16_t *>(this->src_port_);
       rp = static_cast <uint16_t *>(this->dst_port_);
     } else {
+      assert(this->dir_ == DIR_R2L || this->dir_ == DIR_NIL);
       ra = static_cast <uint32_t *>(this->src_addr_);
       la = static_cast <uint32_t *>(this->dst_addr_);
       rp = static_cast <uint16_t *>(this->src_port_);
       lp = static_cast <uint16_t *>(this->dst_port_);
     }
-
     
-    
+    // Copy IP address, port number into buffer.
     memcpy(p, la, this->addr_len_);
     p += this->addr_len_ / 4;
     memcpy(p, ra, this->addr_len_);
@@ -340,12 +384,15 @@ namespace swarm {
     }
     p++;
 
+    // Set IP_PROTOCOL as unsigned 32bit integer
     *p = static_cast<uint32_t>(this->proto_);
     p++;
 
+    // Set `session label length`
     this->ssn_label_len_ = p - this->ssn_label_;
     assert(this->ssn_label_len_ < SSN_LABEL_MAX);
 
+    // Calculate hash value.
     u_int64_t h = 1125899906842597;
     for (size_t i = 0; i < this->ssn_label_len_; i++) {
       h = (this->ssn_label_[i] + (h << 6) + (h << 16) - h);

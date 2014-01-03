@@ -45,6 +45,8 @@ namespace swarm {
   // Property
   //
   class Property {
+  public:
+
   private:
     NetDec * nd_;
     time_t tv_sec_;
@@ -75,12 +77,16 @@ namespace swarm {
 
     bool hashed_;
     uint64_t hash_value_;
+    FlowDir dir_;
 
     static const size_t SSN_LABEL_MAX = 128;
     uint32_t ssn_label_[SSN_LABEL_MAX];
     size_t ssn_label_len_;
 
     static const ValueNull val_null_;
+
+    static inline FlowDir get_dir(void *src_addr, void *dst_addr, size_t addr_len,
+                                  void *src_port, void *dst_port, size_t port_len);
 
   public:
     explicit Property (NetDec * nd);
@@ -110,6 +116,8 @@ namespace swarm {
     size_t len () const;      // original data length
     size_t cap_len () const;  // captured data length
     void tv (struct timeval *tv) const;
+    time_t tv_sec() const;
+    time_t tv_usec() const;
     double ts () const;
 
     // ToDo(masa): byte_t * refer() should be const byte_t * refer()
@@ -127,6 +135,7 @@ namespace swarm {
     std::string proto () const;
     uint64_t hash_value () const;
     const void *ssn_label(size_t *len) const;
+    FlowDir dir() const;
     inline static size_t vid2idx (val_id vid) {
       return static_cast <size_t> (vid - VALUE_BASE);
     }

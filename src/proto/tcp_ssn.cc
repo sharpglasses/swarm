@@ -24,47 +24,237 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include <sstream>
 #include "../decode.h"
 #include "../utils/lru-hash.h"
 #include "../debug.h"
 
 namespace swarm {
+  enum TcpStat {
+    CLOSED,
+    LISTEN,
+    SYN_SENT,
+    SYN_RCVD,
+    ESTABLISHED,
+    FIN_WAIT_1,
+    FIN_WAIT_2,
+    TIME_WAIT,
+    CLOSING,
+    CLOSE_WAIT,
+    LAST_ACK,
+  };
+
+  enum TcpEvent {
+    TCP_SYN,
+    TCP_SYNACK,
+    TCP_ESTABLISHED,
+    TCP_DATA_TO_SERVER,
+    TCP_ACK_TO_SERVER,
+    TCP_DATA_TO_CLIENT,
+    TCP_ACK_TO_CLIENT,
+    TCP_INVALID,
+    TCP_FIN,
+    TCP_FINACK,
+  };
+
   class TcpSession : public LRUHash::Node {
+    static const u_int8_t FIN  = 0x01;
+    static const u_int8_t SYN  = 0x02;
+    static const u_int8_t RST  = 0x04;
+    static const u_int8_t PUSH = 0x08;
+    static const u_int8_t ACK  = 0x10;
+    static const u_int8_t URG  = 0x20;
+    static const u_int8_t ECE  = 0x40;
+    static const u_int8_t CWR  = 0x80;
+
   private:
     void *key_;
     size_t len_;
     uint64_t hash_;
+    time_t ts_;
+
+    class Node {
+    private:
+      uint32_t base_seq_;
+      uint32_t recv_len_;
+      uint32_t next_ack_;
+      TcpStat stat_;
+
+    public:
+      Node() : base_seq_(0), recv_len_(0), stat_(CLOSED) {}
+      ~Node() {};
+      inline TcpStat stat() const { return this->stat_; }
+
+      bool recv(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len) {
+        assert((~(SYN | ACK | FIN | RST) & flags) == 0);
+        switch(this->stat_) {
+        case CLOSED:
+          if (flags == SYN) {
+            // Server recieves SYN packet
+            this->stat_ = LISTEN;
+            this->next_ack_ = seq + 1;
+          }
+          break;
+
+        case LISTEN: break;
+
+        case SYN_SENT:
+          if (flags == (SYN|ACK)) {
+            // Client recieves SYN|ACK packet
+            this->next_ack_ = seq + 1;
+          }
+          break;
+
+        case SYN_RCVD:
+          if (flags == ACK) {
+            this->stat_ = ESTABLISHED;
+          }
+          
+        case ESTABLISHED: break;
+        case FIN_WAIT_1: break;
+        case FIN_WAIT_2: break;
+        case TIME_WAIT: break;
+        case CLOSING: break;
+        case CLOSE_WAIT: break;
+        case LAST_ACK: break;
+        }
+        return true;
+      }
+      bool send(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len) {
+        assert((~(SYN | ACK | FIN | RST) & flags) == 0);
+        switch(this->stat_) {
+        case CLOSED:
+          if (flags == SYN) {
+            this->stat_ = SYN_SENT;
+            this->base_seq_ = seq;
+          }
+          break;
+
+        case LISTEN:
+          // Server sends SYN|ACK packet
+          if (flags == (SYN|ACK)) {
+            this->stat_ = SYN_RCVD;
+            this->base_seq_ = seq;
+          }
+          break;
+
+        case SYN_SENT:
+          // Client sends ACK packet after SYN|ACK
+          if (flags == ACK) {
+            this->stat_ = ESTABLISHED;
+          }
+          break;
+
+        case SYN_RCVD: break;
+
+        case ESTABLISHED: break;
+        case FIN_WAIT_1: break;
+        case FIN_WAIT_2: break;
+        case TIME_WAIT: break;
+        case CLOSING: break;
+        case CLOSE_WAIT: break;
+        case LAST_ACK: break;
+        }
+        return true;
+      }
+    } server_, client_;
+    FlowDir dir_;
+
+    inline bool to_server(FlowDir dir) const {
+      return (this->dir_ == dir && this->dir_ != DIR_NIL);
+    }
+    inline bool to_client(FlowDir dir) const {
+      return (this->dir_ != dir && this->dir_ != DIR_NIL);
+    }
 
   public:
-    TcpSession(Property *p) {
-      const void *ptr = p->ssn_label(&this->len_);
-      this->key_ = ::malloc(this->len_);
-      ::memcpy(this->key_, ptr, this->len_);
-      this->hash_ = p->hash_value();
+    TcpSession(const void *key, size_t key_len, uint64_t hash)
+      : dir_(DIR_NIL) {
+      this->len_ = key_len;
+      this->key_ = ::malloc(key_len);
+      ::memcpy(this->key_, key, this->len_);
+      this->hash_ = hash;
+
+      ::memset(&this->server_, 0, sizeof(this->server_));
+      ::memset(&this->client_, 0, sizeof(this->client_));
     }
     ~TcpSession() {
       if(this->key_) {
         ::free(this->key_);
       }
     }
-
+    void set_ts(time_t ts) {
+      this->ts_ = ts;
+    }
+    time_t ts() const {
+      return this->ts_; 
+    }
     bool match(const void *key, size_t len) {
       return (this->len_ == len && 0 == ::memcmp(this->key_, key, len));
     }
     uint64_t hash() {
-      return this->hash_; 
+      return this->hash_;
+    }
+    bool update(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len,
+                FlowDir dir) {
+      uint8_t f = flags & (FIN | SYN | RST | ACK);
+      bool rc = true;
+
+#if 0
+      const bool DBG = false;
+      std::stringstream ss;
+      if ((f & FIN) > 0) { ss << "F"; } else { ss << "_"; }
+      if ((f & SYN) > 0) { ss << "S"; } else { ss << "_"; }
+      if ((f & RST) > 0) { ss << "R"; } else { ss << "_"; }
+      if ((f & PUSH) > 0) { ss << "P"; } else { ss << "_"; }
+      if ((f & ACK) > 0) { ss << "A"; } else { ss << "_"; }
+      if ((f & URG) > 0) { ss << "U"; } else { ss << "_"; }
+      if ((f & ECE) > 0) { ss << "E"; } else { ss << "_"; }
+      if ((f & CWR) > 0) { ss << "C"; } else { ss << "_"; }
+
+      std::string s_dir = "NIL";
+      if (dir == DIR_L2R) { s_dir = "L2R"; }
+      else if (dir == DIR_R2L) { s_dir = "R2L"; }
+
+      debug(DBG, "seq: %u, ack: %u, dir:%s, flag:%s, len:%zd",
+            seq, ack, s_dir.c_str(), ss.str().c_str(), data_len);
+#endif
+
+      if (this->dir_ == DIR_NIL) {
+        // Initialize: server and client are determined by SYN packet direction
+        if (f == SYN) {
+          this->dir_ = dir;
+          this->client_.send(f, seq, ack, data_len);
+          this->server_.recv(f, seq, ack, data_len);
+        }
+      } else {
+        // Normal phase: server and client
+        if(this->to_server(dir)) {
+          // Send data (Clinet => Server)
+          this->client_.send(f, seq, ack, data_len);
+          this->server_.recv(f, seq, ack, data_len);
+        } else {
+          assert(this->to_client(dir));
+          // Send data (Server => Client)
+          this->server_.send(f, seq, ack, data_len);
+          this->client_.recv(f, seq, ack, data_len);
+        }
+      }
+
+      return rc;
     }
   };
 
   class TcpSsnDecoder : public Decoder {
   private:
     ev_id EV_EST_;
-    val_id P_SEG_, P_TCP_HDR_;
+    val_id P_SEG_, P_TCP_HDR_, P_TCP_SEQ_, P_TCP_ACK_, P_TCP_FLAGS_;
     LRUHash *ssn_table_;
+    time_t last_ts_;
+    static const time_t TIMEOUT = 300;
 
   public:
-    explicit TcpSsnDecoder (NetDec * nd) : Decoder (nd) {
+    explicit TcpSsnDecoder (NetDec * nd) : Decoder (nd), last_ts_(0) {
       this->EV_EST_ = nd->assign_event ("tcp_ssn.established",
                                         "TCP session established");
       this->P_SEG_ = nd->assign_value ("tcp_ssn.segment", "TCP segment data");
@@ -77,47 +267,76 @@ namespace swarm {
       while (NULL != (ssn = dynamic_cast<TcpSession*>(this->ssn_table_->pop()))) {
         delete ssn;
       }
-      
+
       delete this->ssn_table_;
     }
 
     void setup (NetDec * nd) {
       // nothing to do
       this->P_TCP_HDR_ = nd->lookup_value_id("tcp.header");
+      this->P_TCP_SEQ_ = nd->lookup_value_id("tcp.seq");
+      this->P_TCP_ACK_ = nd->lookup_value_id("tcp.ack");
+      this->P_TCP_FLAGS_ = nd->lookup_value_id("tcp.flags");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpSsnDecoder (nd); }
-    
+
+    void timeout_session(time_t tv_sec) {
+      // session timeout 
+      if (this->last_ts_ > 0 && this->last_ts_ < tv_sec) {
+        this->ssn_table_->prog(tv_sec - this->last_ts_);
+      }
+      this->last_ts_ = tv_sec;
+      TcpSession *outdated_ssn;
+      while (NULL != (outdated_ssn = 
+                      dynamic_cast<TcpSession*>(this->ssn_table_->pop()))) {
+        if (outdated_ssn->ts() + TIMEOUT < tv_sec) {
+          delete outdated_ssn;
+        } else {
+          this->ssn_table_->put(TIMEOUT, outdated_ssn);
+        }
+      }
+
+    }
+
     TcpSession *fetch_session(Property *p) {
       // Lookup TcpSession object from ssn_table_ LRU hash table.
       // If not existing, create new TcpSession and return the one.
-      uint64_t hv = p->hash_value();
+
       size_t key_len;
       const void *ssn_key = p->ssn_label(&key_len);
       TcpSession *ssn = dynamic_cast<TcpSession*>
         (this->ssn_table_->get(p->hash_value(), ssn_key, key_len));
 
       if (!ssn) {
-        ssn = new TcpSession(p);
-        this->ssn_table_->put(300, ssn);
+        ssn = new TcpSession(ssn_key, key_len, p->hash_value());
+        this->ssn_table_->put(TIMEOUT, ssn);
       }
 
+      ssn->set_ts(p->tv_sec());
       return ssn;
     }
 
     bool decode (Property *p) {
-      const struct tcp_header *hdr = reinterpret_cast<const struct tcp_header*>
-        (p->value(this->P_TCP_HDR_).ptr());
+      this->timeout_session(p->tv_sec());
 
       TcpSession *ssn = this->fetch_session(p);
-      
+      size_t data_len = p->remain();
+
+      uint8_t flags = p->value(this->P_TCP_FLAGS_).ntoh <uint8_t> ();
+      uint32_t seq = p->value(this->P_TCP_SEQ_).ntoh <uint32_t> ();
+      uint32_t ack = p->value(this->P_TCP_ACK_).ntoh <uint32_t> ();
+
+      ssn->update(flags, seq, ack, data_len, p->dir());
+
+
       // set data to property
       // p->set (this->P_SRC_PORT_, &(hdr->src_port_), sizeof (hdr->src_port_));
 
       // push event
       // p->push_event (this->EV_PKT_);
 
-      
+
       return true;
     }
   };

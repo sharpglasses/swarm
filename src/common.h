@@ -57,6 +57,13 @@ namespace swarm {
   class Decoder;
   class Timer;
   class Task;
+
+  enum FlowDir {
+    DIR_NIL = 0, // Not defined
+    DIR_L2R, // Left to Right
+    DIR_R2L, // Right to Left
+  };
+
 }  // namespace swarm
 
 #endif  // SRC_COMMON_H__

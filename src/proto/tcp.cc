@@ -58,6 +58,7 @@ namespace swarm {
 
     ev_id EV_PKT_, EV_SYN_;
     val_id P_SRC_PORT_, P_DST_PORT_, P_FLAGS_, P_SEQ_, P_ACK_;
+    dec_id TCP_SSN_;
 
   public:
     DEF_REPR_CLASS (VarFlags, FacFlags);
@@ -79,7 +80,7 @@ namespace swarm {
 
     }
     void setup (NetDec * nd) {
-      // nothing to do
+      this->TCP_SSN_ = nd->lookup_dec_id("tcp_ssn");
     };
 
     static Decoder * New (NetDec * nd) { return new TcpDecoder (nd); }
@@ -109,6 +110,9 @@ namespace swarm {
       if ((hdr->flags_ & (SYN | ACK)) == SYN) {
         p->push_event (this->EV_SYN_);
       }
+
+      p->calc_hash();
+      this->emit(this->TCP_SSN_, p);
 
       return true;
     }
