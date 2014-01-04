@@ -61,6 +61,9 @@ namespace swarm {
 
     // Parameter management
     std::vector <ValueSet *> value_;
+    std::vector <size_t> val_hist_;
+    size_t val_hist_ptr_;
+    static const size_t VAL_HIST_MAX = 1024;
 
     // Event management
     std::vector <ev_id> ev_queue_;
@@ -87,6 +90,7 @@ namespace swarm {
 
     static inline FlowDir get_dir(void *src_addr, void *dst_addr, size_t addr_len,
                                   void *src_port, void *dst_port, size_t port_len);
+    void set_val_history(size_t v_idx);
 
   public:
     explicit Property (NetDec * nd);

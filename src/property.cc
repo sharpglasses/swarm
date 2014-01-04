@@ -44,7 +44,7 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Property
-  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL) {
+  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), val_hist_(VAL_HIST_MAX) {
     this->nd_->build_value_vector (&(this->value_));
   }
   Property::~Property () {
@@ -76,10 +76,11 @@ namespace swarm {
     // ::memcpy (this->buf_, data, cap_len);
     this->buf_ = data;
 
-    for (size_t i = 0; i < this->value_.size (); i++) {
-      this->value_[i]->init ();
+    for (size_t i = 0; i < this->val_hist_ptr_; i++) {
+      this->value_[this->val_hist_[i]]->init ();
     }
 
+    this->val_hist_ptr_ = 0;
     this->ev_push_ptr_ = 0;
     this->ev_pop_ptr_ = 0;
 
@@ -279,6 +280,13 @@ namespace swarm {
     }
   }
 
+  void Property::set_val_history(size_t v_idx) {
+    if (this->val_hist_ptr_ < VAL_HIST_MAX) {
+      this->val_hist_[this->val_hist_ptr_] = v_idx;
+      this->val_hist_ptr_++;
+    }
+  }
+
   bool Property::set (const std::string &value_name, void * ptr, size_t len) {
     const val_id vid = this->nd_->lookup_value_id (value_name);
     if (vid == VALUE_NULL) {
@@ -293,6 +301,7 @@ namespace swarm {
     if (idx < this->value_.size () && ptr) {
       assert (idx < this->value_.size () && this->value_[idx] != NULL);
       this->value_[idx]->push (static_cast <byte_t*> (ptr), len);
+      this->set_val_history(idx);
       return true;
     } else {
       return false;
@@ -308,9 +317,11 @@ namespace swarm {
   }
   bool Property::copy (const val_id vid, void * ptr, size_t len) {
     size_t idx = static_cast <size_t> (vid - VALUE_BASE);
+
     if (idx < this->value_.size () && ptr) {
       assert (idx < this->value_.size () && this->value_[idx] != NULL);
       this->value_[idx]->push (static_cast <byte_t*> (ptr), len, true);
+      this->set_val_history(idx);
       return true;
     } else {
       return false;
