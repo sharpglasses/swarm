@@ -34,6 +34,7 @@
 
 namespace swarm {
   const std::string Value::null_("(none)");
+  const std::string ValueNull::v_("(null)");
 
   ValueSet::ValueSet(ValueFactory * fac) : idx_(0), fac_(fac) {
   }

@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 #include <string>
 #include <vector>
+#include <string.h>
 
 #include "./common.h"
 
@@ -108,7 +109,7 @@ namespace swarm {
   //
   class ValueNull : public Value {
   private:
-    const std::string v_ = "(null)";
+    static const std::string v_;
 
   public:
     ValueNull() {}
