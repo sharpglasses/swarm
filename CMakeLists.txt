@@ -14,6 +14,8 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 INCLUDE_DIRECTORIES(${INC_DIR} ./src)
 LINK_DIRECTORIES(${LIB_DIR})
 
+# Build library
+
 FILE(GLOB BASESRCS "src/*.cc" "src/proto/*.cc" "src/utils/*.cc")
 FILE(GLOB TESTSRCS "test/*.cc")
 
@@ -23,6 +25,16 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     TARGET_LINK_LIBRARIES(swarm pcap pthread)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+INSTALL(TARGETS swarm LIBRARY DESTINATION lib)
+INSTALL(FILES src/swarm.h src/common.h src/timer.h src/netcap.h src/netdec.h src/decode.h DESTINATION include/swarm)
+
+
+
+INSTALL(FILES DESTINATION include/swarm)
+INSTALL(FILES src/property.h DESTINATION include/swarm)
+
+
 
 ADD_EXECUTABLE(swarm-test ${TESTSRCS})
 TARGET_LINK_LIBRARIES(swarm-test swarm)
