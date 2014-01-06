@@ -29,7 +29,7 @@
 
 namespace swarm {
   std::map <std::string, Decoder * (*)(NetDec *nd)>
-  DecoderMap::protocol_decoder_map_;
+  DecoderMap::protocol_decoder_map_ __attribute__ ((init_priority (1)));
 
 
   bool DecoderMap::reg_protocol_decoder (const std::string &name,
