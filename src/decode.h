@@ -59,7 +59,8 @@ namespace swarm {
       protocol_decoder_map_;
 
   public:
-    DecoderMap ();
+    DecoderMap (const std::string &name,
+                Decoder * (*New) (NetDec * nd));
     static bool reg_protocol_decoder (const std::string &name,
                                       Decoder * (*New) (NetDec * nd));
     static size_t build_decoder_vector (NetDec * nd,
@@ -67,9 +68,9 @@ namespace swarm {
                                         std::vector <std::string> *dec_name);
   };
 
-#define INIT_DECODER(NAME, FUNC)                    \
-  bool __is_protocol_decoder_##NAME##_enable =      \
-    DecoderMap::reg_protocol_decoder (#NAME, FUNC)
+#define INIT_DECODER(NAME,FUNC)                     \
+  DecoderMap __dec_map_##NAME##_entry(#NAME, FUNC)  
+  // __attribute__ ((init_priority (60000)))
 
   // developer can confirm if your module is enable by
   //
