@@ -76,40 +76,59 @@ namespace swarm {
     class Node {
     private:
       uint32_t base_seq_;
-      uint32_t recv_len_;
+      uint32_t sent_len_;
       uint32_t next_ack_;
+      bool avail_seq_;
+      bool avail_ack_;
       TcpStat stat_;
+      bool updated_;
 
     public:
-      Node() : base_seq_(0), recv_len_(0), stat_(CLOSED) {}
+      Node() : 
+        base_seq_(0),
+        sent_len_(0),
+        next_ack_(0),
+        avail_seq_(false),
+        avail_ack_(false),
+        stat_(CLOSED),
+        updated_(false) {
+      }
       ~Node() {};
       inline TcpStat stat() const { return this->stat_; }
+      bool updated() const { return this->updated_; }
 
+      void update_stat(TcpStat stat) {
+        this->stat_ = stat;
+        this->updated_ = true;
+      }
       bool recv(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len) {
         assert((~(SYN | ACK | FIN | RST) & flags) == 0);
+        this->updated_ = false;
+
         switch(this->stat_) {
         case CLOSED:
           if (flags == SYN) {
             // Server recieves SYN packet
-            this->stat_ = LISTEN;
+            this->update_stat(LISTEN);
             this->next_ack_ = seq + 1;
+            this->avail_ack_ = true;
           }
           break;
 
-        case LISTEN: break;
+        case LISTEN:
+          break;
 
         case SYN_SENT:
           if (flags == (SYN|ACK)) {
             // Client recieves SYN|ACK packet
             this->next_ack_ = seq + 1;
+            this->avail_ack_ = true;
           }
           break;
 
         case SYN_RCVD:
-          if (flags == ACK) {
-            this->stat_ = ESTABLISHED;
-          }
-          
+          break;
+
         case ESTABLISHED: break;
         case FIN_WAIT_1: break;
         case FIN_WAIT_2: break;
@@ -118,54 +137,118 @@ namespace swarm {
         case CLOSE_WAIT: break;
         case LAST_ACK: break;
         }
+
+        if (this->stat_ == ESTABLISHED || this->stat_ == SYN_RCVD) {
+          this->next_ack_ += data_len;
+        }
         return true;
       }
+
+      /*
+        State Transition
+
+        -- Client -------------- Server --
+         [CLOSING]               [CLOSING]
+            |       ---(SYN)--->    |
+         [SYN_SENT]              [LISTEN]
+            |       <-(SYN|ACK)-    |
+         [SYN_SENT]              [SYN_RECV]
+            |       ---(ACK)-->     |
+         [ESTABLISH]             [SYN_RECV]
+            |    <--(ACK or Data)-- |
+         [ESTABLISH]             [ESTABLISH]
+            |                       |
+      */
+
       bool send(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len) {
         assert((~(SYN | ACK | FIN | RST) & flags) == 0);
+        this->updated_ = false;
+
         switch(this->stat_) {
         case CLOSED:
           if (flags == SYN) {
-            this->stat_ = SYN_SENT;
+            this->update_stat(SYN_SENT);
             this->base_seq_ = seq;
+            this->avail_seq_ = true;
           }
           break;
 
         case LISTEN:
           // Server sends SYN|ACK packet
           if (flags == (SYN|ACK)) {
-            this->stat_ = SYN_RCVD;
+            this->update_stat(SYN_RCVD);
             this->base_seq_ = seq;
+            this->avail_seq_ = true;
           }
           break;
 
         case SYN_SENT:
           // Client sends ACK packet after SYN|ACK
           if (flags == ACK) {
-            this->stat_ = ESTABLISHED;
+            this->update_stat(ESTABLISHED);
           }
           break;
 
-        case SYN_RCVD: break;
+        case SYN_RCVD: 
+          if (flags == FIN) {
+            this->update_stat(FIN_WAIT_1);            
+          } else {
+            this->update_stat(ESTABLISHED);
+          }
+          break;
 
-        case ESTABLISHED: break;
-        case FIN_WAIT_1: break;
-        case FIN_WAIT_2: break;
-        case TIME_WAIT: break;
-        case CLOSING: break;
-        case CLOSE_WAIT: break;
-        case LAST_ACK: break;
+        case ESTABLISHED:
+          if (flags == FIN) {
+            this->update_stat(FIN_WAIT_1);            
+          }
+          break;
+
+        case FIN_WAIT_1:
+          if (flags == ACK) {
+            this->update_stat(CLOSING);
+          }
+          break;
+        
+        case FIN_WAIT_2:
+          // ToDo: session closing procedure
+          break;
+        case TIME_WAIT: 
+          // ToDo: session closing procedure
+          break;
+        case CLOSING:
+          // ToDo: session closing procedure
+          break;
+
+        case CLOSE_WAIT:
+          if (flags == FIN) {
+            this->update_stat(LAST_ACK);
+          }
+          break;
+
+        case LAST_ACK: 
+          if (flags == ACK) {
+            this->update_stat(CLOSED);
+          }
+          break;
+        }
+
+        if (this->stat_ == ESTABLISHED) {
+          this->sent_len_ += data_len;
         }
         return true;
       }
+
+      bool check_seq(uint32_t seq, uint32_t ack) const {
+        if ((!this->avail_seq_ || (this->base_seq_ + this->sent_len_ + 1 <= seq)) &&
+            (!this->avail_ack_ || (this->next_ack_))) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
     } server_, client_;
     FlowDir dir_;
-
-    inline bool to_server(FlowDir dir) const {
-      return (this->dir_ == dir && this->dir_ != DIR_NIL);
-    }
-    inline bool to_client(FlowDir dir) const {
-      return (this->dir_ != dir && this->dir_ != DIR_NIL);
-    }
 
   public:
     TcpSession(const void *key, size_t key_len, uint64_t hash)
@@ -195,13 +278,25 @@ namespace swarm {
     uint64_t hash() {
       return this->hash_;
     }
+    inline bool to_server(FlowDir dir) const {
+      return (this->dir_ == dir && this->dir_ != DIR_NIL);
+    }
+    inline bool to_client(FlowDir dir) const {
+      return (this->dir_ != dir && this->dir_ != DIR_NIL);
+    }
+    inline TcpStat server_stat() const {
+      return this->server_.stat();
+    }
+    inline TcpStat client_stat() const {
+      return this->client_.stat();
+    }
     bool update(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len,
                 FlowDir dir) {
       uint8_t f = flags & (FIN | SYN | RST | ACK);
       bool rc = true;
 
 #if 0
-      const bool DBG = false;
+      const bool DBG = true;
       std::stringstream ss;
       if ((f & FIN) > 0) { ss << "F"; } else { ss << "_"; }
       if ((f & SYN) > 0) { ss << "S"; } else { ss << "_"; }
@@ -220,24 +315,36 @@ namespace swarm {
             seq, ack, s_dir.c_str(), ss.str().c_str(), data_len);
 #endif
 
+
       if (this->dir_ == DIR_NIL) {
         // Initialize: server and client are determined by SYN packet direction
         if (f == SYN) {
           this->dir_ = dir;
           this->client_.send(f, seq, ack, data_len);
           this->server_.recv(f, seq, ack, data_len);
+        } else {
+        // ignore not SYN packet
+          rc = false;
         }
       } else {
         // Normal phase: server and client
+        Node *sender, *recver;
+
         if(this->to_server(dir)) {
           // Send data (Clinet => Server)
-          this->client_.send(f, seq, ack, data_len);
-          this->server_.recv(f, seq, ack, data_len);
+          sender = &(this->client_);
+          recver = &(this->server_);
         } else {
           assert(this->to_client(dir));
           // Send data (Server => Client)
-          this->server_.send(f, seq, ack, data_len);
-          this->client_.recv(f, seq, ack, data_len);
+          sender = &(this->server_);
+          recver = &(this->client_);
+        }
+
+        if (sender->check_seq(seq, ack)) {
+          // Valid sequence & ack number
+          sender->send(f, seq, ack, data_len);
+          recver->recv(f, seq, ack, data_len);
         }
       }
 
@@ -248,7 +355,8 @@ namespace swarm {
   class TcpSsnDecoder : public Decoder {
   private:
     ev_id EV_EST_;
-    val_id P_SEG_, P_TCP_HDR_, P_TCP_SEQ_, P_TCP_ACK_, P_TCP_FLAGS_;
+    val_id P_SEG_, P_TO_SERVER_;
+    val_id P_TCP_HDR_, P_TCP_SEQ_, P_TCP_ACK_, P_TCP_FLAGS_;
     LRUHash *ssn_table_;
     time_t last_ts_;
     static const time_t TIMEOUT = 300;
@@ -258,6 +366,8 @@ namespace swarm {
       this->EV_EST_ = nd->assign_event ("tcp_ssn.established",
                                         "TCP session established");
       this->P_SEG_ = nd->assign_value ("tcp_ssn.segment", "TCP segment data");
+      this->P_TO_SERVER_ = 
+        nd->assign_value ("tcp_ssn.to_server", "Packet to server");
 
       this->ssn_table_ = new LRUHash(3600, 0xffff);
     }
@@ -327,7 +437,17 @@ namespace swarm {
       uint32_t seq = p->value(this->P_TCP_SEQ_).ntoh <uint32_t> ();
       uint32_t ack = p->value(this->P_TCP_ACK_).ntoh <uint32_t> ();
 
-      ssn->update(flags, seq, ack, data_len, p->dir());
+      if (ssn->update(flags, seq, ack, data_len, p->dir())) {
+        bool to_server = ssn->to_server(p->dir());
+        byte_t *data = p->payload(data_len);
+
+        p->copy(this->P_TO_SERVER_, &to_server, sizeof(to_server));
+
+        if ((to_server  && ssn->server_stat() == ESTABLISHED) || 
+            (!to_server && ssn->client_stat() == ESTABLISHED)) {
+          p->set(this->P_SEG_, data, data_len);
+        }
+      }
 
 
       // set data to property

@@ -44,7 +44,11 @@ namespace swarm {
 
   // -------------------------------------------------------
   // Property
-  Property::Property (NetDec * nd) : nd_(nd), buf_(NULL), val_hist_(VAL_HIST_MAX) {
+  Property::Property (NetDec * nd) : 
+    nd_(nd), 
+    buf_(NULL),
+    val_hist_(VAL_HIST_MAX), 
+    val_hist_ptr_(0) {
     this->nd_->build_value_vector (&(this->value_));
   }
   Property::~Property () {
