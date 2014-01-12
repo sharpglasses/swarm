@@ -59,14 +59,17 @@ namespace tcp_ssn_test {
     EXPECT_EQ(swarm::CLOSED, ssn->client_stat());
     EXPECT_EQ(swarm::CLOSED, ssn->server_stat());
 
+    // Send SYN Packet (client -> server, L2R)
     EXPECT_TRUE(ssn->update(SYN, seqL, 0, 0, swarm::DIR_L2R));
     EXPECT_EQ(swarm::SYN_SENT, ssn->client_stat());
     EXPECT_EQ(swarm::LISTEN,   ssn->server_stat());
 
+    // Send SYN-ACK Packet (server -> client, R2L)
     EXPECT_TRUE(ssn->update(SYN | ACK, seqR, seqL + 1, 0, swarm::DIR_R2L));
     EXPECT_EQ(swarm::SYN_SENT, ssn->client_stat());
     EXPECT_EQ(swarm::SYN_RCVD, ssn->server_stat());
 
+    // Send ACK Packet (client -> server, L2R)
     EXPECT_TRUE(ssn->update(ACK, seqL + 1, seqR + 1, 0, swarm::DIR_L2R));
     EXPECT_EQ(swarm::ESTABLISHED, ssn->client_stat());
     EXPECT_EQ(swarm::SYN_RCVD, ssn->server_stat());
@@ -76,13 +79,16 @@ namespace tcp_ssn_test {
     EXPECT_EQ(swarm::ESTABLISHED, ssn->client_stat());
     EXPECT_EQ(swarm::ESTABLISHED, ssn->server_stat());
 
-    /*
-    // Send data (server -> client, R2L)
-    EXPECT_TRUE(ssn->update(0, seqR + 1, seqL + 11, 20, swarm::DIR_R2L));
-    EXPECT_EQ(swarm::ESTABLISHED, ssn->status());
-    EXPECT_TRUE(ssn->update(ACK, seqL + 11, seqR + 21, 0, swarm::DIR_L2R));
-    EXPECT_EQ(swarm::ESTABLISHED, ssn->status());
+    // Send data (client -> server, L2R)
+    EXPECT_TRUE(ssn->update(0, seqL + 1, seqR + 11, 20, swarm::DIR_L2R));
+    EXPECT_EQ(swarm::ESTABLISHED, ssn->client_stat());
+    EXPECT_EQ(swarm::ESTABLISHED, ssn->server_stat());
 
+    EXPECT_TRUE(ssn->update(ACK, seqR + 11, seqL + 21, 0, swarm::DIR_R2L));
+    EXPECT_EQ(swarm::ESTABLISHED, ssn->client_stat());
+    EXPECT_EQ(swarm::ESTABLISHED, ssn->server_stat());
+
+    /*
     // Send FIN (client -> server, L2R)
     EXPECT_TRUE(ssn->update(FIN, seqL + 11, seqR + 21, 10, swarm::DIR_L2R));
     EXPECT_EQ(swarm::FIN_SENT1, ssn->status());

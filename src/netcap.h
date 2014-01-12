@@ -84,6 +84,51 @@ namespace swarm {
   };
 
   // ----------------------------------------------------------------
+  // class CapPcapMmap:
+  // Mmap based fast pcap file reader
+  //
+  class CapPcapMmap : public NetCap {
+  private:
+    // From libpcap header
+    enum LINKTYPE {
+      LINKTYPE_ETHERNET = 1,
+      LINKTYPE_RAW = 101,
+      LINKTYPE_LINUX_SLL = 113,
+    };
+
+    struct pcap_file_hdr {
+      uint32_t magic;
+      uint16_t version_major;
+      uint16_t version_minor;
+      int32_t thiszone;
+      uint32_t sigfigs;
+      uint32_t snaplen;
+      uint32_t linktype;
+    } hdr_;
+
+    struct pcap_pkt_hdr {
+      uint32_t tv_sec;
+      uint32_t tv_usec;
+      uint32_t caplen;
+      uint32_t len;
+    };
+
+    int fd_;
+    void *addr_;
+    uint8_t *base_;
+    uint8_t *ptr_;
+    uint8_t *eof_;
+    size_t length_;
+    size_t offset_;
+
+    bool run ();
+
+  public:
+    CapPcapMmap(const std::string &filepath);
+    ~CapPcapMmap ();
+  };
+
+  // ----------------------------------------------------------------
   // class PcapBase:
   // Implemented common pcap functions for CapPcapDev and CapPcapFile
   //

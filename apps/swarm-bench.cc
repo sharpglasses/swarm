@@ -83,9 +83,6 @@ bool do_benchmark (const optparse::Values& opt) {
   swarm::NetCap *nc = NULL;
 
   if (!(opt.is_set ("read_file") ^ opt.is_set ("interface"))) {
-    fprintf (stderr, "error: can't specify read_file option "
-             "and interface option\n");
-    return false;
   }
 
   if (opt.is_set ("read_file")) {
@@ -93,6 +90,11 @@ bool do_benchmark (const optparse::Values& opt) {
   } else if (opt.is_set ("interface")) {
     nc = new swarm::CapPcapDev (opt["interface"]);
     nc->set_repeat_timer (nd_bench, 1000);
+  } else if (opt.is_set ("pcap_mmap")) {
+    nc = new swarm::CapPcapMmap (opt["pcap_mmap"]);
+  } else {
+    fprintf (stderr, "error: need specify one input method from -r, -i or -f");
+    return false;
   }
 
   if (nc->status () != swarm::NetCap::READY) {
@@ -115,6 +117,8 @@ int main (int argc, char *argv[]) {
 
   psr.add_option("-r").dest("read_file")
     .help("Specify read pcap format file(s)");
+  psr.add_option("-m").dest("pcap_mmap")
+    .help("Specify read pcap format file(s) by mmap based reader");
   psr.add_option("-i").dest("interface")
     .help("Specify interface to monitor on the fly");
 
