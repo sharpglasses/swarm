@@ -88,18 +88,14 @@ namespace tcp_ssn_test {
     EXPECT_EQ(swarm::ESTABLISHED, ssn->client_stat());
     EXPECT_EQ(swarm::ESTABLISHED, ssn->server_stat());
 
-    /*
-    // Send FIN (client -> server, L2R)
-    EXPECT_TRUE(ssn->update(FIN, seqL + 11, seqR + 21, 10, swarm::DIR_L2R));
-    EXPECT_EQ(swarm::FIN_SENT1, ssn->status());
-    EXPECT_TRUE(ssn->update(FIN | ACK, seqR + 21, seqL + 12, 0, swarm::DIR_R2L));
-    EXPECT_EQ(swarm::FINACK_SENT1, ssn->status());
+    // Send data (client -> server, L2R)
+    EXPECT_TRUE(ssn->update(FIN, seqL + 21, seqR + 11, 20, swarm::DIR_L2R));
+    EXPECT_EQ(swarm::FIN_WAIT_1,  ssn->client_stat());
+    EXPECT_EQ(swarm::ESTABLISHED, ssn->server_stat());
 
-    // Send FIN (client -> server, L2R)
-    EXPECT_TRUE(ssn->update(FIN, seqR + 21, seqL + 11, 20, swarm::DIR_R2L));
-    EXPECT_EQ(swarm::FIN_SENT2, ssn->status());
-    EXPECT_TRUE(ssn->update(FIN | ACK, seqL + 11, seqR + 22, 0, swarm::DIR_L2R));
-    EXPECT_EQ(swarm::FINACK_SENT2, ssn->status());
-    */    
+    EXPECT_TRUE(ssn->update(ACK, seqR + 11, seqL + 21, 0, swarm::DIR_R2L));
+    EXPECT_EQ(swarm::FIN_WAIT_2, ssn->client_stat());
+    EXPECT_EQ(swarm::CLOSE_WAIT, ssn->server_stat());
+
   }
 }

@@ -442,15 +442,40 @@ namespace SkypeIRC {
   }
 
   TEST_F (SkypeIRCFix, tcp_ssn) {
-    class SrcCount : public Counter {
+    class DataCount : public Counter {
     public:
-      explicit SrcCount (const std::string &addr) { this->tgt_ = addr; }
+      std::deque<size_t> src_size_, dst_size_;
+      explicit DataCount () {}
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        if (p.value ("udp.src_port").repr () == this->tgt_) {
-          this->countup ();
+        size_t len;
+        // if (p.value("tcp_ssn.segment").ptr(&len) != NULL) {
+        if (!p.value("tcp_ssn.segment").is_null()) {
+          p.value("tcp_ssn.segment").ptr(&len);
+          if (p.src_addr() == "195.215.8.141") {
+            this->src_size_.push_back(len);
+          } else if (p.dst_addr() == "195.215.8.141") {
+            this->dst_size_.push_back(len);
+          }
         }
       }
     };
+
+    DataCount *dc = new DataCount();
+    nd->set_handler("tcp.packet", dc);
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
+    }
+
+    EXPECT_EQ(3, dc->src_size_.size());
+    EXPECT_EQ(5,   dc->src_size_.at(0));
+    EXPECT_EQ(232, dc->src_size_.at(1));
+    EXPECT_EQ(67,  dc->src_size_.at(2));
+
+    EXPECT_EQ(3, dc->dst_size_.size());
+    EXPECT_EQ(5,   dc->dst_size_.at(0));
+    EXPECT_EQ(451, dc->dst_size_.at(1));
+    EXPECT_EQ(18,  dc->dst_size_.at(2));
   }
 
 }  // namespace SkypeIRC

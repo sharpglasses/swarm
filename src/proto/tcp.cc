@@ -39,7 +39,7 @@ namespace swarm {
       u_int32_t ack_;       // tcp ack number
 
       // ToDo(Masa): 4 bit data field should be updated for little-endian
-      u_int8_t offset_:4, x2_:4;
+      u_int8_t offset_;
 
       u_int8_t flags_;      // flags
       u_int16_t window_;    // window
@@ -109,6 +109,28 @@ namespace swarm {
 
       if ((hdr->flags_ & (SYN | ACK)) == SYN) {
         p->push_event (this->EV_SYN_);
+      }
+
+
+      // TCP Header Option handling
+      size_t opthdr_len = (hdr->offset_ >> 2) - sizeof(struct tcp_header);
+      assert(opthdr_len < 0xfff);
+      if (opthdr_len > 0) {
+        byte_t *opt = p->payload(opthdr_len);
+        size_t optlen = 0;
+        for (byte_t *op = opt; op + 2 < opt + opthdr_len; op += optlen) {
+          if (op[0] == 1) {
+            optlen = 1;
+            continue;
+          }
+
+          if (op + 2 >= opt + opthdr_len) {
+            break;
+          }
+          // debug(1, "kind: %zd", op[0]);
+          // debug(1, "len : %zd", op[1]);
+          optlen = op[1];
+        }
       }
 
       p->calc_hash();

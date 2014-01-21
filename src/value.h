@@ -116,6 +116,7 @@ namespace swarm {
     ~ValueNull() {}
     std::string repr() const { return this->v_; }
     bool is_null() const { return true; }
+    byte_t *ptr (size_t *len=NULL) const { return NULL; }    
   };
 
   // -------------------------------------------------------

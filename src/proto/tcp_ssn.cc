@@ -44,19 +44,6 @@ namespace swarm {
     LAST_ACK,
   };
 
-  enum TcpEvent {
-    TCP_SYN,
-    TCP_SYNACK,
-    TCP_ESTABLISHED,
-    TCP_DATA_TO_SERVER,
-    TCP_ACK_TO_SERVER,
-    TCP_DATA_TO_CLIENT,
-    TCP_ACK_TO_CLIENT,
-    TCP_INVALID,
-    TCP_FIN,
-    TCP_FINACK,
-  };
-
   class TcpSession : public LRUHash::Node {
     static const u_int8_t FIN  = 0x01;
     static const u_int8_t SYN  = 0x02;
@@ -81,6 +68,7 @@ namespace swarm {
       bool avail_seq_;
       bool avail_ack_;
       TcpStat stat_;
+      bool cf_wait_; // Close/FIN wait candidate
       bool updated_;
 
     public:
@@ -91,6 +79,7 @@ namespace swarm {
         avail_seq_(false),
         avail_ack_(false),
         stat_(CLOSED),
+        cf_wait_(false),
         updated_(false) {
       }
       ~Node() {};
@@ -129,11 +118,31 @@ namespace swarm {
         case SYN_RCVD:
           break;
 
-        case ESTABLISHED: break;
-        case FIN_WAIT_1: break;
-        case FIN_WAIT_2: break;
+        case ESTABLISHED: 
+          if (flags == FIN) {
+            this->cf_wait_ = true;
+          }
+          break;
+
+        case FIN_WAIT_1:           
+          if (flags == ACK) {
+            this->update_stat(FIN_WAIT_2);
+          }
+          break;
+
+        case FIN_WAIT_2:
+          if (flags == FIN) {
+            this->cf_wait_ = true;
+          }
+          break;
+
         case TIME_WAIT: break;
-        case CLOSING: break;
+        case CLOSING: 
+          if (flags == ACK) {
+            this->update_stat(TIME_WAIT);
+          }
+          break;
+
         case CLOSE_WAIT: break;
         case LAST_ACK: break;
         }
@@ -201,23 +210,26 @@ namespace swarm {
           if (flags == FIN) {
             this->update_stat(FIN_WAIT_1);            
           }
+          if (flags == ACK && this->cf_wait_) {
+            this->update_stat(CLOSE_WAIT);
+          }
           break;
 
         case FIN_WAIT_1:
           if (flags == ACK) {
             this->update_stat(CLOSING);
           }
+
           break;
         
         case FIN_WAIT_2:
-          // ToDo: session closing procedure
+          if (this->cf_wait_ && flags == ACK) {
+            this->update_stat(TIME_WAIT);
+          }
           break;
-        case TIME_WAIT: 
-          // ToDo: session closing procedure
-          break;
-        case CLOSING:
-          // ToDo: session closing procedure
-          break;
+
+        case TIME_WAIT: break;
+        case CLOSING: break;
 
         case CLOSE_WAIT:
           if (flags == FIN) {
@@ -290,6 +302,15 @@ namespace swarm {
     inline TcpStat client_stat() const {
       return this->client_.stat();
     }
+    inline bool is_data_available(FlowDir dir) const {
+      const Node *sender = (this->dir_ == dir) ? &this->client_ : &this->server_;
+      if (!sender->updated() && sender->stat() == ESTABLISHED) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
     bool update(uint8_t flags, uint32_t seq, uint32_t ack, size_t data_len,
                 FlowDir dir) {
       uint8_t f = flags & (FIN | SYN | RST | ACK);
@@ -437,15 +458,28 @@ namespace swarm {
       uint32_t seq = p->value(this->P_TCP_SEQ_).ntoh <uint32_t> ();
       uint32_t ack = p->value(this->P_TCP_ACK_).ntoh <uint32_t> ();
 
+      bool DBG = false;
+      debug(DBG, "data: %zd", data_len);
+
       if (ssn->update(flags, seq, ack, data_len, p->dir())) {
         bool to_server = ssn->to_server(p->dir());
         byte_t *data = p->payload(data_len);
-
+        if(to_server) {
+          debug(DBG, "C->S");
+        } else {
+          debug(DBG, "S->C");
+        }
         p->copy(this->P_TO_SERVER_, &to_server, sizeof(to_server));
 
-        if ((to_server  && ssn->server_stat() == ESTABLISHED) || 
-            (!to_server && ssn->client_stat() == ESTABLISHED)) {
-          p->set(this->P_SEG_, data, data_len);
+        if (ssn->is_data_available(p->dir())) {
+          if (data_len > 0) {
+            if(to_server) {
+              debug(DBG, "seg_data: %zd", data_len);
+            } else {
+              debug(DBG, "seg_data: %zd", data_len);
+            }
+            p->set(this->P_SEG_, data, data_len);
+          }
         }
       }
 
