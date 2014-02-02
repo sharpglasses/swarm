@@ -111,12 +111,16 @@ namespace swarm {
         p->push_event (this->EV_SYN_);
       }
 
+      p->calc_hash();
 
       // TCP Header Option handling
       size_t opthdr_len = (hdr->offset_ >> 2) - sizeof(struct tcp_header);
       assert(opthdr_len < 0xfff);
       if (opthdr_len > 0) {
         byte_t *opt = p->payload(opthdr_len);
+        if (!opt) {
+          return false;
+        }
         size_t optlen = 0;
         for (byte_t *op = opt; op + 2 < opt + opthdr_len; op += optlen) {
           if (op[0] == 1) {
@@ -133,7 +137,6 @@ namespace swarm {
         }
       }
 
-      p->calc_hash();
       this->emit(this->TCP_SSN_, p);
 
       return true;
