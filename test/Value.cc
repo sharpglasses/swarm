@@ -35,11 +35,11 @@ TEST (ValueSet, retain) {
     (reinterpret_cast <const swarm::byte_t *> ("0123456789"));
 
   vs->init ();
-  vs->push (&a[0], 2);;
+  vs->retain()->set(&a[0], 2);;
   swarm::Value * v1 = vs->retain ();
   ASSERT_TRUE (v1);
   v1->set (&a[2], 2);
-  vs->push (&a[4], 2);
+  vs->retain()->set(&a[4], 2);
   swarm::Value * v2 = vs->retain ();
   ASSERT_TRUE (v2);
   v2->set (&a[6], 2);
@@ -82,7 +82,7 @@ TEST (ValueSet, basic) {
   EXPECT_EQ (0, vset->size ());
   EXPECT_EQ (NULL, vset->get(0));
 
-  vset->push (a, 4);
+  vset->retain()->set(a, 4);
   EXPECT_EQ (1, vset->size ());
   EXPECT_TRUE (NULL != vset->get(0));
   EXPECT_TRUE (NULL == vset->get(1));
@@ -101,7 +101,7 @@ TEST (ValueSet, basic) {
           "0123", "30 31 32 33", "48.49.50.51", err, err);
 
 
-  vset->push (&a[3], 4, true);
+  vset->retain()->copy(&a[3], 4);
   swarm::byte_t *copied_ptr = vset->get (1)->ptr();
   EXPECT_EQ (2, vset->size ());
   EXPECT_TRUE (NULL != vset->get(1));

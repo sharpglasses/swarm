@@ -46,15 +46,6 @@ namespace swarm {
   size_t ValueSet::size () const {
     return this->idx_;
   }
-  void ValueSet::push (byte_t *data, size_t len, bool copy) {
-    Value *v = this->retain ();
-
-    if (copy) {
-      v->copy (data, len);
-    } else {
-      v->set (data, len);
-    }
-  }
   Value * ValueSet::retain () {
     Value * v;
     if (this->idx_ >= this->value_set_.size ())  {

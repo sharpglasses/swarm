@@ -276,6 +276,7 @@ namespace swarm {
   }
   Value * Property::retain (const val_id vid) {
     size_t idx = static_cast <size_t> (vid - VALUE_BASE);
+    this->set_val_history(idx);
     if (idx < this->value_.size ()) {
       Value * v = this->value_[idx]->retain ();
       return v;
@@ -299,18 +300,25 @@ namespace swarm {
       return this->set (vid, ptr, len);
     }
   }
-
   bool Property::set (const val_id vid, void * ptr, size_t len) {
-    size_t idx = static_cast <size_t> (vid - VALUE_BASE);
-    if (idx < this->value_.size () && ptr) {
-      assert (idx < this->value_.size () && this->value_[idx] != NULL);
-      this->value_[idx]->push (static_cast <byte_t*> (ptr), len);
-      this->set_val_history(idx);
+    Value *v = this->retain(vid);
+    if (v) {
+      v->set(reinterpret_cast<byte_t*>(ptr), len);
       return true;
     } else {
       return false;
     }
   }
+
+  /*
+    if (idx < this->value_.size () && ptr) {
+      assert (idx < this->value_.size () && this->value_[idx] != NULL);
+      this->value_[idx]->push (static_cast <byte_t*> (ptr), len);
+      return true;
+    } else {
+      return false;
+    }
+    } */
   bool Property::copy (const std::string &value_name, void * ptr, size_t len) {
     const val_id vid = this->nd_->lookup_value_id (value_name);
     if (vid == VALUE_NULL) {
@@ -320,8 +328,16 @@ namespace swarm {
     }
   }
   bool Property::copy (const val_id vid, void * ptr, size_t len) {
+    Value *v = this->retain(vid);
+    if (v) {
+      v->copy(reinterpret_cast<byte_t*>(ptr), len);
+      return true;
+    } else {
+      return false;
+    }
+    /*    
     size_t idx = static_cast <size_t> (vid - VALUE_BASE);
-
+    
     if (idx < this->value_.size () && ptr) {
       assert (idx < this->value_.size () && this->value_[idx] != NULL);
       this->value_[idx]->push (static_cast <byte_t*> (ptr), len, true);
@@ -329,7 +345,7 @@ namespace swarm {
       return true;
     } else {
       return false;
-    }
+      }*/
   }
 
   FlowDir Property::get_dir(void *src_addr, void *dst_addr, size_t addr_len,

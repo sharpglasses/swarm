@@ -478,4 +478,28 @@ namespace SkypeIRC {
     EXPECT_EQ(18,  dc->dst_size_.at(2));
   }
 
+
+  TEST_F (SkypeIRCFix, dns) {
+    class DataCount : public Counter {
+    public:
+      explicit DataCount () {}
+      void recv (swarm::ev_id eid, const swarm::Property &p) {
+        size_t len;
+
+        // std::cout << "---------" << std::endl;
+        for (size_t i = 0; i < p.value_size("dns.an_name"); i++) {
+          // std::cout << i << ": " << p.value("dns.an_name", i).repr() << std::endl;
+        }
+      }
+    };
+
+    DataCount *dc = new DataCount();
+    nd->set_handler("dns.packet", dc);
+    for (auto it = test_data.begin (); it != test_data.end (); it++) {
+      PcapData * p = (*it);
+      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
+    }
+
+  }
+
 }  // namespace SkypeIRC
