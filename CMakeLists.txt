@@ -27,7 +27,7 @@ ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 INSTALL(TARGETS swarm LIBRARY DESTINATION lib)
-INSTALL(FILES src/swarm.h src/common.h src/timer.h src/netcap.h src/netdec.h src/decode.h DESTINATION include/swarm)
+INSTALL(FILES src/swarm.h src/common.h src/timer.h src/netcap.h src/netdec.h src/decode.h src/value.h DESTINATION include/swarm)
 
 
 
