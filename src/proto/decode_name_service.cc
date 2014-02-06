@@ -30,6 +30,7 @@
 namespace swarm {
   std::string NameServiceDecoder::VarNameServiceData::repr() const {
     std::string s;
+
     bool rc = false;
     switch (this->type_) {
     case  1: s = this->ip4(); break;  // A
@@ -52,7 +53,12 @@ namespace swarm {
       break;
 
     default:
-      debug (1, "? %d", this->type_);
+      {
+        std::stringstream ss;
+        debug (1, "? %d", this->type_);
+        ss << this->type_;
+        s = ss.str();
+      }
     }
     return s;
   }
