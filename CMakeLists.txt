@@ -47,4 +47,6 @@ ADD_EXECUTABLE(overseer apps/overseer.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(overseer swarm)
 ADD_EXECUTABLE(swarm-bench apps/swarm-bench.cc apps/optparse.cc)
 TARGET_LINK_LIBRARIES(swarm-bench swarm)
+ADD_EXECUTABLE(swarm-tool apps/swarm-tool.cc apps/optparse.cc)
+TARGET_LINK_LIBRARIES(swarm-tool swarm)
 

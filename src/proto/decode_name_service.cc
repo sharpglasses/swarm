@@ -43,10 +43,10 @@ namespace swarm {
       {
         size_t len;
         byte_t * ptr = this->ptr(&len);
-        byte_t * rp;
-        rp = NameServiceDecoder::parse_label (ptr, len, this->base_ptr_,
-                                              this->total_len_, &s);
-        if (rp != NULL) {
+        byte_t * rp
+          = NameServiceDecoder::parse_label (ptr, len, this->base_ptr_,
+                                             this->total_len_, &s);
+        if (rp == NULL) {
           s = Value::null_;
         }
       }
@@ -323,7 +323,8 @@ namespace swarm {
       remain -= data_len + 1;
     }
 
-    // if exiting loop, too log domain name (invalid)
+    // if exiting loop, 
+    debug (DEBUG, "too long domain name (invalid)");
     return NULL;
   }
 
