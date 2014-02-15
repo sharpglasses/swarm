@@ -2,6 +2,7 @@ Feb 15 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
 	0.3.3
 	* src/proto/tcp_ssn.cc: Support basic state transition
 	* Fixed several bugs of protocol decoders
+	* Disabled debug message when Release build type
 
 Jan 3 2013	Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
 	0.3.2.1

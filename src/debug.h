@@ -32,6 +32,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#ifdef SWARM_DEBUG
+
 #define debug(X, ...)                                                    \
   do {                                                                  \
     struct tm td;                                                       \
@@ -47,5 +49,11 @@
       fflush (out);                                                     \
     }                                                                   \
   } while (0);
+
+#else
+
+#define debug(X, ...) {}
+
+#endif // SWARM_DEBUG
 
 #endif  // SRC_DEBUG_H__

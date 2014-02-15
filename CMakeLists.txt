@@ -1,9 +1,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(Swarm)
 
+
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, default to Release")
+    SET(CMAKE_BUILD_TYPE "Release")
+endif()
+
 SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O3 -std=c++0x")
-SET(CMAKE_CXX_FLAGS_DEBUG   "-Wall -O0 -std=c++0x -g")
-SET(CMAKE_BUILD_TYPE Release)
+SET(CMAKE_CXX_FLAGS_DEBUG   "-Wall -O0 -std=c++0x -g -DSWARM_DEBUG")
 SET(CMAKE_SHARED_LINKER_FLAGS "-lpcap -dynamiclib")
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
