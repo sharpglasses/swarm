@@ -134,6 +134,10 @@ namespace swarm {
           // debug(1, "kind: %zd", op[0]);
           // debug(1, "len : %zd", op[1]);
           optlen = op[1];
+
+          if (optlen == 0) {
+            return false;
+          }
         }
       }
 
