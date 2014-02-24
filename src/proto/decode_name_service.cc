@@ -26,6 +26,7 @@
 
 #include <sstream>
 #include "./decode_name_service.h"
+#include "./debug.h"
 
 namespace swarm {
   std::string NameServiceDecoder::VarNameServiceData::repr() const {

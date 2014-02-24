@@ -484,7 +484,6 @@ namespace SkypeIRC {
     public:
       explicit DataCount () {}
       void recv (swarm::ev_id eid, const swarm::Property &p) {
-        size_t len;
 
         // std::cout << "---------" << std::endl;
         for (size_t i = 0; i < p.value_size("dns.an_name"); i++) {

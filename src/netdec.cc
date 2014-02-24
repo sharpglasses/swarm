@@ -30,6 +30,7 @@
 #include "./property.h"
 #include "./decode.h"
 #include "./timer.h"
+#include "./debug.h"
 
 namespace swarm {
   // -------------------------------------------------------

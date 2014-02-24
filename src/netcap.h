@@ -119,7 +119,6 @@ namespace swarm {
     uint8_t *ptr_;
     uint8_t *eof_;
     size_t length_;
-    size_t offset_;
 
     bool run ();
 
