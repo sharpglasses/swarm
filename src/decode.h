@@ -33,7 +33,6 @@
 #include <vector>
 
 #include "./swarm.h"
-#include "./debug.h"
 #include "./value.h"
 
 namespace swarm {
