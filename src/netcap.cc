@@ -36,7 +36,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <string>
-
+#include <ev.h>
 #include "./netcap.h"
 #include "./netdec.h"
 #include "./debug.h"
@@ -297,8 +297,18 @@ namespace swarm {
     // processing packets from pcap file
     struct pcap_pkthdr *pkthdr;
     const u_char *pkt_data;
-    int rc;
+    int rc = 1;
 
+    this->loop_ = ev_default_loop(0);
+    ev_io watcher;
+    int fd = pcap_get_selectable_fd(this->pcap_);
+    watcher.data = this;
+
+    ev_io_init(&watcher, PcapBase::handle_pcap_event, fd, EV_READ);    
+    ev_io_start(this->loop_, &watcher);
+    ev_loop(this->loop_, 0);
+
+    /*
     while (true) {
       rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
 
@@ -317,12 +327,31 @@ namespace swarm {
 
       this->timer_proc ();
     }
+    */
 
     pcap_close (this->pcap_);
     this->pcap_ = NULL;
     return rc;
   }
 
+  void PcapBase::handle_pcap_event(EV_P_ struct ev_io *w, int revents) {
+    struct pcap_pkthdr *pkthdr;
+    const u_char *pkt_data;
+    int rc;
+    PcapBase *base = reinterpret_cast<PcapBase*>(w->data);
+    for(int i = 0; i < 64; i++) {
+      rc = ::pcap_next_ex (base->pcap_, &pkthdr, &pkt_data);
+
+      if (rc == 1 && base->netdec()) {
+        base->netdec()->input (pkt_data, pkthdr->len, pkthdr->ts,
+                               pkthdr->caplen);
+      } else if (rc < 0) {
+        ev_io_stop (EV_A_ w);
+        ev_unloop (EV_A_ EVUNLOOP_ALL);
+        return;
+      }
+    }
+  }
 
 
   // -------------------------------------------------------------------

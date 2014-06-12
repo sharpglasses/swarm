@@ -27,6 +27,7 @@
 #ifndef SRC_NETCAP_H__
 #define SRC_NETCAP_H__
 
+#include <ev.h>
 #include <string>
 #include "./common.h"
 #include "./timer.h"
@@ -134,12 +135,14 @@ namespace swarm {
   class PcapBase : public NetCap {
   protected:
     pcap_t *pcap_;
+    struct ev_loop *loop_;
     std::string filter_;
     static const size_t PCAP_BUFSIZE_ = 0xffff;
     static const size_t PCAP_TIMEOUT_ = 1;
 
     bool run ();
-
+    static void handle_pcap_event(EV_P_ struct ev_io *w, int revents);
+    
   public:
     PcapBase ();
     virtual ~PcapBase ();

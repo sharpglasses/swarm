@@ -26,9 +26,9 @@ FILE(GLOB TESTSRCS "test/*.cc")
 
 ADD_LIBRARY(swarm SHARED ${BASESRCS})
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    TARGET_LINK_LIBRARIES(swarm pcap pthread rt)
+    TARGET_LINK_LIBRARIES(swarm pcap pthread rt ev)
 ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    TARGET_LINK_LIBRARIES(swarm pcap pthread)
+    TARGET_LINK_LIBRARIES(swarm pcap pthread ev)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 INSTALL(TARGETS swarm LIBRARY DESTINATION lib)
