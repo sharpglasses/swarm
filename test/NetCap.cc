@@ -41,7 +41,7 @@ TEST(CapPcapMmap, Basic) {
 
   swarm::NetDec *nd = new swarm::NetDec ();
   std::string sample_file = "./data/SkypeIRC.cap";
-  swarm::CapPcapMmap *cap = new swarm::CapPcapMmap(sample_file);
+  swarm::CapPcapFile *cap = new swarm::CapPcapFile(sample_file);
   Counter *eth_count = new Counter();
   Counter *ip4_count = new Counter();
   nd->set_handler("ether.packet", eth_count);

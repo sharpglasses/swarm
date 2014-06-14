@@ -62,10 +62,36 @@ namespace swarm {
       this->set_errmsg("Status is not ready");
       return false;
     }
-    
-    bool rc = this->run ();
-    return rc;
+
+    if (!this->setup()) {
+      return false;
+    }
+
+    ::ev_loop(this->ev_loop_, 0);
+
+    if (!this->teardown()) {
+      return false;
+    }
+
+    return true;
   }
+
+  void NetCap::handle_io_event(EV_P_ struct ev_io *w, int revents) {
+    NetCap *nc = reinterpret_cast<PcapBase*>(w->data);
+    nc->handler(revents);
+  }
+
+  void NetCap::ev_watch_fd(int fd) {
+    this->watcher_.data = this;
+    ev_io_init(&(this->watcher_), NetCap::handle_io_event, fd, EV_READ);    
+    ev_io_start(this->ev_loop_, &(this->watcher_));
+  }
+  void NetCap::ev_loop_exit() {
+    // ev_io_stop (EV_A_ w);
+    ev_unloop (this->ev_loop_, EVUNLOOP_ALL);
+  }
+
+
 
 
   task_id NetCap::set_periodic_task(Task *task, float interval) {
@@ -97,10 +123,12 @@ namespace swarm {
     return this->errmsg_;
   }
 
+
   // -------------------------------------------------------------------
   // class CapPcapMmap
   //
   CapPcapMmap::CapPcapMmap(const std::string &filepath) : fd_(0), addr_(NULL) {
+    assert(0); // don't use in libev arch
     this->set_status(FAIL);
 
     this->fd_ = ::open(filepath.c_str(), O_RDONLY);
@@ -163,7 +191,7 @@ namespace swarm {
     }
   }
 
-  bool CapPcapMmap::run() {
+  bool CapPcapMmap::setup() {
     // delegate pcap descriptor
     std::string dec = "";
     switch (this->hdr_.linktype) {
@@ -234,6 +262,12 @@ namespace swarm {
     return rc;
   }
 
+  bool CapPcapMmap::teardown() {
+    return true;
+  }
+
+  void CapPcapMmap::handler(int revents) {
+  }
 
   // -------------------------------------------------------------------
   // class PcapBase
@@ -275,7 +309,7 @@ namespace swarm {
     return true;
   }
 
-  bool PcapBase::run () {
+  bool PcapBase::setup () {
     // delegate pcap descriptor
     int dlt = pcap_datalink (this->pcap_);
     std::string dec = "";
@@ -299,15 +333,7 @@ namespace swarm {
 
     // ----------------------------------------------
     // processing packets from pcap file
-    int rc = 1;
-
-    ev_io watcher;
-    int fd = ::pcap_get_selectable_fd(this->pcap_);
-    watcher.data = this;
-
-    ev_io_init(&watcher, PcapBase::handle_pcap_event, fd, EV_READ);    
-    ev_io_start(this->ev_loop(), &watcher);
-    ::ev_loop(this->ev_loop(), 0);
+    this->ev_watch_fd(::pcap_get_selectable_fd(this->pcap_));
 
     /*
     while (true) {
@@ -329,26 +355,28 @@ namespace swarm {
       this->timer_proc ();
     }
     */
-
-    pcap_close (this->pcap_);
-    this->pcap_ = NULL;
-    return rc;
+    return true;
   }
 
-  void PcapBase::handle_pcap_event(EV_P_ struct ev_io *w, int revents) {
+  bool PcapBase::teardown() {
+    pcap_close (this->pcap_);
+    this->pcap_ = NULL;
+    return true;
+  }
+
+
+  void PcapBase::handler(int revents) {
     struct pcap_pkthdr *pkthdr;
     const u_char *pkt_data;
     int rc;
-    PcapBase *base = reinterpret_cast<PcapBase*>(w->data);
     for(int i = 0; i < 64; i++) {
-      rc = ::pcap_next_ex (base->pcap_, &pkthdr, &pkt_data);
+      rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
 
-      if (rc == 1 && base->netdec()) {
-        base->netdec()->input (pkt_data, pkthdr->len, pkthdr->ts,
+      if (rc == 1 && this->netdec()) {
+        this->netdec()->input (pkt_data, pkthdr->len, pkthdr->ts,
                                pkthdr->caplen);
       } else if (rc < 0) {
-        ev_io_stop (EV_A_ w);
-        ev_unloop (EV_A_ EVUNLOOP_ALL);
+        this->ev_loop_exit();
         return;
       } else {
         return;

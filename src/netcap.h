@@ -56,16 +56,24 @@ namespace swarm {
     std::string errmsg_;
     Status status_;
     struct ev_loop *ev_loop_;
+    ev_io watcher_;
 
     std::map<task_id, TaskEntry*> task_entry_;
     task_id last_id_;
 
+    virtual bool setup() = 0;
+    virtual bool teardown() = 0;
+    virtual void handler(int revents) = 0;
+    static void handle_io_event(EV_P_ struct ev_io *w, int revents);
+
   protected:
     inline NetDec *netdec() { return this->nd_; }
     struct ev_loop *ev_loop() const { return this->ev_loop_; }
+    void ev_loop_exit();
+    void ev_watch_fd(int fd);
+
     void set_errmsg(const std::string &errmsg);
     void set_status(Status st);
-    virtual bool run () = 0;
 
   public:
     explicit NetCap ();
@@ -118,7 +126,9 @@ namespace swarm {
     uint8_t *eof_;
     size_t length_;
 
-    bool run ();
+    bool setup();
+    bool teardown();
+    void handler(int revents);
 
   public:
     CapPcapMmap(const std::string &filepath);
@@ -136,7 +146,9 @@ namespace swarm {
     static const size_t PCAP_BUFSIZE_ = 0xffff;
     static const size_t PCAP_TIMEOUT_ = 1;
 
-    bool run ();
+    bool setup();
+    bool teardown();
+    void handler(int revents);
     static void handle_pcap_event(EV_P_ struct ev_io *w, int revents);
     static void tick_timer(EV_P_ struct ev_timer *w, int revents);
 
