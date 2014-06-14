@@ -66,8 +66,7 @@ namespace swarm {
     none_(""),
     recv_len_(0),
     cap_len_(0),
-    recv_pkt_(0),
-    timer_(new Timer ()) {
+    recv_pkt_(0) {
     this->init_ts_.tv_sec = 0;;
     this->init_ts_.tv_nsec = 0;;
     this->last_ts_.tv_sec = 0;;
@@ -100,7 +99,6 @@ namespace swarm {
 
     this->fwd_dec_.clear ();
     this->rev_dec_.clear ();
-    delete this->timer_;
   }
 
   dec_id NetDec::install_dec_mod (const std::string &name, Decoder *dec) {
@@ -202,7 +200,7 @@ namespace swarm {
     }
 
     // handle timer
-    this->timer_->ticktock (tv);
+    // this->timer_->ticktock (tv);
 
     return true;
   }
@@ -352,16 +350,6 @@ namespace swarm {
       delete ent;
       return hdlr;
     }
-  }
-
-  task_id NetDec::set_onetime_timer (Task *task, int delay_msec) {
-    return this->timer_->install_task (task, Timer::ONCE, delay_msec);
-  }
-  task_id NetDec::set_repeat_timer (Task *task, int interval_msec) {
-    return this->timer_->install_task (task, Timer::REPEAT, interval_msec);
-  }
-  bool NetDec::unset_timer (task_id id) {
-    return this->timer_->remove_task (id);
   }
 
   uint64_t NetDec::recv_len () const {

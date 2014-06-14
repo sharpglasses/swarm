@@ -38,59 +38,6 @@ namespace swarm {
   class Task;
 
   // ----------------------------------------------------------
-  // Timer
-  class Timer {
-  public:
-    enum Mode {
-      REPEAT = 1,
-      ONCE,
-    };
-
-  private:
-    std::multimap<tick_t, TaskEntry*> schedule_;
-    std::map<task_id, TaskEntry*> task_map_;
-    task_id task_id_seq_;
-    tick_t curr_tick_;
-    tick_t base_tick_;
-    inline static tick_t msec2tick (int msec);
-    inline static tick_t timespec2tick (const struct timespec &now);
-    void push_task(TaskEntry *ent);
-
-  public:
-    Timer ();
-    ~Timer ();
-
-    // Common
-    task_id install_task (Task *task, Mode mode, int msec);
-    bool remove_task (task_id t_id);
-    void ticktock (const struct timespec &now);
-    void ticktock (const struct timeval &now);
-  };
-
-  // ----------------------------------------------------------
-  // RealtimeTimer
-  class RealtimeTimer : public Timer {
-  private:
-    u_int32_t ready_;
-    u_int32_t enable_;
-    pthread_t clock_th_;
-    static const bool DBG = false;
-
-  public:
-    // Functions for REALTIME_CLOCK
-    static void *clock (void *obj);
-    void start ();
-    void stop ();
-    bool ready () const;
-    void fire ();
-  };
-
-  class WindingTimer : public Timer {
-  public:
-    // Functions for MANUAL_CLOCK
-  };
-
-  // ----------------------------------------------------------
   // Task
   class Task {
   public:
@@ -107,17 +54,13 @@ namespace swarm {
     Task *task_;
     tick_t interval_;
     tick_t next_tick_;
-    Timer::Mode mode_;
 
   public:
-    TaskEntry (task_id id, Task *task, tick_t interval, Timer::Mode mode);
+    TaskEntry (task_id id, Task *task, float interval);
     ~TaskEntry ();
-    task_id id () const;
-    tick_t interval () const;
-    Task *task () const;
-    Timer::Mode mode () const;
-    tick_t calc_next_tick (tick_t curr);
-    tick_t next_tick () const;
+    task_id id () const { return this->id_; }
+    float interval () const { return this->interval_; }
+    Task *task () const { return this->task_; }
   };
 
 

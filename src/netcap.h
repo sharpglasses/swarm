@@ -34,7 +34,6 @@
 
 namespace swarm {
   class NetDec;
-  class RealtimeTimer;
   class Task;
 
   // ----------------------------------------------------------------
@@ -54,17 +53,11 @@ namespace swarm {
 
   private:
     NetDec *nd_;
-    RealtimeTimer *timer_;
     std::string errmsg_;
     Status status_;
 
   protected:
     inline NetDec *netdec() { return this->nd_; }
-    inline void timer_proc () {
-      if (this->timer_->ready ()) {
-        this->timer_->fire ();
-      }
-    }
     void set_errmsg(const std::string &errmsg);
     void set_status(Status st);
     virtual bool run () = 0;
@@ -77,9 +70,9 @@ namespace swarm {
     inline bool ready () const { return (this->status_ == READY); }
     bool start ();
 
-    task_id set_onetime_timer (Task *task, int delay_msec);
-    task_id set_repeat_timer (Task *task, int interval_msec);
-    bool unset_timer (task_id id);
+    task_id set_periodic_task(Task *task, float interval);
+    task_id set_onetime_task(Task *task, float delay);
+    bool unset_task(task_id id);
 
     const std::string &errmsg () const;
   };
@@ -142,7 +135,8 @@ namespace swarm {
 
     bool run ();
     static void handle_pcap_event(EV_P_ struct ev_io *w, int revents);
-    
+    static void tick_timer(EV_P_ struct ev_timer *w, int revents);
+
   public:
     PcapBase ();
     virtual ~PcapBase ();

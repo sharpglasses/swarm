@@ -92,7 +92,6 @@ namespace swarm {
       return static_cast <size_t> (eid - EV_BASE);
     }
 
-    Timer *timer_;
     std::string errmsg_;
 
   public:

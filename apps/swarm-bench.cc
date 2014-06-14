@@ -89,7 +89,8 @@ bool do_benchmark (const optparse::Values& opt) {
     nc = new swarm::CapPcapFile (opt["read_file"]);
   } else if (opt.is_set ("interface")) {
     nc = new swarm::CapPcapDev (opt["interface"]);
-    nc->set_repeat_timer (nd_bench, 1000);
+    // ToDo: replace to new timer
+    // nc->set_repeat_timer (nd_bench, 1000);
   } else if (opt.is_set ("pcap_mmap")) {
     nc = new swarm::CapPcapMmap (opt["pcap_mmap"]);
   } else {

@@ -339,36 +339,6 @@ namespace SkypeIRC {
   }
 
 
-  TEST_F (SkypeIRCFix, Timer) {
-    class TimeCounter : public swarm::Task {
-    private:
-      int count_;
-    public:
-      TimeCounter () : count_(0) {}
-      int count () const { return this->count_; }
-      void exec (const struct timespec &tv) { this->count_++; }
-    };
-
-    TimeCounter *tc1 = new TimeCounter ();
-    TimeCounter *tc2 = new TimeCounter ();
-    TimeCounter *tc3 = new TimeCounter ();
-
-    nd->set_onetime_timer (tc1,   1 * 1000);  // should be fired
-    nd->set_onetime_timer (tc2, 323 * 1000);  // should not be fired
-    nd->set_repeat_timer  (tc3,   1 * 1000);  // should be fired 5 times
-
-    int i = 0;
-    // test is done in 32 packet
-    for (auto it = test_data.begin (); it != test_data.end () && i < 32;
-         it++, i++) {
-      PcapData * p = (*it);
-      nd->input (p->pkt_data (), p->len (), *(p->ts ()), p->caplen ());
-    }
-
-    EXPECT_EQ (  1, tc1->count ());
-    EXPECT_EQ (  0, tc2->count ());
-    EXPECT_EQ (  5, tc3->count ());
-  }
 
   TEST_F (SkypeIRCFix, Stat) {
     for (auto it = test_data.begin (); it != test_data.end (); it++) {

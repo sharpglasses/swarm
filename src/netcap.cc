@@ -48,11 +48,9 @@ namespace swarm {
   // class NetCap
   //
   NetCap::NetCap () :
-    nd_(NULL),
-    timer_(new RealtimeTimer ()) {
+    nd_(NULL) {
   }
   NetCap::~NetCap () {
-    delete this->timer_;
   }
   void NetCap::bind_netdec (NetDec *nd) {
     this->nd_ = nd;
@@ -65,21 +63,16 @@ namespace swarm {
       return false;
     }
 
-    this->timer_->start ();
     bool rc = this->run ();
-    this->timer_->stop ();
     return rc;
   }
 
 
-  task_id NetCap::set_onetime_timer (Task *task, int delay_msec) {
-    return this->timer_->install_task (task, Timer::ONCE, delay_msec);
+  task_id NetCap::set_periodic_task(Task *task, float interval) {
   }
-  task_id NetCap::set_repeat_timer (Task *task, int interval_msec) {
-    return this->timer_->install_task (task, Timer::REPEAT, interval_msec);
+  task_id NetCap::set_onetime_task(Task *task, float delay) {
   }
-  bool NetCap::unset_timer (task_id id) {
-    return this->timer_->remove_task (id);
+  bool NetCap::unset_task(task_id id) {
   }
 
   void NetCap::set_status(Status st) {
@@ -223,7 +216,6 @@ namespace swarm {
       if (this->netdec()) {
         this->netdec()->input (pkt_data, pkthdr->len, tv, pkthdr->caplen);
       }
-      this->timer_proc ();
     }
 
     this->set_status(STOP);    
@@ -295,8 +287,6 @@ namespace swarm {
 
     // ----------------------------------------------
     // processing packets from pcap file
-    struct pcap_pkthdr *pkthdr;
-    const u_char *pkt_data;
     int rc = 1;
 
     this->loop_ = ev_default_loop(0);
@@ -304,6 +294,9 @@ namespace swarm {
     int fd = pcap_get_selectable_fd(this->pcap_);
     watcher.data = this;
 
+    ev_timer timer;
+    ev_timer_init(&timer, PcapBase::tick_timer, 0.0, 0.1);
+    ev_timer_start(this->loop_, &timer);
     ev_io_init(&watcher, PcapBase::handle_pcap_event, fd, EV_READ);    
     ev_io_start(this->loop_, &watcher);
     ev_loop(this->loop_, 0);
@@ -334,6 +327,10 @@ namespace swarm {
     return rc;
   }
 
+  void PcapBase::tick_timer(EV_P_ struct ev_timer *w, int revents) {
+    // printf("tick!\n");
+  } 
+
   void PcapBase::handle_pcap_event(EV_P_ struct ev_io *w, int revents) {
     struct pcap_pkthdr *pkthdr;
     const u_char *pkt_data;
@@ -348,6 +345,8 @@ namespace swarm {
       } else if (rc < 0) {
         ev_io_stop (EV_A_ w);
         ev_unloop (EV_A_ EVUNLOOP_ALL);
+        return;
+      } else {
         return;
       }
     }

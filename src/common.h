@@ -55,7 +55,6 @@ namespace swarm {
   class ValueFactory;
   class Value;
   class Decoder;
-  class Timer;
   class Task;
 
   enum FlowDir {
