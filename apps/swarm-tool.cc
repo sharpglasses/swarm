@@ -37,7 +37,7 @@ class GenHandler : public swarm::Handler {
   void set_key(const std::string &key) {
     this->key_ = key;
   }
-  void recv (swarm::ev_id eid, const  swarm::Property &p) {
+  void recv (swarm::ev_id eid, const swarm::Property &p) {
     if (!this->key_.empty() && !p.value(this->key_).is_null()) {
       for (size_t i = 0; i < p.value_size(this->key_); i++) {
         std::cout << p.value(this->key_, i).repr() ;
@@ -64,8 +64,10 @@ bool do_benchmark (const optparse::Values& opt) {
 
   if (opt.is_set ("read_file")) {
     nc = new swarm::CapPcapFile (opt["read_file"]);
+  } else if (opt.is_set("interface")) {
+    nc = new swarm::CapPcapDev (opt["interface"]);
   } else {
-    fprintf (stderr, "error: need specify one input method from -r, -i or -f");
+    fprintf (stderr, "error: need specify one input method from -r, -i");
     return false;
   }
 
@@ -75,7 +77,7 @@ bool do_benchmark (const optparse::Values& opt) {
   }
 
   GenHandler *gh = new GenHandler();
-  nd->set_handler("ether.packet", gh);
+  assert(swarm::HDLR_NULL != nd->set_handler("ether.packet", gh));
   nc->bind_netdec (nd);
 
   if (opt.is_set("value")) {
@@ -92,12 +94,14 @@ bool do_benchmark (const optparse::Values& opt) {
 int main (int argc, char *argv[]) {
   optparse::OptionParser psr = optparse::OptionParser();
 
+  psr.add_option("-i").dest("interface")
+    .help("Specify read interface");
   psr.add_option("-r").dest("read_file")
     .help("Specify read pcap format file(s)");
   psr.add_option("-e").dest("event")
-    .help("Specify read pcap format file(s)");
+    .help("Event of NetCap");
   psr.add_option("-v").dest("value")
-    .help("Specify read pcap format file(s)");
+    .help("Value name of property");
 
   optparse::Values& opt = psr.parse_args(argc, argv);
   std::vector <std::string> args = psr.args();

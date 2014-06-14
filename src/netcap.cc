@@ -334,27 +334,6 @@ namespace swarm {
     // ----------------------------------------------
     // processing packets from pcap file
     this->ev_watch_fd(::pcap_get_selectable_fd(this->pcap_));
-
-    /*
-    while (true) {
-      rc = ::pcap_next_ex (this->pcap_, &pkthdr, &pkt_data);
-
-      if (rc == 1 && this->netdec()) {
-        this->netdec()->input (pkt_data, pkthdr->len, pkthdr->ts,
-                               pkthdr->caplen);
-      } else {
-        if (rc == -2) {
-          break;
-        } else if (rc < 0) {
-          rc = false;
-          this->set_errmsg (pcap_geterr (this->pcap_));
-          break;
-        }
-      }
-
-      this->timer_proc ();
-    }
-    */
     return true;
   }
 

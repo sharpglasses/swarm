@@ -82,15 +82,11 @@ bool do_benchmark (const optparse::Values& opt) {
   // processing packets from pcap file
   swarm::NetCap *nc = NULL;
 
-  if (!(opt.is_set ("read_file") ^ opt.is_set ("interface"))) {
-  }
-
   if (opt.is_set ("read_file")) {
     nc = new swarm::CapPcapFile (opt["read_file"]);
   } else if (opt.is_set ("interface")) {
     nc = new swarm::CapPcapDev (opt["interface"]);
-    // ToDo: replace to new timer
-    // nc->set_repeat_timer (nd_bench, 1000);
+    nc->set_periodic_task (nd_bench, 1.);
   } else if (opt.is_set ("pcap_mmap")) {
     nc = new swarm::CapPcapMmap (opt["pcap_mmap"]);
   } else {

@@ -40,13 +40,14 @@ namespace swarm {
   TaskEntry::TaskEntry (task_id id, Task *task, float interval,
                         struct ev_loop *loop) :
     id_(id), task_(task), interval_(interval), loop_(loop) {
+    this->timer_.data = this;
     ev_timer_init(&(this->timer_), TaskEntry::work, 0.0, this->interval_);
     ev_timer_start(this->loop_, &(this->timer_));
   }
   TaskEntry::~TaskEntry () {
     ev_timer_stop(this->loop_, &(this->timer_));    
   }
-  void TaskEntry::work(EV_P_ struct ev_timer *w, int reeeevents) {
+  void TaskEntry::work(EV_P_ struct ev_timer *w, int revents) {
     TaskEntry *ent = reinterpret_cast<TaskEntry*>(w->data);
     double tv = ev_now(EV_A);
     double tv_sec, tv_nsec;
