@@ -32,3 +32,24 @@
 #include "../src/debug.h"
 #include "../src/swarm.h"
 
+TEST(Timer, set) {
+  class Worker : public swarm::Task {
+  public:
+    int i_;
+    Worker() : i_(0) {}
+    void exec(const struct timespec &ts) { 
+      i_++; 
+    }
+  };
+
+  Worker *w = new Worker();
+  swarm::NetCap *nc = new swarm::CapPcapDev("en0");
+  swarm::task_id tid1 = nc->set_periodic_task(w, 1.);
+  swarm::task_id tid2 = nc->set_periodic_task(w, 1.5);
+  EXPECT_NE(tid1, tid2);
+  EXPECT_TRUE(nc->unset_task(tid1));
+  EXPECT_FALSE(nc->unset_task(tid1));
+  EXPECT_TRUE(nc->unset_task(tid2));
+  EXPECT_FALSE(nc->unset_task(tid2));
+}
+

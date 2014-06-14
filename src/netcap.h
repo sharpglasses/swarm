@@ -55,9 +55,14 @@ namespace swarm {
     NetDec *nd_;
     std::string errmsg_;
     Status status_;
+    struct ev_loop *ev_loop_;
+
+    std::map<task_id, TaskEntry*> task_entry_;
+    task_id last_id_;
 
   protected:
     inline NetDec *netdec() { return this->nd_; }
+    struct ev_loop *ev_loop() const { return this->ev_loop_; }
     void set_errmsg(const std::string &errmsg);
     void set_status(Status st);
     virtual bool run () = 0;
@@ -71,7 +76,6 @@ namespace swarm {
     bool start ();
 
     task_id set_periodic_task(Task *task, float interval);
-    task_id set_onetime_task(Task *task, float delay);
     bool unset_task(task_id id);
 
     const std::string &errmsg () const;
@@ -128,7 +132,6 @@ namespace swarm {
   class PcapBase : public NetCap {
   protected:
     pcap_t *pcap_;
-    struct ev_loop *loop_;
     std::string filter_;
     static const size_t PCAP_BUFSIZE_ = 0xffff;
     static const size_t PCAP_TIMEOUT_ = 1;

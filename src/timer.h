@@ -27,9 +27,9 @@
 #ifndef SRC_TIMER_H__
 #define SRC_TIMER_H__
 
-#include <pthread.h>
 #include <stdint.h>
 #include <map>
+#include <ev.h>
 #include "./common.h"
 
 namespace swarm {
@@ -40,6 +40,10 @@ namespace swarm {
   // ----------------------------------------------------------
   // Task
   class Task {
+  protected:
+    void stop();
+    void exit();
+
   public:
     Task ();
     virtual ~Task ();
@@ -52,15 +56,17 @@ namespace swarm {
   private:
     task_id id_;
     Task *task_;
-    tick_t interval_;
-    tick_t next_tick_;
+    float interval_;
+    struct ev_loop *loop_;
+    struct ev_timer timer_;
 
   public:
-    TaskEntry (task_id id, Task *task, float interval);
+    TaskEntry (task_id id, Task *task, float interval, struct ev_loop *loop);
     ~TaskEntry ();
     task_id id () const { return this->id_; }
     float interval () const { return this->interval_; }
     Task *task () const { return this->task_; }
+    static void work (EV_P_ struct ev_timer *w, int revents);
   };
 
 

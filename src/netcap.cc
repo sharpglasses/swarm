@@ -48,7 +48,7 @@ namespace swarm {
   // class NetCap
   //
   NetCap::NetCap () :
-    nd_(NULL) {
+    nd_(NULL), ev_loop_(ev_default_loop(0)), last_id_(1) {
   }
   NetCap::~NetCap () {
   }
@@ -62,17 +62,29 @@ namespace swarm {
       this->set_errmsg("Status is not ready");
       return false;
     }
-
+    
     bool rc = this->run ();
     return rc;
   }
 
 
   task_id NetCap::set_periodic_task(Task *task, float interval) {
-  }
-  task_id NetCap::set_onetime_task(Task *task, float delay) {
+    TaskEntry *ent = new TaskEntry(this->last_id_, task, interval,
+                                   this->ev_loop_);
+    this->task_entry_.insert(std::make_pair(ent->id(), ent));
+    this->last_id_++;
+    return ent->id();
   }
   bool NetCap::unset_task(task_id id) {
+    auto it = this->task_entry_.find(id);
+    if (this->task_entry_.end() == it) {
+      return false;
+    } else {
+      TaskEntry *ent = it->second;
+      this->task_entry_.erase(it->first);
+      delete ent;
+      return true;
+    }
   }
 
   void NetCap::set_status(Status st) {
@@ -289,17 +301,13 @@ namespace swarm {
     // processing packets from pcap file
     int rc = 1;
 
-    this->loop_ = ev_default_loop(0);
     ev_io watcher;
-    int fd = pcap_get_selectable_fd(this->pcap_);
+    int fd = ::pcap_get_selectable_fd(this->pcap_);
     watcher.data = this;
 
-    ev_timer timer;
-    ev_timer_init(&timer, PcapBase::tick_timer, 0.0, 0.1);
-    ev_timer_start(this->loop_, &timer);
     ev_io_init(&watcher, PcapBase::handle_pcap_event, fd, EV_READ);    
-    ev_io_start(this->loop_, &watcher);
-    ev_loop(this->loop_, 0);
+    ev_io_start(this->ev_loop(), &watcher);
+    ::ev_loop(this->ev_loop(), 0);
 
     /*
     while (true) {
@@ -326,10 +334,6 @@ namespace swarm {
     this->pcap_ = NULL;
     return rc;
   }
-
-  void PcapBase::tick_timer(EV_P_ struct ev_timer *w, int revents) {
-    // printf("tick!\n");
-  } 
 
   void PcapBase::handle_pcap_event(EV_P_ struct ev_io *w, int revents) {
     struct pcap_pkthdr *pkthdr;
