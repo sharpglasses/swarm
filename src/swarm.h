@@ -37,9 +37,45 @@
 
 #include "./common.h"
 #include "./property.h"
-#include "./timer.h"
-#include "./netcap.h"
 #include "./netdec.h"
+#include "./netcap.h"
 #include "./decode.h"
+
+namespace swarm {
+  class NetDec;
+  class NetCap;
+  class Handler;
+  class Task;
+
+  // ----------------------------------------------------------
+  // Swarm
+  class Swarm {
+  protected:
+    NetDec *netdec_;
+    NetCap *netcap_;
+    
+  public:
+    Swarm();
+    ~Swarm();
+    hdlr_id set_handler(const std::string &ev_name, Handler *hdlr);
+    bool unset_handler(hdlr_id h_id);
+
+    task_id set_periodic_task(Task *task, float interval);
+    bool unset_task(task_id t_id);
+    virtual void start() = 0;
+  };
+
+  class SwarmDev : public Swarm {
+  public:
+    SwarmDev(const std::string &dev_name);
+    ~SwarmDev();
+  };
+  class SwarmFile : public Swarm {
+  public:
+    SwarmFile(const std::string &file_path);
+    ~SwarmFile();
+  };
+
+}
 
 #endif  // SRC_SWARM_H__

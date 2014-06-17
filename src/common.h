@@ -47,8 +47,6 @@ namespace swarm {
   const dec_id   DEC_BASE =  0;
   const task_id  TASK_NULL = 0;
 
-  class NetDec;
-  class NetCap;
   class Property;
   class ValueSet;
   class ValueEntry;

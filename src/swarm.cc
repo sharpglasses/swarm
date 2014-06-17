@@ -31,7 +31,57 @@
 #include <string.h>
 
 #include "./swarm.h"
-#include "./decode.h"
-#include "./value.h"
 #include "./debug.h"
 #include "./netdec.h"
+#include "./netcap.h"
+
+namespace swarm {
+  Swarm::Swarm() {
+    this->netdec_ = new NetDec();    
+  };
+  Swarm::~Swarm() {
+  }
+
+  SwarmDev::SwarmDev(const std::string &dev_name) {
+    this->netcap_ = new CapPcapDev(dev_name);
+  }
+  SwarmDev::~SwarmDev() {
+    delete this->netcap_;
+  }
+  SwarmFile::SwarmFile(const std::string &file_path) {
+    this->netcap_ = new CapPcapFile(file_path);
+  }
+  SwarmFile::~SwarmFile() {
+    delete this->netcap_;
+  }
+
+  hdlr_id Swarm::set_handler(const std::string &ev_name, Handler *hdlr) {
+    return this->netdec_->set_handler(ev_name, hdlr);
+  }
+  bool Swarm::unset_handler(hdlr_id h_id) {
+    return this->netdec_->unset_handler(h_id);
+  }
+
+  task_id Swarm::set_periodic_task(Task *task, float interval) {
+    assert(this->netcap_);
+    return this->netcap_->set_periodic_task(task, interval);
+  }
+  bool Swarm::unset_task(task_id t_id) {
+    assert(this->netcap_);
+    return this->netcap_->unset_task(t_id);
+  }
+
+
+  Task::Task () {
+  }
+  Task::~Task () {
+  }
+  
+  // -------------------------------------------------------
+  // Handler
+  Handler::Handler () {
+  }
+  Handler::~Handler () {
+  }
+  
+} // namespace swarm

@@ -34,11 +34,7 @@
 
 namespace swarm {
   // -------------------------------------------------------
-  // Handler
-  Handler::Handler () {
-  }
-  Handler::~Handler () {
-  }
+  // HandlerEntry
 
   HandlerEntry::HandlerEntry (hdlr_id hid, ev_id ev, Handler * hdlr) :
     id_(hid), ev_(ev), hdlr_(hdlr) {

@@ -32,14 +32,18 @@
 #include <deque>
 #include <string>
 #include "./common.h"
+#include "./swarm.h"
 
 namespace swarm {
+  // ----------------------------------------------------------
+  // Handler
   class Handler {
   public:
     Handler ();
     virtual ~Handler ();
     virtual void recv (ev_id eid, const Property &p) = 0;
   };
+
 
   class HandlerEntry {
   private:

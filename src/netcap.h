@@ -29,12 +29,14 @@
 
 #include <ev.h>
 #include <string>
+#include <map>
 #include "./common.h"
-#include "./timer.h"
+
 
 namespace swarm {
   class NetDec;
   class Task;
+  class TaskEntry;
 
   // ----------------------------------------------------------------
   // class NetCap:
@@ -183,6 +185,39 @@ namespace swarm {
     explicit CapPcapFile (const std::string &file_path);
     ~CapPcapFile ();
   };
+
+  // ----------------------------------------------------------
+  // Task
+  class Task {
+  protected:
+    void stop();
+    void exit();
+
+  public:
+    Task ();
+    virtual ~Task ();
+    virtual void exec (const struct timespec &tv) = 0;
+  };
+
+  // ----------------------------------------------------------
+  // TaskEntry
+  class TaskEntry {
+  private:
+    task_id id_;
+    Task *task_;
+    float interval_;
+    struct ev_loop *loop_;
+    struct ev_timer timer_;
+
+  public:
+    TaskEntry (task_id id, Task *task, float interval, struct ev_loop *loop);
+    ~TaskEntry ();
+    task_id id () const { return this->id_; }
+    float interval () const { return this->interval_; }
+    Task *task () const { return this->task_; }
+    static void work (EV_P_ struct ev_timer *w, int revents);
+  };
+
 
 }  //  namespace swarm
 

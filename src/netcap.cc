@@ -37,6 +37,7 @@
 #include <string.h>
 #include <string>
 #include <ev.h>
+#include <math.h>
 #include "./netcap.h"
 #include "./netdec.h"
 #include "./debug.h"
@@ -403,4 +404,26 @@ namespace swarm {
   }
   CapPcapFile::~CapPcapFile () {
   }
+
+  TaskEntry::TaskEntry (task_id id, Task *task, float interval,
+                        struct ev_loop *loop) :
+    id_(id), task_(task), interval_(interval), loop_(loop) {
+    this->timer_.data = this;
+    ev_timer_init(&(this->timer_), TaskEntry::work, 0.0, this->interval_);
+    ev_timer_start(this->loop_, &(this->timer_));
+  }
+  TaskEntry::~TaskEntry () {
+    ev_timer_stop(this->loop_, &(this->timer_));    
+  }
+  void TaskEntry::work(EV_P_ struct ev_timer *w, int revents) {
+    TaskEntry *ent = reinterpret_cast<TaskEntry*>(w->data);
+    double tv = ev_now(EV_A);
+    double tv_sec, tv_nsec;
+    struct timespec ts;
+    tv_nsec = modf(tv, &tv_sec);
+    ts.tv_sec  = static_cast<time_t>(tv_sec);
+    ts.tv_nsec = static_cast<long>(tv_nsec * 1e+9);
+    ent->task_->exec(ts);
+  };
+
 }  // namespace swarm
