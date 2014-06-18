@@ -70,7 +70,10 @@ namespace swarm {
     assert(this->netcap_);
     return this->netcap_->unset_task(t_id);
   }
-
+  void Swarm::start() {
+    this->netcap_->bind_netdec(this->netdec_);
+    this->netcap_->start();
+  }
 
   Task::Task () {
   }

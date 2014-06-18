@@ -62,7 +62,7 @@ namespace swarm {
 
     task_id set_periodic_task(Task *task, float interval);
     bool unset_task(task_id t_id);
-    virtual void start() = 0;
+    void start();
   };
 
   class SwarmDev : public Swarm {
