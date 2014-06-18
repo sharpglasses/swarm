@@ -59,7 +59,7 @@ namespace swarm {
     Status status_;
     struct ev_loop *ev_loop_;
     ev_io watcher_;
-
+    ev_timer timeout_;
     std::map<task_id, TaskEntry*> task_entry_;
     task_id last_id_;
 
@@ -67,6 +67,7 @@ namespace swarm {
     virtual bool teardown() = 0;
     virtual void handler(int revents) = 0;
     static void handle_io_event(EV_P_ struct ev_io *w, int revents);
+    static void handle_timeout(EV_P_ struct ev_timer *w, int revents);
 
   protected:
     inline NetDec *netdec() { return this->nd_; }
@@ -83,7 +84,7 @@ namespace swarm {
     void bind_netdec (NetDec *nd);
     inline Status status () const { return this->status_; }
     inline bool ready () const { return (this->status_ == READY); }
-    bool start ();
+    bool start (float timeout = 0);
 
     task_id set_periodic_task(Task *task, float interval);
     bool unset_task(task_id id);

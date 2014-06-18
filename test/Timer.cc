@@ -32,7 +32,7 @@
 #include "../src/debug.h"
 #include "../src/swarm.h"
 
-TEST(Timer, set) {
+TEST(Timer, set_unset) {
   class Worker : public swarm::Task {
   public:
     int i_;
@@ -53,3 +53,21 @@ TEST(Timer, set) {
   EXPECT_FALSE(nc->unset_task(tid2));
 }
 
+TEST(Timer, run_timer) {
+  class Worker : public swarm::Task {
+  public:
+    int i_;
+    Worker() : i_(0) {}
+    void exec(const struct timespec &ts) { 
+      i_++; 
+    }
+  };
+
+  Worker *w = new Worker();
+  swarm::NetCap *nc = new swarm::CapPcapDev("en0");
+  ASSERT_EQ(swarm::NetCap::READY, nc->status());
+  swarm::task_id tid1 = nc->set_periodic_task(w, 0.1);
+  nc->start(1.);
+  // Periodic task per 0.1 second should be called 10 time in 1 second
+  EXPECT_LE(10, w->i_);
+}

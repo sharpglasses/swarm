@@ -58,7 +58,7 @@ namespace swarm {
   }
 
 
-  bool NetCap::start () {
+  bool NetCap::start (float timeout) {
     if (this->status_ != READY) {
       this->set_errmsg("Status is not ready");
       return false;
@@ -68,6 +68,11 @@ namespace swarm {
       return false;
     }
 
+    if (timeout > 0.) {
+      this->timeout_.data = this;
+      ev_timer_init(&(this->timeout_), handle_timeout, timeout, 0.);
+      ev_timer_start(this->ev_loop_, &(this->timeout_));
+    }
     ::ev_loop(this->ev_loop_, 0);
 
     if (!this->teardown()) {
@@ -78,8 +83,13 @@ namespace swarm {
   }
 
   void NetCap::handle_io_event(EV_P_ struct ev_io *w, int revents) {
-    NetCap *nc = reinterpret_cast<PcapBase*>(w->data);
+    NetCap *nc = reinterpret_cast<NetCap*>(w->data);
     nc->handler(revents);
+  }
+
+  void NetCap::handle_timeout(EV_P_ struct ev_timer *w, int revents) {
+    NetCap *nc = reinterpret_cast<NetCap*>(w->data);
+    nc->ev_loop_exit();
   }
 
   void NetCap::ev_watch_fd(int fd) {
