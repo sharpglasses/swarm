@@ -29,15 +29,15 @@
 #include <pcap.h>
 #include <pthread.h>
 #include <assert.h>
-#include <sys/types.h> 
-#include <sys/stat.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
-#include <string>
 #include <ev.h>
 #include <math.h>
+#include <string>
 #include "./netcap.h"
 #include "./netdec.h"
 #include "./debug.h"
@@ -49,7 +49,7 @@ namespace swarm {
   // class NetCap
   //
   NetCap::NetCap () :
-    nd_(NULL), ev_loop_(ev_default_loop(0)), last_id_(1) {
+    nd_(NULL), ev_loop_(EV_DEFAULT), last_id_(1) {
   }
   NetCap::~NetCap () {
   }
@@ -68,17 +68,23 @@ namespace swarm {
       return false;
     }
 
+    ev_timer_init(&(this->timeout_), handle_timeout, timeout, 0.);
+    this->timeout_.data = this;
     if (timeout > 0.) {
-      this->timeout_.data = this;
-      ev_timer_init(&(this->timeout_), handle_timeout, timeout, 0.);
       ev_timer_start(this->ev_loop_, &(this->timeout_));
     }
-    ::ev_loop(this->ev_loop_, 0);
+    ::ev_run(this->ev_loop_, 0);
 
     if (!this->teardown()) {
       return false;
     }
 
+    if (ev_is_active(&(this->watcher_))) {
+      ev_io_stop(this->ev_loop_, &(this->watcher_));
+    }
+    if (ev_is_active(&(this->timeout_))) {
+      ev_timer_stop(this->ev_loop_, &(this->timeout_));
+    }
     return true;
   }
 
@@ -93,13 +99,14 @@ namespace swarm {
   }
 
   void NetCap::ev_watch_fd(int fd) {
+    ev_io_init(&(this->watcher_), NetCap::handle_io_event, fd, EV_READ);
     this->watcher_.data = this;
-    ev_io_init(&(this->watcher_), NetCap::handle_io_event, fd, EV_READ);    
     ev_io_start(this->ev_loop_, &(this->watcher_));
   }
   void NetCap::ev_loop_exit() {
     // ev_io_stop (EV_A_ w);
-    ev_unloop (this->ev_loop_, EVUNLOOP_ALL);
+    // ev_unloop (this->ev_loop_, EVUNLOOP_ALL);
+    ::ev_break(this->ev_loop_, EVBREAK_ALL);
   }
 
 
@@ -139,7 +146,7 @@ namespace swarm {
   // class CapPcapMmap
   //
   CapPcapMmap::CapPcapMmap(const std::string &filepath) : fd_(0), addr_(NULL) {
-    assert(0); // don't use in libev arch
+    assert(0);  // don't use in libev arch
     this->set_status(FAIL);
 
     this->fd_ = ::open(filepath.c_str(), O_RDONLY);
@@ -153,14 +160,14 @@ namespace swarm {
       this->set_errmsg("fstat error");
       return;
     }
-    
+
     this->length_ = buf.st_size;
     if (this->length_ < sizeof(struct pcap_file_hdr)) {
       this->set_errmsg("The file is too short");
       return;
     }
-      
-    this->addr_ = 
+
+    this->addr_ =
       ::mmap(NULL, this->length_, PROT_READ, MAP_PRIVATE, this->fd_, 0);
     if (!this->addr_) {
       this->set_errmsg("mmap error");
@@ -184,7 +191,7 @@ namespace swarm {
     this->ptr_  = this->base_ + sizeof(struct pcap_file_hdr);
     ::memcpy(&this->hdr_, hdr, sizeof(this->hdr_));
 
-#if 0      
+#if 0
     debug(1, "magic = %08X", hdr->magic);
     debug(1, "ver_major = %u", hdr->version_major);
     debug(1, "ver_minor = %u", hdr->version_minor);
@@ -241,10 +248,11 @@ namespace swarm {
         break;
       }
 
-      struct pcap_pkt_hdr *pkthdr = 
+      struct pcap_pkt_hdr *pkthdr =
         reinterpret_cast<struct pcap_pkt_hdr*>(this->ptr_);
       this->ptr_ += sizeof(struct pcap_pkt_hdr);
-      size_t len = (pkthdr->caplen < pkthdr->len) ? pkthdr->caplen : pkthdr->len;
+      size_t len = (pkthdr->caplen < pkthdr->len) ?
+        pkthdr->caplen : pkthdr->len;
 
       tv.tv_sec  = pkthdr->tv_sec;
       tv.tv_usec = pkthdr->tv_usec;
@@ -269,7 +277,7 @@ namespace swarm {
       }
     }
 
-    this->set_status(STOP);    
+    this->set_status(STOP);
     return rc;
   }
 
@@ -439,7 +447,7 @@ namespace swarm {
     ev_timer_start(this->loop_, &(this->timer_));
   }
   TaskEntry::~TaskEntry () {
-    ev_timer_stop(this->loop_, &(this->timer_));    
+    ev_timer_stop(this->loop_, &(this->timer_));
   }
   void TaskEntry::work(EV_P_ struct ev_timer *w, int revents) {
     TaskEntry *ent = reinterpret_cast<TaskEntry*>(w->data);

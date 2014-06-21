@@ -37,13 +37,19 @@ TEST(Timer, set_unset) {
   public:
     int i_;
     Worker() : i_(0) {}
-    void exec(const struct timespec &ts) { 
-      i_++; 
+    void exec(const struct timespec &ts) {
+      this->i_++;
     }
   };
 
   Worker *w = new Worker();
-  swarm::NetCap *nc = new swarm::CapPcapDev("en0");
+
+  std::vector<std::string> name_list;
+  std::string errmsg;
+  swarm::CapPcapDev::retrieve_device_list(&name_list, &errmsg);
+  ASSERT_LT(0, name_list.size());
+
+  swarm::NetCap *nc = new swarm::CapPcapDev(name_list[0]);
   swarm::task_id tid1 = nc->set_periodic_task(w, 1.);
   swarm::task_id tid2 = nc->set_periodic_task(w, 1.5);
   EXPECT_NE(tid1, tid2);
@@ -58,16 +64,23 @@ TEST(Timer, run_timer) {
   public:
     int i_;
     Worker() : i_(0) {}
-    void exec(const struct timespec &ts) { 
-      i_++; 
+    void exec(const struct timespec &ts) {
+      this->i_++;
     }
   };
 
+  std::vector<std::string> name_list;
+  std::string errmsg;
+  swarm::CapPcapDev::retrieve_device_list(&name_list, &errmsg);
+  ASSERT_LT(0, name_list.size());
+
   Worker *w = new Worker();
-  swarm::NetCap *nc = new swarm::CapPcapDev("en0");
+  swarm::NetCap *nc = new swarm::CapPcapDev(name_list[0]);
+
   ASSERT_EQ(swarm::NetCap::READY, nc->status());
   swarm::task_id tid1 = nc->set_periodic_task(w, 0.1);
   nc->start(1.);
   // Periodic task per 0.1 second should be called 10 time in 1 second
-  EXPECT_LE(10, w->i_);
+  EXPECT_LE(5, w->i_);
+  EXPECT_GT(15, w->i_);
 }
