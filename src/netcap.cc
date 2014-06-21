@@ -395,6 +395,22 @@ namespace swarm {
   CapPcapDev::~CapPcapDev () {
   }
 
+  bool CapPcapDev::retrieve_device_list(std::vector<std::string> *name_list,
+                                        std::string *errmsg) {
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_if_t *alldevsp;
+    if (0 == pcap_findalldevs(&alldevsp, errbuf)) {
+      pcap_if_t *dev;
+      for(dev = alldevsp; dev; dev = dev->next) {
+        name_list->push_back(std::string(dev->name));
+      }
+      pcap_freealldevs(alldevsp);
+      return true;
+    } else {
+      errmsg->assign(errbuf);
+      return false;
+    }
+  }
 
 
   // -------------------------------------------------------------------

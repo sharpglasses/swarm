@@ -29,6 +29,18 @@
 #include <string>
 #include "../src/swarm.h"
 
+TEST(NetCap, device_name) {
+  std::vector<std::string> name_list;
+  std::string errmsg;
+  bool rc = swarm::CapPcapDev::retrieve_device_list(&name_list, &errmsg);
+  EXPECT_TRUE(rc);
+  // for(size_t i = 0; i < name_list.size(); i++) {
+  // printf("%s\n", name_list[i].c_str());
+  // }
+  EXPECT_LT(0, name_list.size());
+  EXPECT_TRUE(errmsg.empty());
+}
+
 TEST(CapPcapMmap, Basic) {
   class Counter  : public swarm::Handler {
   protected:

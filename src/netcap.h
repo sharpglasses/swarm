@@ -30,6 +30,7 @@
 #include <ev.h>
 #include <string>
 #include <map>
+#include <vector>
 #include "./common.h"
 
 
@@ -172,6 +173,8 @@ namespace swarm {
   public:
     explicit CapPcapDev (const std::string &dev_name);
     ~CapPcapDev ();
+    static bool retrieve_device_list(std::vector<std::string> *name_list,
+                                     std::string *errmsg);
   };
 
   // ----------------------------------------------------------------
