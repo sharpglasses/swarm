@@ -70,6 +70,26 @@ namespace swarm {
     assert(this->netcap_);
     return this->netcap_->unset_task(t_id);
   }
+
+  ev_id Swarm::lookup_event_id(const std::string &ev_name) {
+    if (this->netdec_) {
+      return this->netdec_->lookup_event_id(ev_name);
+    } else {
+      return EV_NULL;
+    }
+  }
+  val_id Swarm::lookup_value_id(const std::string &val_name) {
+    if (this->netdec_) {
+      return this->netdec_->lookup_value_id(val_name);
+    } else {
+      return EV_NULL;
+    }
+  }
+
+  bool Swarm::ready() const {
+    return (this->netcap_ && this->netcap_->ready());
+  }
+
   void Swarm::start() {
     this->netcap_->bind_netdec(this->netdec_);
     this->netcap_->start();

@@ -62,6 +62,11 @@ namespace swarm {
 
     task_id set_periodic_task(Task *task, float interval);
     bool unset_task(task_id t_id);
+
+    ev_id lookup_event_id(const std::string &ev_name);
+    val_id lookup_value_id(const std::string &val_name);
+
+    bool ready() const;
     void start();
   };
 
